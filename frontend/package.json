@@ -12,7 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "express": "^5.1.0",
+    "express": "^4.19.2",
     "vue": "^3.5.22"
   },
   "devDependencies": {

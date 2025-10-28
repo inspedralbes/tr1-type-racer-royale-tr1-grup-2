@@ -11,6 +11,6 @@
   "license": "ISC",
   "keywords": [],
   "dependencies": {
-    "express": "^5.1.0"
+    "express": "^4.19.2"
   }
 }
