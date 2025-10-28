@@ -4,25 +4,20 @@
     "data": {
       "username": "Alex"
     },
-    "meta": {},
     "__comment__": "PANTALL INICI // cliente -> servidor, cuando el jugador introduce el nombre y le da al boton de jugar"
   },
   {
     "event": "start_game",
-    "data": {},
-    "meta": {
+    "data": {
       "roomId": "room_1",
-      "playerId": "u42"
-    },
+      "playerId": "u42"},
     "__comment__": "PANTALLA DE LOBBY // cliente -> servidor, cuando el jugador le da al boton de empezar partida (solo el host)"
   },
   {
     "event": "word_typed",
     "data": {
       "word": "azul",
-      "isCorrect": true
-    },
-    "meta": {
+      "isCorrect": true,
       "playerId": "u42",
       "roomId": "room_1"
     },
