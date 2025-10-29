@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import RegistroJugador from './componentes/registroJugador.vue';
-import Lobby from './components/Lobby.vue';
+import Lobby from './components/lobby.vue';
 import InetrfazJuego from './componentes/interfazJuego.vue';
 import FiPartida from './components/FiPartida.vue';
 
