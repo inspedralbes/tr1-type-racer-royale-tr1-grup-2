@@ -1,16 +1,23 @@
-const express = require('express');
-const path = require('path');
+// index.js
+import { Server } from "socket.io";
+import { registerGameEvents } from "./socket/gameManager.js";
+import wordsRouter from "./routes/wordRoutes.js"; // tu router de palabras
+import express from "express";
 const app = express();
-const port = 3000;
+const PORT = 3000;
 
-// Serve static files from the Vue app
-app.use(express.static(path.join(__dirname, 'public')));
-
-app.get('/api', (req, res) => res.send('¡Hola, mundo desde Docker!'));
-
-// Handles any requests that don't match the ones above
-app.get('/*', (req,res) =>{
-    res.sendFile(path.join(__dirname+'/public/index.html'));
+// Crear servidor HTTP y Socket.IO
+const io = new Server(httpServer, {
+  cors: { origin: "*" },
 });
 
-app.listen(port, () => console.log(`Servidor escuchando en http://localhost:${port}`));
+app.use(express.json());
+app.use("/palabras", wordsRouter);
+
+// Registrar la lógica del juego (se hace en otro archivo)
+registerGameEvents(io);
+
+// Iniciar servidor
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor Socket.IO escuchando en http://localhost:${PORT}`);
+});

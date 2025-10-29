@@ -45,7 +45,6 @@
     "data": {
         "remainingWords": ["CINCUENTA PALABRAS DE LAS QUE QUEDAN"],
         "completedWords": 3,
-        "totalLimit": 10,
         "playerId": "u42"
     },
     "__comment__": "PANTALLA JOC servidor -> cliente, respuesta a el jugador al haber escrito la palabra correctamente"
