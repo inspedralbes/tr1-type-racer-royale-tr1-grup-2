@@ -1,31 +1,29 @@
 <script setup>
 import { ref } from "vue";
 
-const vistaActual = ref('salaEspera')
+const vistaActual = ref("salaEspera");
 
-const nomJugador = ref('')
-const jugadors = ref([])
+const nomJugador = ref("");
+const jugadors = ref([]);
 
 function connectarAlServidor() {
-  communicationManager.connect();
+  /*communicationManager.connect();
 
   communicationManager.emit('player_join', {
     username: nomJugador.value
   });
-  vistaActual.value = 'lobby';
+  vistaActual.value = 'lobby';*/
 }
-
 </script>
 <template>
   <div id="contenedor-juego">
-      <div v-if="vistaActual === 'salaEspera'" class="vista-container">
+    <div v-if="vistaActual === 'salaEspera'" class="vista-container">
       <h1>Type Racer Royale</h1>
       <input type="text" v-model="nomJugador" placeholder="Exemple: Paco" />
       <button @click="connectarAlServidor">Entra al Lobby</button>
     </div>
-</div>  
+  </div>
 </template>
-
 
 <style scoped>
 #contenedor-juego {

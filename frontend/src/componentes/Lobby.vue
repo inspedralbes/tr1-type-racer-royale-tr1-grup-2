@@ -1,35 +1,34 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
 
-const vistaActual = ref('lobby')
+const vistaActual = ref("lobby");
 const joEsticLlest = ref(false);
 
 onMounted(() => {
-  communicationManager.on('updatePlayerList', (llistaDeJugadors) => {
+  /*communicationManager.on('updatePlayerList', (llistaDeJugadors) => {
     jugadors.value = llistaDeJugadors;
-  });
+  });*/
 });
 
 function marcarComLlest() {
-  communicationManager.emit('player_ready', {
+  /*communicationManager.emit('player_ready', {
     username: nomJugador.value
   });
-  joEsticLlest.value = true;
+  joEsticLlest.value = true;*/
 }
-
-
 </script>
 <template>
   <div id="contenedor-juego">
-      <div v-if="vistaActual === 'lobby'" class="vista-container">
+    <div v-if="vistaActual === 'lobby'" class="vista-container">
       <h1>Type Racer Royale</h1>
       <input type="text" v-model="nomJugador" placeholder="Exemple: Paco" />
-      <button @click="marcarComLlest" :disabled="joEsticLlest">Estic llest</button>
+      <button @click="marcarComLlest" :disabled="joEsticLlest">
+        Estic llest
+      </button>
       <button @click="connectarAlServidor">Comença la parida</button>
     </div>
-</div>  
+  </div>
 </template>
-
 
 <style scoped>
 #contenedor-juego {
