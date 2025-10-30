@@ -17,7 +17,6 @@
     "event": "word_typed",
     "data": {
       "wordId": "1",
-      "isCorrect": true,
       "completedWords": 10,
       "playerId": "u42",
       "roomId": "room_1"

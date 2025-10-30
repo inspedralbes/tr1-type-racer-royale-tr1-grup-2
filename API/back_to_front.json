@@ -34,7 +34,8 @@
     "data": {
         "initialWords": ["CINCUENTA PALABRAS"],
         "wordLimit": 60,
-        "roomId": "room_1"
+        "roomId": "room_1",
+        "status": "playing"
     },
     "__comment__": "PANTALLA JOC servidor -> cliente, envio de las palabras a todos los jugadores cuando empieza la partida"
     },
@@ -45,7 +46,8 @@
     "data": {
         "remainingWords": ["CINCUENTA PALABRAS DE LAS QUE QUEDAN"],
         "completedWords": 3,
-        "playerId": "u42"
+        "playerId": "u42",
+        "status": "onLobby"
     },
     "__comment__": "PANTALLA JOC servidor -> cliente, respuesta a el jugador al haber escrito la palabra correctamente"
     },
@@ -82,9 +84,9 @@
     "event": "player_eliminated",
     "data": {
         "playerId": "u51",
-        "username": "Marta",
         "reason": "word_limit_exceeded",
-        "roomId": "room_1"
+        "roomId": "room_1",
+        "status": "eliminated"
     },
     "__comment__": "PANTALLA JOC servidor -> cliente, respuesta del servidor a todos los jugadores cuando un jugador es eliminado"
     },

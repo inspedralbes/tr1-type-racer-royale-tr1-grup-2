@@ -14,6 +14,7 @@ router.get("/words", (req, res) => {
 
     res.json({
         data: {
+            playerID: 1,
             initialWords: selected,
             wordLimit: 60,
             roomId: "room_1"

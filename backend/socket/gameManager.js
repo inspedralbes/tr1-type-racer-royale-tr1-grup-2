@@ -1,6 +1,6 @@
 // gameManager.js
 import { generarPalabras, seleccionarRandom } from "../logic/wordLogic.js";
-import { calcularPalabrasRestantes } from "../logic/wordLogic.js";
+import { calcularPalabrasRestantes, añadirPalabraCompletada } from "../logic/wordLogic.js";
 // --- LISTA DE SALAS ---
 const rooms = {}; // { roomId: { host: "socketId", players: [{ id, name, words: [], completedWords }], initialWords: [] } }
 const players = {}; // { id, playerName } }
@@ -43,66 +43,48 @@ export const registerGameEvents = (io) => {
     //   }
     // });
 
-    // INICIAR PARTIDA
-    socket.on("start_game", (msg) => {
-      const { roomId } = msg.data;
-      const room = rooms[roomId];
-      if (room && room.players.length <= 2) {
-        io.to(roomId).emit("game_started", {
-          data: {
-            initialWords: room.initialWords,
-            wordLimit: 60,
-            roomId,
-          },
-          __comment__: "Envío de palabras iniciales al iniciar la partida",
-        });
-        console.log(`🚀 Partida iniciada en sala ${roomId}`);
-      }
-    });
-
-
-    socket.on("letter_typed", (msg) => {
-      const { wordId, isCorrect, playerId, roomId } = msg.data;
-      const room = rooms[roomId];
-      if (room && room.players.find((p) => p.id === playerId)) {
-        io.to(roomId).emit("server_message", {
-          event: "game_started",
-          data: {
-            initialWords: room.initialWords,
-            wordLimit: 50,
-            roomId,
-          },
-          __comment__: "Envío de palabras iniciales al iniciar la partida",
-        });
-        console.log(`🚀 Partida iniciada en sala ${roomId}`);
-      }
-    });
-
     socket.on("word_typed", (msg) => {
-      const { wordId, isCorrect, playerId, roomId } = msg.data;
-      const room = rooms[roomId];
-      if (room && room.players.find((p) => p.id === playerId)) {
-        const jugadorActual = room.players[playerId-1];
-        const palabrasRestantes = calcularPalabrasRestantes(jugadorActual.initialWords, wordId);
-        io.to(roomId).emit("update_player_words", {
-          data: {
-            remainingWords: palabrasRestantes,
-            completedWords: room.players[playerId-1].completedWords,
-            roomId,
-          },
-          __comment__: "Envío de palabras iniciales al iniciar la partida",
-        });
-        console.log(`🚀 Partida iniciada en sala ${roomId}`);
+    const { wordId, isCorrect, playerId, roomId } = msg.data;
+    const room = rooms[roomId];
+    if (!room) return;
 
-        io.to(roomId).broadcast.emit("update_progress", {
-          data: {
-            remainingWords: palabrasRestantes,
-            completedWords: room.players[playerId-1].completedWords,
-            roomId,
-          },
-          __comment__: "Envío de palabras iniciales al iniciar la partida",
-        });
+    // 1️⃣ Eliminar palabra completada y obtenerla
+    const palabraEliminada = calcularPalabrasRestantes(rooms, roomId, playerId, wordId);
+
+    // 2️⃣ Añadir la palabra completada al resto de jugadores
+    if (palabraEliminada) {
+    añadirPalabraCompletada(rooms, roomId, playerId, palabraEliminada);
     }
+
+    // 3️⃣ Buscar al jugador actual
+    const jugadorActual = room.players.find(p => p.id === playerId);
+    if (!jugadorActual) return;
+
+    // 4️⃣ Si se queda sin palabras, marcarlo como "finished"
+    if (jugadorActual.words.length === 0) {
+        jugadorActual.status = "finished";
+    }
+
+    // 5️⃣ Enviar actualización al front (a todos en la sala)
+    io.to(roomId).emit("update_player_words", {
+        data: {
+        playerId,
+        remainingWords: jugadorActual.words,
+        completedWords: jugadorActual.completedWords,
+        status: jugadorActual.status,
+        roomId,
+        }
+    });
+
+    // 6️⃣ Si quieres actualizar progreso general también (opcional)
+    socket.broadcast.to(roomId).emit("update_progress", {
+        data: {
+        roomId,
+        players: room.players,
+        }
+    });
+
+    console.log(`✅ Jugador ${jugadorActual.name} completó "${palabraEliminada}" en sala ${roomId}`);
     });
 
     // DESCONECTAR
