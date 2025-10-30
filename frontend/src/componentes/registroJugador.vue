@@ -14,69 +14,104 @@ function generatePlayerId() {
 }
 
 function connectarAlServidor() {
-  // 1. Conectar al servidor
   communicationManager.connect();
 
-  // 2. Preparar un listener para cuando el servidor confirme que nos hemos unido
   communicationManager.on("joined_lobby", (payload) => {
     console.log("Successfully joined lobby:", payload);
-    // 4. Emitir el evento al padre (App.vue) para cambiar de vista
     emit("registrado", payload);
   });
 
   const newPlayerId = generatePlayerId();
 
-  // 3. Enviar la petición para unirse
   communicationManager.emit("player_join", {
     username: nomJugador.value,
     playerId: newPlayerId,
   });
 }
 </script>
+
 <template>
   <div id="contenedor-juego">
     <div class="vista-container">
       <h1>Type Racer Royale</h1>
-      <input type="text" v-model="nomJugador" placeholder="Exemple: Paco" />
+      <label for="nomJugador">Nom de l'usuari:</label>
+      <input
+        id="nomJugador"
+        type="text"
+        v-model="nomJugador"
+        placeholder="Exemple: Paco"
+      />
       <button @click="connectarAlServidor">Entra al Lobby</button>
     </div>
   </div>
 </template>
 
 <style scoped>
-
-#general{
-  rgba(240, 248, 255, 0);
-}
-
-#contenedor {
+#contenedor-juego {
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  text-align: center;
-  width: 100vw;
   height: 100vh;
-  padding: 20px;
-  box-sizzing: border-box;
-  background-color: (0, 0, 0, 0.5);
-}
-
-#contenedor-mesa{
-  margin-top: 15%;
-  background-image: 
-  background-size: cover;
-}
-
-.text-input {
+  width: 100vw;
+  background: linear-gradient(to bottom, #000000, #330000);
   font-family: "Courier New", Courier, monospace;
-  font-size: 20px;
-  min-width: 500px;
-  min-height: 30px;
-  border-radius: 5px;
-  text-align: center;
-  border-color: rgba(137, 46, 226, 0);
-  background-color: #3DCBFC;
-  color: wheat;
+  color: #ffe6e6;
 }
 
+.vista-container {
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 40px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.6);
+  width: 90%;
+  max-width: 500px;
+}
+
+h1 {
+  margin-bottom: 30px;
+  font-size: 32px;
+  color: #ff3333;
+  text-shadow: 1px 1px 2px black;
+}
+
+label {
+  display: block;
+  font-size: 18px;
+  margin-bottom: 10px;
+  color: #ff9999;
+}
+
+input[type="text"] {
+  font-size: 20px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 6px;
+  border: none;
+  background-color: #990000;
+  color: #ffe6e6;
+  text-align: center;
+  margin-bottom: 25px;
+  box-shadow: inset 0 0 5px rgba(255, 0, 0, 0.4);
+}
+
+input::placeholder {
+  color: #ffcccc;
+}
+
+button {
+  background-color: #660000;
+  color: #ffe6e6;
+  border: none;
+  padding: 12px 24px;
+  font-size: 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+}
+
+button:hover {
+  background-color: #990000;
+}
 </style>
