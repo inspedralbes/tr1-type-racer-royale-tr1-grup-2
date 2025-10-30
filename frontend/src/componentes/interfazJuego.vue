@@ -4,6 +4,67 @@ import socket from "@/servicios/socket.js";
 
 const listaEntera = ref([]);
 const palabraUser = ref("");
+const completedWords = ref(0);
+const playerId = ref(null);
+const roomId = ref(null);
+
+// Limpia una palabra (quita espacios y puntuación al inicio/final)
+function cleanWord(raw) {
+  return raw.trim().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
+}
+
+// Procesa una sola palabra completada
+function processSingleWord(raw) {
+  const word = cleanWord(raw);
+  if (!word) return;
+
+  completedWords.value += 1;
+
+  // Llamamos a la función ya existente para enviar la palabra al servidor
+  // marcar isCorrect como true por defecto; la verificación real la podrás añadir luego
+  enviarPalabra(
+    palabraUser.value,
+    true,
+    completedWords.value,
+    playerId.value,
+    roomId.value
+  );
+}
+
+// Handler para keydown en el input
+function onInputKeyDown(e) {
+  if (
+    e.code === "Space" ||
+    e.key === " " ||
+    e.key === "Spacebar" ||
+    e.key === "Enter"
+  ) {
+    e.preventDefault();
+    const text = palabraUser.value || "";
+    const parts = text.trim().split(/\s+/).filter(Boolean);
+    console.log("Parts to process:", palabraUser.value);
+
+    if (parts.length === 0) {
+      palabraUser.value = "";
+      return;
+    }
+
+    for (let i = 0; i < parts.length; i++) {
+      processSingleWord(parts[i]);
+    }
+    palabraUser.value = "";
+  }
+}
+
+// manejo del paste para procesar inmediatamente sin esperar Space
+function onInputPaste(e) {
+  const paste = (e.clipboardData || window.clipboardData).getData("text");
+  if (!paste) return;
+  e.preventDefault();
+  const parts = paste.trim().split(/\s+/).filter(Boolean);
+  for (const p of parts) processSingleWord(p);
+  palabraUser.value = "";
+}
 
 //Funcion para pillar las palabras iniciales del servidor
 onMounted(() => {
@@ -35,37 +96,42 @@ onUnmounted(() => {
 });
 
 //Funcion para enviar las palabras del usuario
-function enviarPalabra(word, isCorrect, completedWords, playerId, roomId) {
+function enviarPalabra(
+  palabraUser,
+  isCorrect,
+  completedWordsCount,
+  playerIdVal,
+  roomIdVal
+) {
   const data = {
-    word,
+    word: palabraUser.value,
     isCorrect,
-    completedWords,
-    playerId,
-    roomId,
+    completedWords: completedWordsCount,
+    playerId: playerIdVal,
+    roomId: roomIdVal,
   };
   socket.emit("word_typed", data);
 }
 </script>
 <template>
   <div id="contenedor-juego">
-    <ul>
-      <li v-for="(palabra, index) in listaEntera" :key="index">
-        {{ palabra }}
-      </li>
-    </ul>
-
-    <div id="contenedor-mesa">
-      <button class="letras"></button>
-
-      <!-- <span>prueba</span> -->
-    </div>
     <div class="contenedor-texto">
       <input
         type="text"
         class="text-input"
         v-model="palabraUser"
+        @keydown="onInputKeyDown"
+        @paste="onInputPaste"
         placeholder="Comença a escriure..."
       />
+    </div>
+    <ul>
+      <li v-for="(palabra, index) in listaEntera" :key="index">
+        {{ palabra }}
+      </li>
+    </ul>
+    <div id="contenedor-mesa">
+      <!-- <span>prueba</span> -->
     </div>
   </div>
 </template>
@@ -111,5 +177,7 @@ function enviarPalabra(word, isCorrect, completedWords, playerId, roomId) {
   border-color: rgba(137, 43, 226, 0);
   background-color: rgba(240, 248, 255, 0);
   color: wheat;
+  position: relative;
+  z-index: 5;
 }
 </style>
