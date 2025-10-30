@@ -21,6 +21,6 @@ app.use("/palabras", wordsRouter);
 registerGameEvents(io);
 
 // Iniciar servidor
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`🚀 Servidor Socket.IO escuchando en http://localhost:${PORT}`);
 });
