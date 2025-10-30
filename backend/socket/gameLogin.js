@@ -1,9 +1,7 @@
-// Archivo: socket-logic.js
-
 const { Server } = require("socket.io");
 
-// La función para crear lobbies se mantiene, pero no la usamos
-// para el RoomId principal si queremos que sea testeable.
+// La función para crear lobbies se mantiene, pero no la usamos de momento
+
 function createLobby() {
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const roomPrefix = "room_";
@@ -21,8 +19,7 @@ function generatePlayerId() {
 }
 
 // --- CORRECCIÓN IMPORTANTE ---
-// Usamos un ID de sala fijo. Si fuera aleatorio,
-// el cliente de prueba no sabría a dónde conectarse.
+// Usamos un ID de sala fijo.
 const RoomId = "room_1";
 console.log(`Servidor iniciado con una única sala: ${RoomId}`);
 
@@ -111,22 +108,49 @@ function initializeSocketIO(httpServer, corsOptions) {
     socket.on("disconnect", () => {
       console.log(`[DISCONN] Socket desconectado: ${socket.id}`);
       if (joinedRoom && rooms[joinedRoom] && joinedPlayerId) {
-        // Marcar al jugador como "desconectado"
-        let player = rooms[joinedRoom].players.find(
+        const room = rooms[joinedRoom];
+        const playerIndex = room.players.findIndex(
           (p) => p.playerId === joinedPlayerId
         );
-        if (player) {
-          player.socketId = null;
+
+        if (playerIndex === -1) return;
+
+        const wasHost = playerIndex === 0;
+
+        // Remove the player from the array
+        room.players.splice(playerIndex, 1);
+        console.log(
+          `[DISCONN] Jugador ${joinedPlayerId} eliminado de la sala.`
+        );
+
+        if (wasHost) {
+          // Host disconnected, assign a new host
           console.log(
-            `[DISCONN] Jugador ${joinedPlayerId} marcado como desconectado.`
+            `[DISCONN] El host se ha desconectado. Asignando nuevo host.`
           );
+
+          if (room.players.length > 0) {
+            // Notify all remaining players of the change and their new host status
+            room.players.forEach((player) => {
+              if (player.socketId) {
+                // Ensure player is connected
+                const isNewHost = room.players[0].playerId === player.playerId;
+                io.to(player.socketId).emit("host_changed", {
+                  isHost: isNewHost,
+                  players: room.players,
+                });
+              }
+            });
+          }
+        } else {
+          // Non-host player disconnected, just notify others
+          io.to(joinedRoom).emit("player_list_updated", {
+            players: room.players,
+          });
         }
 
-        io.to(joinedRoom).emit("player_list_updated", {
-          players: rooms[joinedRoom].players,
-        });
         console.log(
-          `[EMIT] 'player_list_updated' por desconexión a sala ${joinedRoom}`
+          `[EMIT] Notificación de desconexión enviada a la sala ${joinedRoom}`
         );
       }
     });
