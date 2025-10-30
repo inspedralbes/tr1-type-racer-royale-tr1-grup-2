@@ -42,29 +42,38 @@ export const seleccionarRandom = (array, cantidad) => {
 
 // funcion que elimina la palabra completada de la lista del jugador que la responde
 // y devuelve la palabra eliminada para añadirla al resto
-export const calcularPalabrasRestantes = (rooms, roomId, playerId, wordId) => {
+// 🔹 CALCULA LAS PALABRAS RESTANTES Y AÑADE A LOS DEMÁS SI SE CUMPLE EL UMBRAL
+export const calcularPalabrasRestantes = (rooms, roomId, playerId, wordId, threshold = 3) => {
   const room = rooms[roomId];
-  if (!room) return null;
+  if (!room) return;
 
   const jugador = room.players.find(p => p.id === playerId);
-  if (!jugador) return null;
+  if (!jugador) return;
 
   const copia = [...jugador.words];
   let completedWord = null;
 
+  // ✅ Eliminar palabra completada
   if (wordId >= 0 && wordId < copia.length) {
     completedWord = copia[wordId];
     copia.splice(wordId, 1);
   }
 
-  // 🔹 Actualizamos el jugador directamente en rooms
+  // ✅ Actualizar datos del jugador
   jugador.words = copia;
-  if (completedWord) {
-    jugador.completedWords.push(completedWord);
-  }
+  jugador.completedWords ??= 0; // asegúrate de que sea número
 
-  // 🔹 Devolvemos la palabra eliminada para que el servidor la use
-  return completedWord;
+  if (completedWord) {
+    jugador.completedWords += 1;
+
+    // ⚡ Si alcanza múltiplo del threshold → enviar palabra a los demás
+    if (jugador.completedWords % threshold === 0) {
+      console.log(
+        `⚡ ${jugador.name || playerId} ha completado ${jugador.completedWords} palabras — enviando "${completedWord}" a los demás`
+      );
+      añadirPalabraCompletada(rooms, roomId, playerId, completedWord);
+    }
+  }
 };
 
 
@@ -77,14 +86,7 @@ export const añadirPalabraCompletada = (rooms, roomId, playerId, palabraElimina
   const room = rooms[roomId];
   if (!room) return;
 
-  // 1️⃣ Buscar al jugador que la completó
-  const jugador = room.players.find(p => p.id === playerId);
-  if (!jugador) return;
-
-  // 2️⃣ Añadir la palabra completada al jugador que la escribió
-  jugador.completedWords.push(palabraEliminada);
-
-  // 3️⃣ Añadir la misma palabra al resto de jugadores
+  // Añadir la palabra completada al resto de jugadores
   room.players.forEach(p => {
     if (p.id !== playerId) {
       p.words.push(palabraEliminada);

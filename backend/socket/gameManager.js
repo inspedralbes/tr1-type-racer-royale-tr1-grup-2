@@ -11,48 +11,44 @@ export const registerGameEvents = (io) => {
     console.log(`🟢 Nuevo jugador conectado: ${socket.id}`);
 
     socket.on("word_typed", (msg) => {
-    const { wordId, isCorrect, playerId, roomId } = msg.data;
+    const { wordId, isCorrect, playerId, roomId, threshold = 3 } = msg.data;
     const room = rooms[roomId];
-    if (!room) return;
+    if (!room || !isCorrect) return;
 
-    // 1️⃣ Eliminar palabra completada y obtenerla
-    const palabraEliminada = calcularPalabrasRestantes(rooms, roomId, playerId, wordId);
+    // ✅ 1️⃣ Actualiza el estado del jugador y maneja internamente si debe añadir palabra
+    calcularPalabrasRestantes(rooms, roomId, playerId, wordId, threshold);
 
-    // 2️⃣ Añadir la palabra completada al resto de jugadores
-    if (palabraEliminada) {
-    añadirPalabraCompletada(rooms, roomId, playerId, palabraEliminada);
-    }
-
-    // 3️⃣ Buscar al jugador actual
+    // ✅ 2️⃣ Buscar al jugador actual
     const jugadorActual = room.players.find(p => p.id === playerId);
     if (!jugadorActual) return;
 
-    // 4️⃣ Si se queda sin palabras, marcarlo como "finished"
+    // ✅ 3️⃣ Si se queda sin palabras, marcarlo como "finished"
     if (jugadorActual.words.length === 0) {
         jugadorActual.status = "finished";
     }
 
-    // 5️⃣ Enviar actualización al front (a todos en la sala)
+    // ✅ 4️⃣ Notificar a todos el nuevo estado del jugador
     io.to(roomId).emit("update_player_words", {
         data: {
         playerId,
         remainingWords: jugadorActual.words,
-        completedWords: jugadorActual.completedWords,
         status: jugadorActual.status,
+        completedWords: jugadorActual.completedWords,
         roomId,
-        }
+        },
     });
 
-    // 6️⃣ Si quieres actualizar progreso general también (opcional)
+    // ✅ 5️⃣ Emitir progreso general (opcional)
     socket.broadcast.to(roomId).emit("update_progress", {
         data: {
         roomId,
         players: room.players,
-        }
+        },
     });
 
-    console.log(`✅ Jugador ${jugadorActual.name} completó "${palabraEliminada}" en sala ${roomId}`);
+    console.log(`✅ Jugador ${jugadorActual.name} completó palabra en sala ${roomId}`);
     });
+
 
     // DESCONECTAR
     socket.on("disconnect", () => {
