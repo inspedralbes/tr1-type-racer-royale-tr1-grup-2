@@ -10,7 +10,8 @@
     "event": "start_game --- ESTO SE HA VUELTO UNA PETICION HTTP NO SOCKET ---",
     "data": {
       "roomId": "room_1",
-      "playerId": "u42"},
+      "playerId": "u42"
+    },
     "__comment__": "PANTALLA DE LOBBY // cliente -> servidor, cuando el jugador le da al boton de empezar partida (solo el host)"
   },
   {
@@ -29,6 +30,7 @@
     "data": {
       "wordId": "1",
       "isCorrect": true,
+      "completedWords": 1,
       "playerId": "u42",
       "roomId": "room_1"
     },
