@@ -43,4 +43,40 @@ function connectarAlServidor() {
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+
+#general{
+  rgba(240, 248, 255, 0);
+}
+
+#contenedor {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100vw;
+  height: 100vh;
+  padding: 20px;
+  box-sizzing: border-box;
+  background-color: (0, 0, 0, 0.5);
+}
+
+#contenedor-mesa{
+  margin-top: 15%;
+  background-image: 
+  background-size: cover;
+}
+
+.text-input {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 20px;
+  min-width: 500px;
+  min-height: 30px;
+  border-radius: 5px;
+  text-align: center;
+  border-color: rgba(137, 46, 226, 0);
+  background-color: #3DCBFC;
+  color: wheat;
+}
+
+</style>
