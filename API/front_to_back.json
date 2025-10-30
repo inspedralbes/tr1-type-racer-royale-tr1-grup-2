@@ -10,18 +10,16 @@
     "event": "start_game",
     "data": {
       "roomId": "room_1",
-      "playerId": "u42"},
+      "playerId": "u42"
+    },
     "__comment__": "PANTALLA DE LOBBY // cliente -> servidor, cuando el jugador le da al boton de empezar partida (solo el host)"
   },
   {
     "event": "word_typed",
     "data": {
-<<<<<<< HEAD
-      "word": "azul",
-=======
       "word": "1",
->>>>>>> 23b592ba7bab8f03790074ab1e0f3393e9e2006b
       "isCorrect": true,
+      "completedWords": 1,
       "playerId": "u42",
       "roomId": "room_1"
     },
