@@ -1,61 +1,40 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
+import communicationManager from '../services/communicationManager';
 
-const vistaActual = ref("lobby");
-const joEsticLlest = ref(false);
-
-onMounted(() => {
-  /*communicationManager.on('updatePlayerList', (llistaDeJugadors) => {
-    jugadors.value = llistaDeJugadors;
-  });*/
+const props = defineProps({
+  lobbyState: {
+    type: Object,
+    required: true
+  }
 });
 
-function marcarComLlest() {
-  /*communicationManager.emit('player_ready', {
-    username: nomJugador.value
+function iniciarJuego() {
+  communicationManager.emit('start_game', {
+    roomId: props.lobbyState.roomId,
+    playerId: props.lobbyState.playerId
   });
-  joEsticLlest.value = true;*/
 }
 </script>
+
 <template>
   <div id="contenedor-juego">
-    <div v-if="vistaActual === 'lobby'" class="vista-container">
-      <h1>Type Racer Royale</h1>
-      <input type="text" v-model="nomJugador" placeholder="Exemple: Paco" />
-      <button @click="marcarComLlest" :disabled="joEsticLlest">
+    <div class="vista-container">
+      <h1>Lobby de la Sala: {{ lobbyState.roomId }}</h1>
+      
+      <h2>Jugadores Conectados:</h2>
+      <ul>
+        <li v-for="jugador in lobbyState.players" :key="jugador.playerId">
+          {{ jugador.username }}
+        </li>
+      </ul>
+
+      <!-- <button @click="marcarComLlest" :disabled="joEsticLlest">
         Estic llest
-      </button>
-      <button @click="connectarAlServidor">Comença la parida</button>
+      </button> -->
+      <button v-if="lobbyState.isHost" @click="iniciarJuego">Comença la partida</button>
     </div>
   </div>
 </template>
 
-<style scoped>
-#contenedor-juego {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  margin: 5% auto;
-  min-width: 900px;
-  min-height: 500px;
-  border-radius: 10px;
-  padding: 20px;
-  box-sizing: border-box;
-}
-
-.contenedor-texto {
-  margin-top: 50px;
-}
-.text-input {
-  font-family: "Courier New", Courier, monospace;
-  font-size: 20px;
-  min-width: 500px;
-  min-height: 30px;
-  border-radius: 5px;
-  text-align: center;
-  border-color: rgba(137, 43, 226, 0);
-  background-color: rgba(240, 248, 255, 0);
-  color: wheat;
-}
-</style>
+<style scoped></style>

@@ -1,0 +1,20 @@
+// ... (el resto del archivo es igual)
+
+// 2. Escucha la respuesta 'joined_lobby'
+socket.on("joined_lobby", (data) => {
+  console.log("\n--- ¡Te has unido al lobby! ---");
+  console.log("Evento: 'joined_lobby'");
+  console.log("Tu Player ID:", data.myPlayerId); // <--- Esto ya estaba bien
+  console.log("Sala ID:", data.roomId);
+  console.log("¿Eres Host?:", data.isHost);
+  console.log("Jugadores actuales:", data.players);
+  console.log("--------------------------------\n");
+});
+
+// 3. Escucha 'player_list_updated'
+socket.on("player_list_updated", (data) => {
+  console.log("\n--- ¡Actualización de Jugadores! ---");
+  console.log("Evento: 'player_list_updated'");
+  console.log("Nuevos jugadores:", data.players);
+  console.log("------------------------------------\n");
+});
