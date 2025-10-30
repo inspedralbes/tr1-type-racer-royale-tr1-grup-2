@@ -11,38 +11,6 @@ export const registerGameEvents = (io) => {
   io.on("connection", (socket) => {
     console.log(`🟢 Nuevo jugador conectado: ${socket.id}`);
 
-    // CREAR SALA
-    // socket.on("create_room", (msg) => {
-    //   const { roomId, playerName } = msg.data;
-
-    //   if (!rooms[roomId]) {
-    //     const todasPalabras = generarPalabras(600);
-    //     const initialWords = seleccionarRandom(todasPalabras, 50);
-
-    //     rooms[roomId] = {
-    //       host: socket.id,
-    //       players: [{ id: socket.id, name: playerName }],
-    //       initialWords,
-    //     };
-
-    //     socket.join(roomId);
-    //     socket.emit("room_created", { roomId, initialWords });
-    //     console.log(`🟢 Sala creada: ${roomId} por ${playerName}`);
-    //   }
-    // });
-
-    // UNIRSE A SALA
-    // socket.on("join_room", (msg) => {
-    //   const { roomId, playerName } = msg.data;
-    //   const room = rooms[roomId];
-    //   if (room) {
-    //     room.players.push({ id: socket.id, name: playerName });
-    //     socket.join(roomId);
-    //     io.to(roomId).emit("update_players", room.players);
-    //     console.log(`🟢 ${playerName} se unió a la sala ${roomId}`);
-    //   }
-    // });
-
     socket.on("word_typed", (msg) => {
     const { wordId, isCorrect, playerId, roomId } = msg.data;
     const room = rooms[roomId];

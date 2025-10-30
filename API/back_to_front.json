@@ -89,24 +89,6 @@
         "status": "eliminated"
     },
     "__comment__": "PANTALLA JOC servidor -> cliente, respuesta del servidor a todos los jugadores cuando un jugador es eliminado"
-    },
-
-
-
-    {
-    "event": "game_over",
-    "data": {
-        "winner": {
-        "playerId": "u42",
-        "username": "Alex"
-        },
-        "ranking": [
-        { "username": "Alex", "completedWords": 10 },
-        { "username": "Marta", "completedWords": 7 },
-        { "username": "Leo", "completedWords": 5 }
-        ],
-        "roomId": "room_1"
-    },
-    "__comment__": "PANTALLA JOC servidor -> cliente, respuesta del servidor a todos los jugadores cuando la partida ha terminado"
     }
+
 ]
