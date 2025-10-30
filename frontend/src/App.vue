@@ -7,4 +7,9 @@ import InetrfazJuego from './componentes/interfazJuego.vue';
   <InetrfazJuego />
 </template>
 
-<style scoped></style>
+
+<style>
+body {
+  font-family: "Inter", sans-serif;
+}
+</style>
