@@ -3,7 +3,10 @@ import { Server } from "socket.io";
 import { registerGameEvents } from "./socket/gameManager.js";
 import wordsRouter from "./routes/wordRoutes.js"; // tu router de palabras
 import express from "express";
+import http from "http";
+
 const app = express();
+const httpServer = http.createServer(app);
 const PORT = 3000;
 
 // Crear servidor HTTP y Socket.IO

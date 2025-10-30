@@ -1,5 +1,4 @@
 // gameManager.js
-import { generarPalabras, seleccionarRandom } from "../logic/wordLogic.js";
 import { calcularPalabrasRestantes, añadirPalabraCompletada } from "../logic/wordLogic.js";
 // --- LISTA DE SALAS ---
 const rooms = {}; // { roomId: { host: "socketId", players: [{ id, name, words: [], completedWords }], initialWords: [] } }
