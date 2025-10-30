@@ -1,16 +1,15 @@
 const express = require('express');
+const cors = require('cors');
 const path = require('path');
 const app = express();
-const port = 3000;
 
-// Serve static files from the Vue app
-app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/api', (req, res) => res.send('¡Hola, mundo desde Docker!'));
+// --- Configuración de CORS ---
+const corsOptions = {
+  origin: 'http://localhost:4000' 
+};
+app.use(cors(corsOptions));
 
-// Handles any requests that don't match the ones above
-app.get('/*', (req,res) =>{
-    res.sendFile(path.join(__dirname+'/public/index.html'));
-});
+const port = process.env.PORT || 3000;
 
 app.listen(port, () => console.log(`Servidor escuchando en http://localhost:${port}`));
