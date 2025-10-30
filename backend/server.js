@@ -1,15 +1,25 @@
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
+const express = require("express");
+const cors = require("cors");
+const http = require("http");
 const app = express();
+const server = http.createServer(app); // <-- Creamos el servidor HTTP
 
+// 1. Importamos NUESTRAS funciónes
+const { initializeSocketIO } = require("./socket/gameLogin.js");
 
-// --- Configuración de CORS ---
+// --- Configuración de CORS para Express (rutas API) y Socket.IO ---
 const corsOptions = {
-  origin: 'http://localhost:4000' 
+  origin: "*",
+  methods: ["GET", "POST"],
 };
+
 app.use(cors(corsOptions));
 
-const port = process.env.PORT || 3000;
+//  Inicializa Socket.IO con el servidor HTTP y las opciones de CORS
+initializeSocketIO(server, corsOptions);
 
-app.listen(port, () => console.log(`Servidor escuchando en http://localhost:${port}`));
+// --- Puerto de escucha ---
+const port = process.env.PORT || 3000;
+server.listen(port, () =>
+  console.log(`Servidor HTTP escuchando en http://localhost:${port}`)
+);
