@@ -44,15 +44,6 @@ onMounted(() => {
     @registrado="handleRegistration"
   />
   <Lobby v-if="vistaActual === 'lobby'" :lobby-state="lobbyState" />
-  <InterfazJuego
-    v-if="vistaActual === 'juego'"
-    :game-state="gameState"
-    @finJuego="vistaActual = 'fiPartida'"
-  />
-  <FiPartida
-    v-if="vistaActual === 'fiPartida'"
-    @reiniciar="vistaActual = 'lobby'"
-  />
 </template>
 
 <style scoped></style>

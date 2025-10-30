@@ -1,8 +1,8 @@
 const { Server } = require("socket.io");
 
-// La función para crear lobbies se mantiene, pero no la usamos de momento
+// No se usa de momento, Actual: unica sala fija
 
-function createLobby() {
+function createLobbyId() {
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const roomPrefix = "room_";
   const randomLetter = letters[Math.floor(Math.random() * letters.length)];
@@ -18,18 +18,17 @@ function generatePlayerId() {
   return `${randomLetter}${randomNumber}`;
 }
 
-// --- CORRECCIÓN IMPORTANTE ---
-// Usamos un ID de sala fijo.
+// Usamos un ID de sala fijo, ¡Hay que quitarlo más adelante!.
 const RoomId = "room_1";
-console.log(`Servidor iniciado con una única sala: ${RoomId}`);
 
+// Estructura de datos para las salas y jugadores, in-memory (Temporal)
 const rooms = {
   [RoomId]: {
     players: [], // Cada jugador tendrá { playerId, socketId, username, completedWords }
   },
 };
 
-// --- Función para inicializar Socket.IO ---
+// Inicializar Socket.IO
 
 function initializeSocketIO(httpServer, corsOptions) {
   const io = new Server(httpServer, {
@@ -37,34 +36,36 @@ function initializeSocketIO(httpServer, corsOptions) {
   });
 
   io.on("connection", (socket) => {
-    console.log(`[IO] Nuevo socket conectado: ${socket.id}`);
     let joinedRoom = null;
     let joinedPlayerId = null;
 
-    // --- Evento: player_join (Pantalla Inicio) ---
+    // Evento: player_join (Pantalla Login)
     socket.on("player_join", (data) => {
+      console.log(`[C -> S] Evento: player_join:`);
       const { username, playerId } = data;
-      console.log(
-        `[JOIN] Jugador intentando unirse: ${playerId} - ${username}`
-      );
-      const roomId = RoomId; // Usar la sala global fija
 
-      if (!rooms[roomId]) {
-        console.error(
-          `[ERROR] El jugador ${playerId} intentó unirse a una sala inexistente: ${roomId}`
-        );
-        socket.emit("join_error", { message: "La sala no existe." });
-        return;
-      }
+      const roomId = RoomId; // Sala fija, más adelante se implantará createLobbyId()
+      console.log(`Sala: ${RoomId}`);
 
-      // --- Lógica de Reconexión y Límite de Sala ---
+      // Pendiente validación de sala.
+
+      // ...
+
+      // Lógica de Reconexión y Límite de Sala
       const existingPlayer = rooms[roomId].players.find(
         (p) => p.playerId === playerId
       );
 
       if (!existingPlayer && rooms[roomId].players.length >= 4) {
-        console.error(`[ERROR] La sala ${roomId} está llena. No se pudo unir ${playerId}.`);
+        console.error(
+          `[ERROR] La sala ${roomId} está llena. No se pudo unir ${playerId}.`
+        );
         socket.emit("join_error", { message: "La sala está llena." });
+        console.log(
+          `[S -> C] Evento: join_error, Datos: ${JSON.stringify({
+            message: "La sala está llena.",
+          })}`
+        );
         return;
       }
 
@@ -73,26 +74,26 @@ function initializeSocketIO(httpServer, corsOptions) {
       joinedPlayerId = playerId;
 
       if (existingPlayer) {
-        console.log(`[RECONN] Jugador ${playerId} se ha reconectado.`);
         existingPlayer.socketId = socket.id;
       } else {
-        // --- CORRECCIÓN ---
-        // Añadido 'completedWords' para coincidir con tu comentario/schema
         const newPlayer = {
           playerId: playerId,
           socketId: socket.id,
           username: username,
           completedWords: [],
-          isReady: false, // Añadido para el estado "listo"
+          isReady: false,
         };
         rooms[roomId].players.push(newPlayer);
-        console.log(`[NEW] Nuevo jugador ${playerId} añadido a la sala.`);
+        console.log(
+          `[JOIN] Jugador ${playerId} - ${username} se unio a la sala ${roomId}.`
+        );
       }
 
       socket.join(roomId);
 
       const isHost = rooms[roomId].players[0].playerId === playerId;
 
+      // PENDIENTE Revisar -->
       // --- Respuesta: joined_lobby ---
       const responsePayload = {
         playerId: playerId,
@@ -102,31 +103,59 @@ function initializeSocketIO(httpServer, corsOptions) {
       };
 
       socket.emit("joined_lobby", responsePayload);
+      console.log(
+        `[S -> C] Evento: joined_lobby, Datos: ${JSON.stringify(
+          responsePayload
+        )}`
+      );
       console.log(`[EMIT] 'joined_lobby' enviado a ${playerId}`);
 
       // --- Notificación a los demás ---
       io.to(roomId).emit("player_list_updated", {
         players: rooms[roomId].players,
       });
+      console.log(
+        `[S -> C] Evento: player_list_updated, Datos: ${JSON.stringify({
+          players: rooms[roomId].players,
+        })}`
+      );
       console.log(`[EMIT] 'player_list_updated' enviado a sala ${roomId}`);
     });
 
     // --- Evento: player_ready (Pantalla Lobby) ---
     socket.on("player_ready", (data) => {
+      console.log(
+        `[C -> S] Evento: player_ready, Datos: ${JSON.stringify(data)}`
+      );
       const { playerId, isReady } = data;
-      const room = Object.values(rooms).find(r => r.players.some(p => p.playerId === playerId));
+      const room = Object.values(rooms).find((r) =>
+        r.players.some((p) => p.playerId === playerId)
+      );
       if (room) {
-        const player = room.players.find(p => p.playerId === playerId);
+        const player = room.players.find((p) => p.playerId === playerId);
         if (player) {
           player.isReady = isReady;
-          console.log(`[READY] El jugador ${playerId} ha cambiado su estado a ${isReady}`);
+          console.log(
+            `[READY] El jugador ${playerId} ha cambiado su estado a ${isReady}`
+          );
           io.to(RoomId).emit("player_list_updated", { players: room.players });
+          console.log(
+            `[S -> C] Evento: player_list_updated, Datos: ${JSON.stringify({
+              players: room.players,
+            })}`
+          );
         }
       }
     });
 
     // --- Evento: start_game (Pantalla Lobby) ---
     socket.on("start_game", ({ roomId, playerId }) => {
+      console.log(
+        `[C -> S] Evento: start_game, Datos: ${JSON.stringify({
+          roomId,
+          playerId,
+        })}`
+      );
       const host = rooms[roomId].players[0];
       if (host.playerId !== playerId) {
         console.error(`[ERROR] El jugador ${playerId} no es el host.`);
@@ -151,6 +180,7 @@ function initializeSocketIO(httpServer, corsOptions) {
 
     // --- Evento: disconnect ---
     socket.on("disconnect", () => {
+      console.log(`[C -> S] Evento: disconnect`);
       console.log(`[DISCONN] Socket desconectado: ${socket.id}`);
       if (joinedRoom && rooms[joinedRoom] && joinedPlayerId) {
         const room = rooms[joinedRoom];
@@ -184,6 +214,12 @@ function initializeSocketIO(httpServer, corsOptions) {
                   isHost: isNewHost,
                   players: room.players,
                 });
+                console.log(
+                  `[S -> C] Evento: host_changed, Datos: ${JSON.stringify({
+                    isHost: isNewHost,
+                    players: room.players,
+                  })}`
+                );
               }
             });
           }
@@ -192,6 +228,11 @@ function initializeSocketIO(httpServer, corsOptions) {
           io.to(joinedRoom).emit("player_list_updated", {
             players: room.players,
           });
+          console.log(
+            `[S -> C] Evento: player_list_updated, Datos: ${JSON.stringify({
+              players: room.players,
+            })}`
+          );
         }
 
         console.log(
@@ -201,7 +242,6 @@ function initializeSocketIO(httpServer, corsOptions) {
     });
   });
 
-  console.log("[IO] Servidor Socket.IO inicializado y listo.");
   return io;
 }
 

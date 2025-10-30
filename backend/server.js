@@ -20,6 +20,4 @@ initializeSocketIO(server, corsOptions);
 
 // --- Puerto de escucha ---
 const port = process.env.PORT || 3000;
-server.listen(port, () =>
-  console.log(`Servidor HTTP escuchando en http://localhost:${port}`)
-);
+server.listen(port, () => console.log(`[IO] http://localhost:${port}`));
