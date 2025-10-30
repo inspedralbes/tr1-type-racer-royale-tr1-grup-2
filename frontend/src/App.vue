@@ -1,23 +1,21 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import RegistroJugador from './componentes/registroJugador.vue';
-import Lobby from './componentes/Lobby.vue';
-import InterfazJuego from './componentes/InterfazJuego.vue';
-import FiPartida from './componentes/FiPartida.vue';
-import communicationManager from './services/communicationManager';
+import { ref, onMounted } from "vue";
+import RegistroJugador from "./componentes/registroJugador.vue";
+import Lobby from "./componentes/Lobby.vue";
+import communicationManager from "./services/communicationManager";
 
-const vistaActual = ref('registroJugador');
+const vistaActual = ref("registroJugador");
 const lobbyState = ref(null);
 const gameState = ref(null);
 
 function handleRegistration(payload) {
   lobbyState.value = payload;
-  vistaActual.value = 'lobby';
+  vistaActual.value = "lobby";
 }
 
 function handleGameStarted(payload) {
   gameState.value = payload;
-  vistaActual.value = 'juego';
+  vistaActual.value = "juego";
 }
 
 function handleHostChanged(payload) {
@@ -34,18 +32,27 @@ function handlePlayerListUpdate(payload) {
 }
 
 onMounted(() => {
-  communicationManager.on('game_started', handleGameStarted);
-  communicationManager.on('host_changed', handleHostChanged);
-  communicationManager.on('player_list_updated', handlePlayerListUpdate);
+  communicationManager.on("game_started", handleGameStarted);
+  communicationManager.on("host_changed", handleHostChanged);
+  communicationManager.on("player_list_updated", handlePlayerListUpdate);
 });
-
 </script>
 
 <template>
-  <RegistroJugador v-if="vistaActual === 'registroJugador'" @registrado="handleRegistration" />
+  <RegistroJugador
+    v-if="vistaActual === 'registroJugador'"
+    @registrado="handleRegistration"
+  />
   <Lobby v-if="vistaActual === 'lobby'" :lobby-state="lobbyState" />
-  <InterfazJuego v-if="vistaActual === 'juego'" :game-state="gameState" @finJuego="vistaActual = 'fiPartida'" />
-  <FiPartida v-if="vistaActual === 'fiPartida'" @reiniciar="vistaActual = 'lobby'" />
+  <InterfazJuego
+    v-if="vistaActual === 'juego'"
+    :game-state="gameState"
+    @finJuego="vistaActual = 'fiPartida'"
+  />
+  <FiPartida
+    v-if="vistaActual === 'fiPartida'"
+    @reiniciar="vistaActual = 'lobby'"
+  />
 </template>
 
 <style scoped></style>

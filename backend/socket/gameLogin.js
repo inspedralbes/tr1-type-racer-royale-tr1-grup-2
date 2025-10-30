@@ -57,14 +57,20 @@ function initializeSocketIO(httpServer, corsOptions) {
         return;
       }
 
+      // --- Lógica de Reconexión y Límite de Sala ---
+      const existingPlayer = rooms[roomId].players.find(
+        (p) => p.playerId === playerId
+      );
+
+      if (!existingPlayer && rooms[roomId].players.length >= 4) {
+        console.error(`[ERROR] La sala ${roomId} está llena. No se pudo unir ${playerId}.`);
+        socket.emit("join_error", { message: "La sala está llena." });
+        return;
+      }
+
       // Asignar variables de estado de la conexión
       joinedRoom = roomId;
       joinedPlayerId = playerId;
-
-      // --- Lógica de Reconexión (Básica) ---
-      let existingPlayer = rooms[roomId].players.find(
-        (p) => p.playerId === playerId
-      );
 
       if (existingPlayer) {
         console.log(`[RECONN] Jugador ${playerId} se ha reconectado.`);
@@ -77,6 +83,7 @@ function initializeSocketIO(httpServer, corsOptions) {
           socketId: socket.id,
           username: username,
           completedWords: [],
+          isReady: false, // Añadido para el estado "listo"
         };
         rooms[roomId].players.push(newPlayer);
         console.log(`[NEW] Nuevo jugador ${playerId} añadido a la sala.`);
@@ -102,6 +109,44 @@ function initializeSocketIO(httpServer, corsOptions) {
         players: rooms[roomId].players,
       });
       console.log(`[EMIT] 'player_list_updated' enviado a sala ${roomId}`);
+    });
+
+    // --- Evento: player_ready (Pantalla Lobby) ---
+    socket.on("player_ready", (data) => {
+      const { playerId, isReady } = data;
+      const room = Object.values(rooms).find(r => r.players.some(p => p.playerId === playerId));
+      if (room) {
+        const player = room.players.find(p => p.playerId === playerId);
+        if (player) {
+          player.isReady = isReady;
+          console.log(`[READY] El jugador ${playerId} ha cambiado su estado a ${isReady}`);
+          io.to(RoomId).emit("player_list_updated", { players: room.players });
+        }
+      }
+    });
+
+    // --- Evento: start_game (Pantalla Lobby) ---
+    socket.on("start_game", ({ roomId, playerId }) => {
+      const host = rooms[roomId].players[0];
+      if (host.playerId !== playerId) {
+        console.error(`[ERROR] El jugador ${playerId} no es el host.`);
+        return;
+      }
+
+      // Verificar si todos los demás jugadores están listos
+      const allReady = rooms[roomId].players.every((player, index) => {
+        if (index === 0) return true; // El host no necesita estar listo
+        return player.isReady;
+      });
+
+      if (!allReady) {
+        console.error(`[ERROR] No todos los jugadores están listos.`);
+        // Opcional: emitir un error al host
+        // socket.emit('start_error', { message: 'No todos los jugadores están listos.' });
+        return;
+      }
+
+      // TODO: Cargar palabras de un fichero o BBDD
     });
 
     // --- Evento: disconnect ---

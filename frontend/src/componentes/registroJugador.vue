@@ -1,9 +1,10 @@
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import communicationManager from "../services/communicationManager";
 
 const emit = defineEmits(["registrado"]);
 const nomJugador = ref("");
+const errorMessage = ref("");
 
 // Función para generar un ID de jugador simple
 function generatePlayerId() {
@@ -13,25 +14,38 @@ function generatePlayerId() {
   return `${randomLetter}${randomNumber}`;
 }
 
+const handleJoinedLobby = (payload) => {
+  console.log("Successfully joined lobby:", payload);
+  emit("registrado", payload);
+};
+
+const handleJoinError = (payload) => {
+  console.error("Join error:", payload.message);
+  errorMessage.value = payload.message;
+};
+
 function connectarAlServidor() {
-  // 1. Conectar al servidor
+  errorMessage.value = ""; // Reset error message
   communicationManager.connect();
-
-  // 2. Preparar un listener para cuando el servidor confirme que nos hemos unido
-  communicationManager.on("joined_lobby", (payload) => {
-    console.log("Successfully joined lobby:", payload);
-    // 4. Emitir el evento al padre (App.vue) para cambiar de vista
-    emit("registrado", payload);
-  });
-
+  
   const newPlayerId = generatePlayerId();
 
-  // 3. Enviar la petición para unirse
   communicationManager.emit("player_join", {
     username: nomJugador.value,
     playerId: newPlayerId,
   });
 }
+
+onMounted(() => {
+  communicationManager.on("joined_lobby", handleJoinedLobby);
+  communicationManager.on("join_error", handleJoinError);
+});
+
+onUnmounted(() => {
+  communicationManager.off("joined_lobby", handleJoinedLobby);
+  communicationManager.off("join_error", handleJoinError);
+});
+
 </script>
 <template>
   <div id="contenedor-juego">
@@ -39,6 +53,7 @@ function connectarAlServidor() {
       <h1>Type Racer Royale</h1>
       <input type="text" v-model="nomJugador" placeholder="Exemple: Paco" />
       <button @click="connectarAlServidor">Entra al Lobby</button>
+      <p v-if="errorMessage" style="color: red;">{{ errorMessage }}</p>
     </div>
   </div>
 </template>
