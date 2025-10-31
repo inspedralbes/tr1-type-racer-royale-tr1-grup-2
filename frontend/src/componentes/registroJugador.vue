@@ -4,14 +4,22 @@ import communicationManager from "../services/communicationManager";
 
 const emit = defineEmits(["registrado"]);
 const nomJugador = ref("");
+const errorMensaje = ref("");
 
+//
 // Función para generar un ID de jugador simple
+//
+
 function generatePlayerId() {
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const randomLetter = letters[Math.floor(Math.random() * letters.length)];
   const randomNumber = Math.floor(100 + Math.random() * 900);
   return `${randomLetter}${randomNumber}`;
 }
+
+//
+//  Función que conecta al usiario al servidor y le genera un ID
+//
 
 function connectarAlServidor() {
   communicationManager.connect();
@@ -20,6 +28,11 @@ function connectarAlServidor() {
     console.log("Successfully joined lobby:", payload);
     emit("registrado", payload);
   });
+
+  communicationManager.on("join_error", (data) => {
+    errorMensaje.value = data.message;
+  });
+
 
   const newPlayerId = generatePlayerId();
 
@@ -34,6 +47,7 @@ function connectarAlServidor() {
   <div id="contenedor-juego">
     <div class="vista-container">
       <h1>Type Racer Royale</h1>
+      <p v-if="errorMensaje" class="mensaje-error">{{ errorMensaje }}</p>
       <label for="nomJugador">Nom de l'usuari:</label>
       <input
         id="nomJugador"
@@ -47,6 +61,7 @@ function connectarAlServidor() {
 </template>
 
 <style scoped>
+
 #contenedor-juego {
   display: flex;
   justify-content: center;
@@ -114,4 +129,11 @@ button {
 button:hover {
   background-color: #990000;
 }
+
+.mensaje-error {
+  color: white;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
 </style>

@@ -58,12 +58,12 @@ function initializeSocketIO(httpServer, corsOptions) {
 
       if (!existingPlayer && rooms[roomId].players.length >= 4) {
         console.error(
-          `[ERROR] La sala ${roomId} está llena. No se pudo unir ${playerId}.`
+          `[ERROR] La sala ${roomId} està plena. No es pot unir ${playerId}.`
         );
-        socket.emit("join_error", { message: "La sala está llena." });
+        socket.emit("join_error", { message: "La sala està plena." });
         console.log(
           `[S -> C] Evento: join_error, Datos: ${JSON.stringify({
-            message: "La sala está llena.",
+            message: "La sala està plena.",
           })}`
         );
         return;
