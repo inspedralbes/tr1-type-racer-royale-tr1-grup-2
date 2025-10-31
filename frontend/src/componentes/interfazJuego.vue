@@ -126,7 +126,7 @@ function onInputKeyDown(event) {
     event.preventDefault();
 
     if (palabraUser.value === palabraObjetivo.value) {
-      // completedWords.value++;
+      completedWords.value++;
 
       // palabrasCompletadasEnBloque.value++;
 

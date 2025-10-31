@@ -8,13 +8,13 @@ export const registerGameEvents = (io) => {
     console.log(`🟢 Nuevo jugador conectado: ${socket.id}`);
 
     socket.on("word_typed", (msg) => {
-      const { wordId, playerId, roomId, threshold = 3 } = msg.data;
+      const { wordId, completedWords, playerId, roomId, threshold = 3 } = msg.data;
       const room = getRoom(roomId);
       if (!room) return;
         console.log(`Jugador ${playerId} en sala ${roomId} ha tipeado palabra ID ${wordId}`);
       socket.join(roomId);
       // Actualizar palabras del jugador
-      calcularPalabrasRestantes({ [roomId]: room }, roomId, playerId, wordId, threshold);
+      calcularPalabrasRestantes({ [roomId]: room }, roomId, playerId, wordId, threshold, completedWords);
 
       const jugadorActual = room.players.find(p => p.id === playerId);
       if (!jugadorActual) return;

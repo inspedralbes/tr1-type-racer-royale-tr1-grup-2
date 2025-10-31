@@ -45,39 +45,33 @@ export const seleccionarRandom = (array, cantidad) => {
 // funcion que elimina la palabra completada de la lista del jugador que la responde
 // y devuelve la palabra eliminada para añadirla al resto
 // 🔹 CALCULA LAS PALABRAS RESTANTES Y AÑADE A LOS DEMÁS SI SE CUMPLE EL UMBRAL
-export const calcularPalabrasRestantes = (rooms, roomId, playerId, wordId, threshold = 3) => {
+export const calcularPalabrasRestantes = (rooms, roomId, playerId, wordId, threshold = 3, completedWords) => {
   const room = getRoom(roomId);
-  console.log(room);
   if (!room) return;
 // console.log(`Calculando palabras restantes para ${jugador.name || playerId} en sala ${roomId}`);
   const jugador = room.players.find(p => p.id === playerId);
   if (!jugador) return;
 
   const copia = [...jugador.words];
-  let completedWord = null;
 
   console.log(`Calculando palabras restantes para ${jugador.name || playerId} en sala ${roomId}`);
   // ✅ Eliminar palabra completada
   if (wordId >= 0 && wordId < copia.length) {
-    completedWord = copia[wordId];
     copia.splice(wordId, 1);
   }
 
   // ✅ Actualizar datos del jugador
   jugador.words = copia;
-  jugador.completedWords ??= 0; // asegúrate de que sea número
-
-  if (completedWord) {
-    jugador.completedWords += 1;
+  jugador.completedWords = completedWords;
+    console.log(completedWords);
 
     // ⚡ Si alcanza múltiplo del threshold → enviar palabra a los demás
-    if (jugador.completedWords % threshold === 0) {
+    if (completedWords % threshold === 0) {
       console.log(
-        `⚡ ${jugador.name || playerId} ha completado ${jugador.completedWords} palabras — enviando "${completedWord}" a los demás`
+        `⚡ ${jugador.name || playerId} ha completado ${jugador.completedWords} palabras — enviando "${completedWords}" a los demás`
       );
-      añadirPalabraCompletada(rooms, roomId, playerId, completedWord);
+      añadirPalabraCompletada(rooms, roomId, playerId, completedWords);
     }
-  }
 };
 
 
