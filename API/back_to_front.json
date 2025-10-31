@@ -36,6 +36,15 @@
   },
 
   {
+    "event": "player_ready",
+    "data": {
+      "playerId": "u42",
+      "isReady": true
+    },
+    "__comment__": "PANTALLA LOBBY servidor -> cliente, respuesta al estado de jugador true o false"
+  },
+
+  {
     "event": "game_started",
     "data": {
       "initialWords": ["CINCUENTA PALABRAS"],

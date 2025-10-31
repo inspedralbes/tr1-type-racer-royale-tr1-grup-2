@@ -93,8 +93,7 @@ function initializeSocketIO(httpServer, corsOptions) {
 
       const isHost = rooms[roomId].players[0].playerId === playerId;
 
-      // PENDIENTE Revisar -->
-      // --- Respuesta: joined_lobby ---
+      // Evento: joined_lobby
       const responsePayload = {
         playerId: playerId,
         roomId: roomId,
@@ -108,7 +107,6 @@ function initializeSocketIO(httpServer, corsOptions) {
           responsePayload
         )}`
       );
-      console.log(`[EMIT] 'joined_lobby' enviado a ${playerId}`);
 
       // --- Notificación a los demás ---
       io.to(roomId).emit("player_list_updated", {
