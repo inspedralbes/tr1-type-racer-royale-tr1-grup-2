@@ -9,13 +9,22 @@ const props = defineProps({
   },
 });
 
+//
 // Estado local reactivo para los jugadores
+//
+
 const jugadores = ref([...props.lobbyState.players]);
 
+//
 // Estado local del jugador actual
+//
+
 const estoyPreparado = ref(false);
 
+//
 // Emitir evento al backend para cambiar estado de preparación
+//
+
 function togglePreparado() {
   estoyPreparado.value = !estoyPreparado.value;
   console.log(
@@ -29,25 +38,38 @@ function togglePreparado() {
   });
 }
 
-// Sincronizar cambios en props.lobbyState.players
+//
+// Sincronizar cambios de estado de jugadores para que se vean si lo cambian 
+//
+
 watchEffect(() => {
   jugadores.value = [...props.lobbyState.players];
 });
 
-// Escuchar actualizaciones desde el backend
+//
+// Escuchar actualizaciones de los jugadores nuevos
+//
+
 onMounted(() => {
   communicationManager.on("player_list_updated", (data) => {
     jugadores.value = [...data.players];
   });
 });
 
+//
 // Verificar si todos los jugadores (excepto el host) están listos
+//
+
 const todosListos = computed(() => {
   return jugadores.value.every((jugador, index) => {
     if (index === 0) return true;
     return jugador.isReady;
   });
 });
+
+//
+// Función qe inicia el juego
+//
 
 function iniciarJuego() {
   communicationManager.emit("start_game", {
@@ -62,6 +84,9 @@ function iniciarJuego() {
     <div class="vista-container">
       <h1>Lobby de la Sala: {{ lobbyState.roomId }}</h1>
 
+<!-- 
+  Lista de jugadores en la sala
+-->
       <h2>Jugadores Conectados:</h2>
       <ul>
         <li v-for="jugador in jugadores" :key="jugador.playerId">
@@ -75,14 +100,19 @@ function iniciarJuego() {
         </li>
       </ul>
 
-      <!-- Botón para cambiar tu estado -->
+<!-- 
+Botón para cambiar tu estado 
+-->
       <div>
         <button @click="togglePreparado">
           {{ estoyPreparado ? "Cancel·la preparació" : "Estic preparat" }}
         </button>
       </div>
 
-      <!-- Botón para iniciar partida solo si todos están listos -->
+<!-- 
+  Botón para iniciar partida solo si todos están listos
+  Solo lo ve el host
+-->
       <button
         v-if="lobbyState.isHost"
         :disabled="!todosListos"

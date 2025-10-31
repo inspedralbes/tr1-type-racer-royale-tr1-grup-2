@@ -7,7 +7,7 @@ const nomJugador = ref("");
 const errorMensaje = ref("");
 
 //
-// Función para generar un ID de jugador simple
+// Función para generar un ID de jugador
 //
 
 function generatePlayerId() {
@@ -18,7 +18,7 @@ function generatePlayerId() {
 }
 
 //
-//  Función que conecta al usiario al servidor y le genera un ID
+//  Función que conecta al usuario al servidor y le genera un ID
 //
 
 function connectarAlServidor() {
@@ -33,7 +33,6 @@ function connectarAlServidor() {
     errorMensaje.value = data.message;
   });
 
-
   const newPlayerId = generatePlayerId();
 
   communicationManager.emit("player_join", {
@@ -47,6 +46,10 @@ function connectarAlServidor() {
   <div id="contenedor-juego">
     <div class="vista-container">
       <h1>Type Racer Royale</h1>
+
+<!--
+Emite el mensaje cuando la sala esta llena
+-->
       <p v-if="errorMensaje" class="mensaje-error">{{ errorMensaje }}</p>
       <label for="nomJugador">Nom de l'usuari:</label>
       <input
@@ -55,6 +58,10 @@ function connectarAlServidor() {
         v-model="nomJugador"
         placeholder="Exemple: Paco"
       />
+
+<!--
+Boton que te manda al lobby
+-->
       <button @click="connectarAlServidor">Entra al Lobby</button>
     </div>
   </div>
