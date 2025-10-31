@@ -66,16 +66,21 @@ function iniciarJuego() {
       <ul>
         <li v-for="jugador in jugadores" :key="jugador.playerId">
           {{ jugador.username }}
-          <span class="estado-jugador">
-            — {{ jugador.isReady ? "Preparat" : "No preparat" }}
+          <span
+            class="estado-jugador"
+            :class="{ 'preparado': jugador.isReady, 'no-preparado': !jugador.isReady }"
+          >
+             — {{ jugador.isReady ? "Preparat" : "No preparat" }}
           </span>
         </li>
       </ul>
 
       <!-- Botón para cambiar tu estado -->
-      <button @click="togglePreparado">
-        {{ estoyPreparado ? "Cancel·la preparació" : "Estic preparat" }}
-      </button>
+      <div>
+        <button @click="togglePreparado">
+          {{ estoyPreparado ? "Cancel·la preparació" : "Estic preparat" }}
+        </button>
+      </div>
 
       <!-- Botón para iniciar partida solo si todos están listos -->
       <button
@@ -146,6 +151,15 @@ li {
   font-size: 0.85em;
   color: #bbb;
   margin-left: 8px;
+  font-weight: bold;
+}
+
+.preparado {
+  color: green;
+}
+
+.no-preparado {
+  color: black;
 }
 
 button {
