@@ -46,4 +46,9 @@ onMounted(() => {
   <Lobby v-if="vistaActual === 'lobby'" :lobby-state="lobbyState" />
 </template>
 
-<style scoped></style>
+
+<style>
+body {
+  font-family: "Inter", sans-serif;
+}
+</style>

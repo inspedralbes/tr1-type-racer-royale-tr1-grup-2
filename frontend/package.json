@@ -8,8 +8,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+<<<<<<< HEAD
     "socket.io-client": "^4.8.1",
     "vue": "^3.2.47"
+=======
+    "express": "^4.19.2",
+    "socket.io-client": "^4.8.1",
+    "vue": "^3.5.22"
+>>>>>>> origin/F18.ConexiónServer
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.0.0",

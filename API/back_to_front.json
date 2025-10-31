@@ -47,9 +47,16 @@
   {
     "event": "game_started",
     "data": {
+<<<<<<< HEAD
       "initialWords": ["CINCUENTA PALABRAS"],
       "wordLimit": 60,
       "roomId": "room_1"
+=======
+        "initialWords": ["CINCUENTA PALABRAS"],
+        "wordLimit": 60,
+        "roomId": "room_1",
+        "status": "playing"
+>>>>>>> origin/F18.ConexiónServer
     },
     "__comment__": "PANTALLA JOC servidor -> cliente, envio de las palabras a todos los jugadores cuando empieza la partida"
   },
@@ -57,10 +64,17 @@
   {
     "event": "update_player_words",
     "data": {
+<<<<<<< HEAD
       "remainingWords": ["CINCUENTA PALABRAS DE LAS QUE QUEDAN"],
       "completedWords": 3,
       "totalLimit": 10,
       "playerId": "u42"
+=======
+        "remainingWords": ["CINCUENTA PALABRAS DE LAS QUE QUEDAN"],
+        "completedWords": 3,
+        "playerId": "u42",
+        "status": "onLobby"
+>>>>>>> origin/F18.ConexiónServer
     },
     "__comment__": "PANTALLA JOC servidor -> cliente, respuesta a el jugador al haber escrito la palabra correctamente"
   },
@@ -91,6 +105,7 @@
   {
     "event": "player_eliminated",
     "data": {
+<<<<<<< HEAD
       "playerId": "u51",
       "username": "Marta",
       "reason": "word_limit_exceeded",
@@ -115,4 +130,14 @@
     },
     "__comment__": "PANTALLA JOC servidor -> cliente, respuesta del servidor a todos los jugadores cuando la partida ha terminado"
   }
+=======
+        "playerId": "u51",
+        "reason": "word_limit_exceeded",
+        "roomId": "room_1",
+        "status": "eliminated"
+    },
+    "__comment__": "PANTALLA JOC servidor -> cliente, respuesta del servidor a todos los jugadores cuando un jugador es eliminado"
+    }
+
+>>>>>>> origin/F18.ConexiónServer
 ]

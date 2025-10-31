@@ -7,17 +7,30 @@
     "__comment__": "PANTALL INICI // cliente -> servidor, cuando el jugador introduce el nombre y le da al boton de jugar"
   },
   {
-    "event": "start_game",
+    "event": "start_game --- ESTO SE HA VUELTO UNA PETICION HTTP NO SOCKET ---",
     "data": {
       "roomId": "room_1",
-      "playerId": "u42"},
+      "playerId": "u42"
+    },
     "__comment__": "PANTALLA DE LOBBY // cliente -> servidor, cuando el jugador le da al boton de empezar partida (solo el host)"
   },
   {
     "event": "word_typed",
     "data": {
-      "word": "azul",
+      "wordId": "1",
+      "completedWords": 10,
+      "playerId": "u42",
+      "roomId": "room_1"
+    },
+    "__comment__": "PANTALLA DE JUEGO // cliente -> servidor, envia cuando el jugador escribe una palabra completa bien hecha"
+  },
+
+  {
+    "event": "letter_typed",
+    "data": {
+      "wordId": "1",
       "isCorrect": true,
+      "completedWords": 1,
       "playerId": "u42",
       "roomId": "room_1"
     },
