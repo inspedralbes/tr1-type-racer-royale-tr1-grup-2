@@ -13,6 +13,7 @@
   "keywords": [],
   "dependencies": {
 <<<<<<< HEAD
+<<<<<<< HEAD
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "socket.io": "^4.7.5",
@@ -21,5 +22,11 @@
     "express": "^4.21.2",
     "socket.io": "^4.8.1"
 >>>>>>> origin/F18.ConexiónServer
+=======
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5",
+    "nodemon": "^3.1.10"
+>>>>>>> origin/f18.-Back-de-pantalla-de-joc
   }
 }

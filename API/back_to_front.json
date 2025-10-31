@@ -48,15 +48,21 @@
     "event": "game_started",
     "data": {
 <<<<<<< HEAD
+<<<<<<< HEAD
       "initialWords": ["CINCUENTA PALABRAS"],
       "wordLimit": 60,
       "roomId": "room_1"
 =======
+=======
+>>>>>>> origin/f18.-Back-de-pantalla-de-joc
         "initialWords": ["CINCUENTA PALABRAS"],
         "wordLimit": 60,
         "roomId": "room_1",
         "status": "playing"
+<<<<<<< HEAD
 >>>>>>> origin/F18.ConexiónServer
+=======
+>>>>>>> origin/f18.-Back-de-pantalla-de-joc
     },
     "__comment__": "PANTALLA JOC servidor -> cliente, envio de las palabras a todos los jugadores cuando empieza la partida"
   },
@@ -65,16 +71,22 @@
     "event": "update_player_words",
     "data": {
 <<<<<<< HEAD
+<<<<<<< HEAD
       "remainingWords": ["CINCUENTA PALABRAS DE LAS QUE QUEDAN"],
       "completedWords": 3,
       "totalLimit": 10,
       "playerId": "u42"
 =======
+=======
+>>>>>>> origin/f18.-Back-de-pantalla-de-joc
         "remainingWords": ["CINCUENTA PALABRAS DE LAS QUE QUEDAN"],
         "completedWords": 3,
         "playerId": "u42",
         "status": "onLobby"
+<<<<<<< HEAD
 >>>>>>> origin/F18.ConexiónServer
+=======
+>>>>>>> origin/f18.-Back-de-pantalla-de-joc
     },
     "__comment__": "PANTALLA JOC servidor -> cliente, respuesta a el jugador al haber escrito la palabra correctamente"
   },
@@ -106,6 +118,7 @@
     "event": "player_eliminated",
     "data": {
 <<<<<<< HEAD
+<<<<<<< HEAD
       "playerId": "u51",
       "username": "Marta",
       "reason": "word_limit_exceeded",
@@ -131,6 +144,8 @@
     "__comment__": "PANTALLA JOC servidor -> cliente, respuesta del servidor a todos los jugadores cuando la partida ha terminado"
   }
 =======
+=======
+>>>>>>> origin/f18.-Back-de-pantalla-de-joc
         "playerId": "u51",
         "reason": "word_limit_exceeded",
         "roomId": "room_1",
@@ -139,5 +154,8 @@
     "__comment__": "PANTALLA JOC servidor -> cliente, respuesta del servidor a todos los jugadores cuando un jugador es eliminado"
     }
 
+<<<<<<< HEAD
 >>>>>>> origin/F18.ConexiónServer
+=======
+>>>>>>> origin/f18.-Back-de-pantalla-de-joc
 ]

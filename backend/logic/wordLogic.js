@@ -1,5 +1,7 @@
 // utils/wordsManager.js
 
+import { getRoom } from "./roomsManager.js";
+
 // Array base con 600 palabras (puedes ampliarlo)
 const palabrasBase = [
   "casa", "perro", "gato", "árbol", "sol", "luna", "mar", "río", "nube", "montaña",
@@ -42,29 +44,34 @@ export const seleccionarRandom = (array, cantidad) => {
 
 // funcion que elimina la palabra completada de la lista del jugador que la responde
 // y devuelve la palabra eliminada para añadirla al resto
-export const calcularPalabrasRestantes = (rooms, roomId, playerId, wordId) => {
-  const room = rooms[roomId];
-  if (!room) return null;
-
+// 🔹 CALCULA LAS PALABRAS RESTANTES Y AÑADE A LOS DEMÁS SI SE CUMPLE EL UMBRAL
+export const calcularPalabrasRestantes = (rooms, roomId, playerId, wordId, threshold = 3, completedWords) => {
+  const room = getRoom(roomId);
+  if (!room) return;
+// console.log(`Calculando palabras restantes para ${jugador.name || playerId} en sala ${roomId}`);
   const jugador = room.players.find(p => p.id === playerId);
-  if (!jugador) return null;
+  if (!jugador) return;
 
   const copia = [...jugador.words];
-  let completedWord = null;
 
+  console.log(`Calculando palabras restantes para ${jugador.name || playerId} en sala ${roomId}`);
+  // ✅ Eliminar palabra completada
   if (wordId >= 0 && wordId < copia.length) {
-    completedWord = copia[wordId];
     copia.splice(wordId, 1);
   }
 
-  // 🔹 Actualizamos el jugador directamente en rooms
+  // ✅ Actualizar datos del jugador
   jugador.words = copia;
-  if (completedWord) {
-    jugador.completedWords.push(completedWord);
-  }
+  jugador.completedWords = completedWords;
+    console.log(completedWords);
 
-  // 🔹 Devolvemos la palabra eliminada para que el servidor la use
-  return completedWord;
+    // ⚡ Si alcanza múltiplo del threshold → enviar palabra a los demás
+    if (completedWords % threshold === 0) {
+      console.log(
+        `⚡ ${jugador.name || playerId} ha completado ${jugador.completedWords} palabras — enviando "${completedWords}" a los demás`
+      );
+      añadirPalabraCompletada(rooms, roomId, playerId, completedWords);
+    }
 };
 
 
@@ -77,14 +84,7 @@ export const añadirPalabraCompletada = (rooms, roomId, playerId, palabraElimina
   const room = rooms[roomId];
   if (!room) return;
 
-  // 1️⃣ Buscar al jugador que la completó
-  const jugador = room.players.find(p => p.id === playerId);
-  if (!jugador) return;
-
-  // 2️⃣ Añadir la palabra completada al jugador que la escribió
-  jugador.completedWords.push(palabraEliminada);
-
-  // 3️⃣ Añadir la misma palabra al resto de jugadores
+  // Añadir la palabra completada al resto de jugadores
   room.players.forEach(p => {
     if (p.id !== playerId) {
       p.words.push(palabraEliminada);

@@ -9,6 +9,7 @@
   },
   "dependencies": {
 <<<<<<< HEAD
+<<<<<<< HEAD
     "socket.io-client": "^4.8.1",
     "vue": "^3.2.47"
 =======
@@ -16,6 +17,11 @@
     "socket.io-client": "^4.8.1",
     "vue": "^3.5.22"
 >>>>>>> origin/F18.ConexiónServer
+=======
+    "express": "^4.19.2",
+    "socket.io-client": "^4.8.1",
+    "vue": "^3.5.22"
+>>>>>>> origin/f18.-Back-de-pantalla-de-joc
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.0.0",

@@ -1,70 +1,69 @@
 // gameManager.js
-import { calcularPalabrasRestantes, añadirPalabraCompletada } from "../logic/wordLogic.js";
-// --- LISTA DE SALAS ---
-const rooms = {}; // { roomId: { host: "socketId", players: [{ id, name, words: [], completedWords }], initialWords: [] } }
-const players = {}; // { id, playerName } }
-// --- PALABRAS BASE ---
+import { calcularPalabrasRestantes } from "../logic/wordLogic.js";
+import { getRoom, createRoom, getAllRooms, deleteRoom } from "../logic/roomsManager.js";
 
-// --- EVENTOS DEL JUEGO ---
+// Crear sala inicial con un jugador
 export const registerGameEvents = (io) => {
   io.on("connection", (socket) => {
     console.log(`🟢 Nuevo jugador conectado: ${socket.id}`);
 
     socket.on("word_typed", (msg) => {
-    const { wordId, isCorrect, playerId, roomId } = msg.data;
-    const room = rooms[roomId];
-    if (!room) return;
+      const { wordId, completedWords, playerId, roomId, threshold = 3 } = msg.data;
+      const room = getRoom(roomId);
+      if (!room) return;
+        console.log(`Jugador ${playerId} en sala ${roomId} ha tipeado palabra ID ${wordId}`);
+      socket.join(roomId);
+      // Actualizar palabras del jugador
+      calcularPalabrasRestantes({ [roomId]: room }, roomId, playerId, wordId, threshold, completedWords);
 
-    // 1️⃣ Eliminar palabra completada y obtenerla
-    const palabraEliminada = calcularPalabrasRestantes(rooms, roomId, playerId, wordId);
+      const jugadorActual = room.players.find(p => p.id === playerId);
+      if (!jugadorActual) return;
+      
+      console.log(`📝 Palabra completada por ${jugadorActual.words} en sala ${roomId}`);
 
-    // 2️⃣ Añadir la palabra completada al resto de jugadores
-    if (palabraEliminada) {
-    añadirPalabraCompletada(rooms, roomId, playerId, palabraEliminada);
-    }
-
-    // 3️⃣ Buscar al jugador actual
-    const jugadorActual = room.players.find(p => p.id === playerId);
-    if (!jugadorActual) return;
-
-    // 4️⃣ Si se queda sin palabras, marcarlo como "finished"
-    if (jugadorActual.words.length === 0) {
+      // Marcar como finished si ya no tiene palabras
+      if (jugadorActual.words.length === 0) {
+        console.log(jugadorActual);
         jugadorActual.status = "finished";
-    }
+      }
 
-    // 5️⃣ Enviar actualización al front (a todos en la sala)
-    io.to(roomId).emit("update_player_words", {
+      // Emitir estado actualizado del jugador
+      io.to(roomId).emit("update_player_words", {
         data: {
-        playerId,
-        remainingWords: jugadorActual.words,
-        completedWords: jugadorActual.completedWords,
-        status: jugadorActual.status,
-        roomId,
-        }
-    });
+          playerId,
+          remainingWords: jugadorActual.words,
+          status: jugadorActual.status,
+          completedWords: jugadorActual.completedWords,
+          roomId,
+        },
+      });
 
-    // 6️⃣ Si quieres actualizar progreso general también (opcional)
-    socket.broadcast.to(roomId).emit("update_progress", {
+      // Emitir progreso general a los demás jugadores
+      socket.broadcast.to(roomId).emit("update_progress", {
         data: {
-        roomId,
-        players: room.players,
-        }
-    });
+          roomId,
+          players: room.players,
+        },
+      });
 
-    console.log(`✅ Jugador ${jugadorActual.name} completó "${palabraEliminada}" en sala ${roomId}`);
+      console.log(`✅ Jugador ${jugadorActual.name} completó palabra en sala ${roomId}`);
     });
 
     // DESCONECTAR
     socket.on("disconnect", () => {
-      for (const roomId in rooms) {
-        const room = rooms[roomId];
-        room.players = room.players.filter((p) => p.id !== socket.id);
+      const allRooms = getAllRooms(); // devuelve un objeto con todas las salas
+      for (const rId in allRooms) {
+        const room = getRoom(rId);
+        if (!room) continue;
+
+        // Eliminar jugador de la sala
+        room.players = room.players.filter(p => p.id !== socket.id);
 
         if (room.players.length === 0) {
-          delete rooms[roomId];
-          console.log(`🗑️ Sala eliminada: ${roomId}`);
+          deleteRoom(rId);
+          console.log(`🗑️ Sala eliminada: ${rId}`);
         } else {
-          io.to(roomId).emit("update_players", room.players);
+          io.to(rId).emit("update_players", room.players);
         }
       }
       console.log(`🔴 Jugador desconectado: ${socket.id}`);

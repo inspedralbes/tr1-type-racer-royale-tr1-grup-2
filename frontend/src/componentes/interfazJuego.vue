@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, computed } from "vue";
 import socket from "@/servicios/socket.js";
 
+<<<<<<< HEAD
 //Variables reactivas
 const listaEntera = ref([]);
 const palabraUser = ref("");
@@ -13,6 +14,26 @@ const palabraInvalida = ref(false);
 const playerId = ref("player-123");
 const roomId = ref("room-abc");
 
+=======
+// 🟩 EDSO – 2025-10-30: Imports nuevos
+import pantallaFinal from './pantallaFinal.vue'
+
+// 🟩 EDSO – 2025-10-30: Variables para manejar la pantalla final
+const mostrarPantallaFinal = ref(false)
+const ganador = ref('')
+
+//Variables reactivas
+const listaEntera = ref([]);
+const palabraUser = ref("");
+const completedWords = ref(0);
+const errorCount = ref(0);
+const palabraActualIndex = ref(0);
+const palabrasCompletadasEnBloque = ref(0);
+const palabraInvalida = ref(false);
+const playerId = ref("player-123");
+const roomId = ref("room-abc");
+
+>>>>>>> origin/f18.-Back-de-pantalla-de-joc
 //Funcion para pillar las palabras iniciales del servidor
 onMounted(() => {
   fetch("/palabras/words")
@@ -31,6 +52,11 @@ onMounted(() => {
       console.error("Hubo un error al reiniciar el juego:", error);
     });
 
+<<<<<<< HEAD
+=======
+///// ESTA FUNCION QUEDA POR REVISAR
+
+>>>>>>> origin/f18.-Back-de-pantalla-de-joc
   socket.on("game_started", (listaPalabras) => {
     console.log("socket -> game_started payload:", listaPalabras);
     if (listaPalabras && Array.isArray(listaPalabras.initialWords)) {
@@ -41,10 +67,52 @@ onMounted(() => {
       palabraUser.value = "";
     }
   });
+<<<<<<< HEAD
 });
 
 onUnmounted(() => {
   socket.off("game_started");
+=======
+
+socket.on("update_player_words", (msg) => {
+  // console.log("Jugador desde servidor:", jugador, "Jugador local:", playerId.value);
+
+  console.log("🧩 [update_player_words] recibido:", msg);
+
+  const { playerId: jugador, remainingWords, status} = msg.data;
+
+  // Si el mensaje es del jugador actual
+  if (jugador === playerId.value) {
+    listaEntera.value = remainingWords;
+
+    // 🟢 EDSO – 2025-10-30: Si el jugador termina, mostrar pantalla final
+    if (status === "finished") {
+      ganador.value = jugador; // podrías usar el nombre real si lo tienes
+      mostrarPantallaFinal.value = true;
+      console.log("🎉 Jugador ha terminado. Mostrando pantalla final.");
+    }
+  }
+});
+
+  // 🟦 EDSO – 2025-10-30: Escucha el progreso general de todos los jugadores
+  socket.on("update_progress", (msg) => {
+    console.log("🌍 [update_progress] recibido:", msg);
+
+    const { players } = msg.data;
+
+    // Puedes mostrarlo en una tabla o UI si quieres
+    players.forEach((p) => {
+      console.log(`Jugador ${p.id}: ${p.completedWords} palabras completadas, estado: ${p.status}`);
+    });
+  });
+
+  });
+
+onUnmounted(() => {
+  socket.off("game_started");
+  socket.off("update_player_words");
+  socket.off("update_progress");
+>>>>>>> origin/f18.-Back-de-pantalla-de-joc
 });
 
 // Validación carácter a carácter
@@ -84,6 +152,7 @@ function onInputKeyDown(event) {
     if (palabraUser.value === palabraObjetivo.value) {
       completedWords.value++;
 
+<<<<<<< HEAD
       palabrasCompletadasEnBloque.value++;
 
       enviarPalabra(palabraUser.value);
@@ -92,6 +161,16 @@ function onInputKeyDown(event) {
         palabraActualIndex.value += 5;
         palabrasCompletadasEnBloque.value = 0;
       }
+=======
+      // palabrasCompletadasEnBloque.value++;
+
+      enviarPalabra(palabraUser.value);
+
+      // if (palabrasCompletadasEnBloque.value === 5) {
+      //   palabraActualIndex.value += 5;
+      //   palabrasCompletadasEnBloque.value = 0;
+      // }
+>>>>>>> origin/f18.-Back-de-pantalla-de-joc
     } else {
       console.warn("Palabra incorrecta. Errores:", errorCount.value);
     }
@@ -108,6 +187,10 @@ function onInputPaste(event) {
 // Enviar palabra al servidor via Socket.IO
 function enviarPalabra(palabraCompletada) {
   const payload = {
+<<<<<<< HEAD
+=======
+    wordId: 0,
+>>>>>>> origin/f18.-Back-de-pantalla-de-joc
     word: palabraCompletada,
     completedWords: completedWords.value,
     errorCount: errorCount.value,
@@ -149,6 +232,11 @@ const palabraObjetivo = computed(() => {
 const esValido = computed(() => validarInput());
 </script>
 <template>
+  <pantallaFinal
+  v-if="mostrarPantallaFinal"
+  :winner="ganador"
+  @go-home="mostrarPantallaFinal = false"
+/>
   <div id="contenedor-juego">
     <ul class="lista-palabras">
       <li

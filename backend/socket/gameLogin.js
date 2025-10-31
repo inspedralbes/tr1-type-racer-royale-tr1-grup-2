@@ -1,6 +1,10 @@
-const { Server } = require("socket.io");
+import { Server } from "socket.io";
+import { createRoom, getRoom } from "../logic/roomsManager.js";
 
 // No se usa de momento, Actual: unica sala fija
+
+const globalPlayers = []; // [{ playerId, username }]
+
 
 function createLobbyId() {
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -11,7 +15,7 @@ function createLobbyId() {
 }
 
 // Para generar un ID único para el jugador
-function generatePlayerId() {
+export function generatePlayerId() {
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const randomLetter = letters[Math.floor(Math.random() * letters.length)];
   const randomNumber = Math.floor(100 + Math.random() * 900);
@@ -19,22 +23,11 @@ function generatePlayerId() {
 }
 
 // Usamos un ID de sala fijo, ¡Hay que quitarlo más adelante!.
-const RoomId = "room_1";
-
-// Estructura de datos para las salas y jugadores, in-memory (Temporal)
-const rooms = {
-  [RoomId]: {
-    players: [], // Cada jugador tendrá { playerId, socketId, username, completedWords }
-  },
-};
-
+const roomId = "room_1";
+let playerCounter = 1;
 // Inicializar Socket.IO
 
-function initializeSocketIO(httpServer, corsOptions) {
-  const io = new Server(httpServer, {
-    cors: corsOptions,
-  });
-
+export function initializeSocketIO(io) {
   io.on("connection", (socket) => {
     let joinedRoom = null;
     let joinedPlayerId = null;
@@ -42,21 +35,30 @@ function initializeSocketIO(httpServer, corsOptions) {
     // Evento: player_join (Pantalla Login)
     socket.on("player_join", (data) => {
       console.log(`[C -> S] Evento: player_join:`);
-      const { username, playerId } = data;
+      const { username } = data;
 
-      const roomId = RoomId; // Sala fija, más adelante se implantará createLobbyId()
-      console.log(`Sala: ${RoomId}`);
+      const playerId = `u${playerCounter++}`;
 
-      // Pendiente validación de sala.
+      let room = getRoom(roomId); // Sala fija, más adelante se implantará createLobbyId()
+      console.log(`Sala: ${roomId}`);
 
-      // ...
+      if (!room) {
+      createRoom(roomId, playerId, username);
+      room = getRoom(roomId);
+      } else {
+        room.players.push({
+        playerId,
+        username,
+        completedWords: 0,
+        });
+      }
 
       // Lógica de Reconexión y Límite de Sala
-      const existingPlayer = rooms[roomId].players.find(
+      const existingPlayer = room.players.find(
         (p) => p.playerId === playerId
       );
 
-      if (!existingPlayer && rooms[roomId].players.length >= 4) {
+      if (!existingPlayer && room.players.length >= 4) {
         console.error(
           `[ERROR] La sala ${roomId} está llena. No se pudo unir ${playerId}.`
         );
@@ -69,82 +71,134 @@ function initializeSocketIO(httpServer, corsOptions) {
         return;
       }
 
-      // Asignar variables de estado de la conexión
-      joinedRoom = roomId;
-      joinedPlayerId = playerId;
+      // 3️⃣ Añadir jugador al array global de players
+      globalPlayers.push(username);
+      // Pendiente validación de sala.
+      const isHost = room.host === playerId;
 
-      if (existingPlayer) {
-        existingPlayer.socketId = socket.id;
-      } else {
-        const newPlayer = {
-          playerId: playerId,
-          socketId: socket.id,
-          username: username,
-          completedWords: [],
-          isReady: false,
-        };
-        rooms[roomId].players.push(newPlayer);
-        console.log(
-          `[JOIN] Jugador ${playerId} - ${username} se unio a la sala ${roomId}.`
-        );
-      }
 
       socket.join(roomId);
 
+<<<<<<< HEAD
       const isHost = rooms[roomId].players[0].playerId === playerId;
 
       // Evento: joined_lobby
+=======
+>>>>>>> origin/f18.-Back-de-pantalla-de-joc
       const responsePayload = {
-        playerId: playerId,
-        roomId: roomId,
-        isHost: isHost,
-        players: rooms[roomId].players,
+        playerId,
+        roomId,
+        isHost,
+        players: room.players.map((p) => ({
+          playerId: p.playerId,
+          username: p.username,
+          completedWords: p.completedWords,
+        })),
       };
 
+<<<<<<< HEAD
       socket.emit("joined_lobby", responsePayload);
       console.log(
         `[S -> C] Evento: joined_lobby, Datos: ${JSON.stringify(
           responsePayload
         )}`
       );
+=======
+      io.to(roomId).emit("joined_lobby", responsePayload);
+      console.log(`[S -> C] Evento: joined_lobby enviado a ${playerId}`, responsePayload);
+>>>>>>> origin/f18.-Back-de-pantalla-de-joc
 
-      // --- Notificación a los demás ---
-      io.to(roomId).emit("player_list_updated", {
-        players: rooms[roomId].players,
-      });
-      console.log(
-        `[S -> C] Evento: player_list_updated, Datos: ${JSON.stringify({
-          players: rooms[roomId].players,
-        })}`
-      );
-      console.log(`[EMIT] 'player_list_updated' enviado a sala ${roomId}`);
+      // ...
+
+      // // Asignar variables de estado de la conexión
+      // joinedRoom = roomId;
+      // joinedPlayerId = playerId;
+
+      // if (existingPlayer) {
+      //   existingPlayer.socketId = socket.id;
+      // } else {
+      //   const newPlayer = {
+      //     playerId: playerId,
+      //     socketId: socket.id,
+      //     username: username,
+      //     completedWords: [],
+      //     isReady: false,
+      //   };
+      //   rooms[roomId].players.push(newPlayer);
+      //   console.log(
+      //     `[JOIN] Jugador ${playerId} - ${username} se unio a la sala ${roomId}.`
+      //   );
+      // }
+
+      // socket.join(roomId);
+
+      // const isHost = rooms[roomId].players[0].playerId === playerId;
+
+      // // PENDIENTE Revisar -->
+      // // --- Respuesta: joined_lobby ---
+      // const responsePayload = {
+      //   playerId: playerId,
+      //   roomId: roomId,
+      //   isHost: isHost,
+      //   players: rooms[roomId].players,
+      // };
+
+      // socket.emit("joined_lobby", responsePayload);
+      // console.log(
+      //   `[S -> C] Evento: joined_lobby, Datos: ${JSON.stringify(
+      //     responsePayload
+      //   )}`
+      // );
+      // console.log(`[EMIT] 'joined_lobby' enviado a ${playerId}`);
+
+      // // --- Notificación a los demás ---
+      // io.to(roomId).emit("player_list_updated", {
+      //   players: rooms[roomId].players,
+      // });
+      // console.log(
+      //   `[S -> C] Evento: player_list_updated, Datos: ${JSON.stringify({
+      //     players: rooms[roomId].players,
+      //   })}`
+      // );
+      // console.log(`[EMIT] 'player_list_updated' enviado a sala ${roomId}`);
     });
 
     // --- Evento: player_ready (Pantalla Lobby) ---
     socket.on("player_ready", (data) => {
-      console.log(
-        `[C -> S] Evento: player_ready, Datos: ${JSON.stringify(data)}`
-      );
-      const { playerId, isReady } = data;
-      const room = Object.values(rooms).find((r) =>
-        r.players.some((p) => p.playerId === playerId)
-      );
-      if (room) {
-        const player = room.players.find((p) => p.playerId === playerId);
-        if (player) {
-          player.isReady = isReady;
-          console.log(
-            `[READY] El jugador ${playerId} ha cambiado su estado a ${isReady}`
-          );
-          io.to(RoomId).emit("player_list_updated", { players: room.players });
-          console.log(
-            `[S -> C] Evento: player_list_updated, Datos: ${JSON.stringify({
-              players: room.players,
-            })}`
-          );
-        }
-      }
-    });
+  console.log(`[C -> S] Evento: player_ready, Datos: ${JSON.stringify(data)}`);
+  const { playerId, isReady } = data;
+
+  // Usar getRoom para obtener la sala donde está el jugador
+  // Suponemos que solo hay una sala fija 'room_1'
+  const roomId = "room_1";
+  const room = getRoom(roomId);
+
+  if (!room) {
+    console.error(`[ERROR] No se encontró la sala del jugador ${playerId}`);
+    return;
+  }
+
+  const player = room.players.find((p) => p.playerId === playerId);
+  if (player) {
+    player.isReady = isReady;
+    console.log(`[READY] El jugador ${playerId} ha cambiado su estado a ${isReady}`);
+
+    const responsePayload = {
+      playerId,
+      roomId,
+      isHost: room.host === playerId,
+      players: room.players.map((p) => ({
+        playerId: p.playerId,
+        username: p.username,
+        completedWords: p.completedWords,
+        isReady: p.isReady || false,
+      })),
+    };
+
+    io.to(roomId).emit("joined_lobby", responsePayload);
+    console.log(`[S -> C] Evento: joined_lobby emitido a sala ${roomId}`);
+  }
+});
 
     // --- Evento: start_game (Pantalla Lobby) ---
     socket.on("start_game", ({ roomId, playerId }) => {
@@ -243,5 +297,3 @@ function initializeSocketIO(httpServer, corsOptions) {
   return io;
 }
 
-// Exportamos la función principal Y el generador de IDs para el test
-module.exports = { initializeSocketIO, generatePlayerId };
