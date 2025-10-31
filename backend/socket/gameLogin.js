@@ -23,7 +23,7 @@ export function generatePlayerId() {
 }
 
 // Usamos un ID de sala fijo, ¡Hay que quitarlo más adelante!.
-const roomId = "room_1";
+const roomId = "room_abc";
 let playerCounter = 1;
 // Inicializar Socket.IO
 
@@ -153,9 +153,7 @@ export function initializeSocketIO(io) {
   console.log(`[C -> S] Evento: player_ready, Datos: ${JSON.stringify(data)}`);
   const { playerId, isReady } = data;
 
-  // Usar getRoom para obtener la sala donde está el jugador
-  // Suponemos que solo hay una sala fija 'room_1'
-  const roomId = "room_1";
+  const roomId = "room_1"; // o donde realmente esté el jugador
   const room = getRoom(roomId);
 
   if (!room) {
@@ -175,7 +173,7 @@ export function initializeSocketIO(io) {
       players: room.players.map((p) => ({
         playerId: p.playerId,
         username: p.username,
-        completedWords: p.completedWords,
+        completedWords: p.completedWords || 0,
         isReady: p.isReady || false,
       })),
     };
@@ -185,35 +183,6 @@ export function initializeSocketIO(io) {
   }
 });
 
-    // --- Evento: start_game (Pantalla Lobby) ---
-    socket.on("start_game", ({ roomId, playerId }) => {
-      console.log(
-        `[C -> S] Evento: start_game, Datos: ${JSON.stringify({
-          roomId,
-          playerId,
-        })}`
-      );
-      const host = rooms[roomId].players[0];
-      if (host.playerId !== playerId) {
-        console.error(`[ERROR] El jugador ${playerId} no es el host.`);
-        return;
-      }
-
-      // Verificar si todos los demás jugadores están listos
-      const allReady = rooms[roomId].players.every((player, index) => {
-        if (index === 0) return true; // El host no necesita estar listo
-        return player.isReady;
-      });
-
-      if (!allReady) {
-        console.error(`[ERROR] No todos los jugadores están listos.`);
-        // Opcional: emitir un error al host
-        // socket.emit('start_error', { message: 'No todos los jugadores están listos.' });
-        return;
-      }
-
-      // TODO: Cargar palabras de un fichero o BBDD
-    });
 
     // --- Evento: disconnect ---
     socket.on("disconnect", () => {

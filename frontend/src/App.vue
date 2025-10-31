@@ -1,19 +1,22 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import RegistroJugador from "./componentes/registroJugador.vue";
 import Lobby from "./componentes/Lobby.vue";
-import Juego from "./componentes/interfazJuego.vue"; // tu componente del juego
+import Juego from "./componentes/interfazJuego.vue";
 import PantallaFinal from "./componentes/pantallaFinal.vue";
 import communicationManager from "./services/communicationManager";
 
-const vistaActual = ref("registroJugador"); // "registroJugador" | "lobby" | "juego" | "final"
+const vistaActual = ref("registroJugador"); // registroJugador | lobby | juego | final
 const lobbyState = ref(null);
-const gameState = ref(null);
-const ganador = ref(""); 
-const playerId = ref(""); // se generará en RegistroJugador
-const roomId = ref(""); // se genera o recibe en RegistroJugador
+const gameState = ref({
+  players: [], // lista de jugadores
+  remainingWords: [], // palabras del jugador actual
+});
+const ganador = ref("");
+const playerId = ref("");
+const roomId = ref("");
 
-// RegistroJugador → Lobby
+// 🔹 RegistroJugador → Lobby
 function handleRegistration(payload) {
   lobbyState.value = payload;
   playerId.value = payload.playerId;
@@ -21,40 +24,72 @@ function handleRegistration(payload) {
   vistaActual.value = "lobby";
 }
 
-// Lobby → Juego
+// 🔹 Lobby → Juego
 function handleGameStarted(payload) {
+  console.log("🎮 Game started:", payload);
   gameState.value = payload;
   vistaActual.value = "juego";
 }
 
-// Actualización del host
-function handleHostChanged(payload) {
-  if (lobbyState.value) {
-    lobbyState.value.isHost = payload.isHost;
-    lobbyState.value.players = payload.players;
-  }
+// 🔹 Fin del juego → Pantalla final
+function handleGameFinished(payload) {
+  console.log("🏁 Game finished:", payload);
+  ganador.value = payload.winnerName || payload.winnerId;
+  vistaActual.value = "final";
 }
 
-// Actualización de lista de jugadores
+// 🔹 Actualizaciones del lobby
 function handlePlayerListUpdate(payload) {
-  if (lobbyState.value) {
+  if (vistaActual.value === "lobby" && lobbyState.value) {
+    console.log("👥 Actualización lista jugadores:", payload);
     lobbyState.value.players = payload.players;
   }
 }
 
-// Juego → PantallaFinal
+// 🔹 Actualizaciones durante el juego
+function handleUpdatePlayerWords(payload) {
+  if (vistaActual.value !== "juego") return;
+
+  const { playerId: updatedPlayerId, remainingWords, status } = payload.data;
+  console.log("🔤 update_player_words recibido:", payload.data);
+
+  // Actualiza solo al jugador que corresponde
+  const existingPlayer = gameState.value.players.find(
+    (p) => p.id === updatedPlayerId
+  );
+
+  if (existingPlayer) {
+    existingPlayer.remainingWords = remainingWords;
+    existingPlayer.status = status;
+  } else {
+    // Si no estaba, lo añade
+    gameState.value.players.push({
+      id: updatedPlayerId,
+      remainingWords,
+      status,
+    });
+  }
+
+  // Si es el jugador actual, también actualiza su lista principal
+  if (updatedPlayerId === playerId.value) {
+    gameState.value.remainingWords = remainingWords;
+  }
+}
+
 onMounted(() => {
   communicationManager.on("game_started", handleGameStarted);
-  communicationManager.on("host_changed", handleHostChanged);
+  communicationManager.on("game_finished", handleGameFinished);
   communicationManager.on("player_list_updated", handlePlayerListUpdate);
+  communicationManager.on("update_player_words", handleUpdatePlayerWords);
+});
 
-  communicationManager.on("game_finished", (payload) => {
-    ganador.value = payload.winnerName || payload.winnerId;
-    vistaActual.value = "final";
-  });
+onUnmounted(() => {
+  communicationManager.off("game_started", handleGameStarted);
+  communicationManager.off("game_finished", handleGameFinished);
+  communicationManager.off("player_list_updated", handlePlayerListUpdate);
+  communicationManager.off("update_player_words", handleUpdatePlayerWords);
 });
 </script>
-
 
 <template>
   <RegistroJugador
@@ -71,15 +106,15 @@ onMounted(() => {
     v-if="vistaActual === 'juego'"
     :player-id="playerId"
     :room-id="roomId"
+    :game-state="gameState"
   />
 
-  <pantallaFinal
+  <PantallaFinal
     v-if="vistaActual === 'final'"
     :winner="ganador"
     @go-home="vistaActual = 'registroJugador'"
   />
 </template>
-
 
 <style>
 body {

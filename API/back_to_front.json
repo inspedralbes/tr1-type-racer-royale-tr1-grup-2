@@ -50,9 +50,8 @@
     "event": "update_player_words",
     "data": {
         "remainingWords": ["CINCUENTA PALABRAS DE LAS QUE QUEDAN"],
-        "completedWords": 3,
         "playerId": "u42",
-        "status": "onLobby"
+        "status": "playing"
     },
     "__comment__": "PANTALLA JOC servidor -> cliente, respuesta a el jugador al haber escrito la palabra correctamente"
   },

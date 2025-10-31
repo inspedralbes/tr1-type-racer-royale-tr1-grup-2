@@ -1,15 +1,13 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from "vue";
-import socket from "@/servicios/socket.js";
+import communicationManager from "../services/CommunicationManager.js"; // ✅ Nuevo import
+import pantallaFinal from "./pantallaFinal.vue";
 
-// 🟩 EDSO – 2025-10-30: Imports nuevos
-import pantallaFinal from './pantallaFinal.vue'
+// 🟩 Variables para manejar la pantalla final
+const mostrarPantallaFinal = ref(false);
+const ganador = ref("");
 
-// 🟩 EDSO – 2025-10-30: Variables para manejar la pantalla final
-const mostrarPantallaFinal = ref(false)
-const ganador = ref('')
-
-//Variables reactivas
+// 🟩 Variables reactivas
 const listaEntera = ref([]);
 const palabraUser = ref("");
 const completedWords = ref(0);
@@ -20,85 +18,83 @@ const palabraInvalida = ref(false);
 const playerId = ref("player-123");
 const roomId = ref("room-abc");
 
-//Funcion para pillar las palabras iniciales del servidor
+// 🟦 FUNCIONES DE SOCKET ADAPTADAS A COMMUNICATION MANAGER
+function onGameStarted(listaPalabras) {
+  console.log("🟢 [game_started] recibido:", listaPalabras);
+  if (listaPalabras && Array.isArray(listaPalabras.initialWords)) {
+    listaEntera.value = listaPalabras.initialWords;
+    palabraActualIndex.value = 0;
+    completedWords.value = 0;
+    errorCount.value = 0;
+    palabraUser.value = "";
+  }
+}
+
+function onUpdatePlayerWords(msg) {
+  console.log("🟢 [update_player_words] recibido:", msg);
+  const { playerId: jugador, remainingWords, status } = msg.data;
+
+  if (jugador === playerId.value) {
+    listaEntera.value = remainingWords;
+
+    if (status === "finished") {
+      ganador.value = jugador;
+      mostrarPantallaFinal.value = true;
+      console.log("🎉 Jugador ha terminado. Mostrando pantalla final.");
+    }
+  }
+}
+
+function onUpdateProgress(msg) {
+  console.log("🌍 [update_progress] recibido:", msg);
+  const { players } = msg.data;
+
+  players.forEach((p) => {
+    console.log(`Jugador ${p.id}: ${p.completedWords} palabras completadas, estado: ${p.status}`);
+  });
+}
+
+// 🟩 MOUNT / UNMOUNT
 onMounted(() => {
+  // Conectar socket
+  communicationManager.connect();
+
+  // Cargar palabras iniciales desde el backend HTTP
   fetch("/palabras/words")
     .then((response) => {
-      if (!response.ok) {
-        throw new Error(`Error HTTP: ${response.status} `);
-      }
+      if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
       return response.json();
     })
     .then((data) => {
       console.log("Palabras recibidas:", data);
       listaEntera.value = data.data.initialWords;
-      console.log("Lista entera cargada correctamente.", listaEntera.value);
     })
     .catch((error) => {
-      console.error("Hubo un error al reiniciar el juego:", error);
+      console.error("Hubo un error al obtener las palabras:", error);
     });
 
-///// ESTA FUNCION QUEDA POR REVISAR
-
-  socket.on("game_started", (listaPalabras) => {
-    console.log("socket -> game_started payload:", listaPalabras);
-    if (listaPalabras && Array.isArray(listaPalabras.initialWords)) {
-      listaEntera.value = listaPalabras.initialWords;
-      palabraActualIndex.value = 0;
-      completedWords.value = 0;
-      errorCount.value = 0;
-      palabraUser.value = "";
-    }
-  });
-
-socket.on("update_player_words", (msg) => {
-  // console.log("Jugador desde servidor:", jugador, "Jugador local:", playerId.value);
-
-  console.log("🧩 [update_player_words] recibido:", msg);
-
-  const { playerId: jugador, remainingWords, status} = msg.data;
-
-  // Si el mensaje es del jugador actual
-  if (jugador === playerId.value) {
-    listaEntera.value = remainingWords;
-
-    // 🟢 EDSO – 2025-10-30: Si el jugador termina, mostrar pantalla final
-    if (status === "finished") {
-      ganador.value = jugador; // podrías usar el nombre real si lo tienes
-      mostrarPantallaFinal.value = true;
-      console.log("🎉 Jugador ha terminado. Mostrando pantalla final.");
-    }
-  }
+  // Escuchar eventos del servidor
+  communicationManager.on("game_started", onGameStarted);
+  communicationManager.on("update_player_words", onUpdatePlayerWords);
+  communicationManager.on("update_progress", onUpdateProgress);
 });
-
-  // 🟦 EDSO – 2025-10-30: Escucha el progreso general de todos los jugadores
-  socket.on("update_progress", (msg) => {
-    console.log("🌍 [update_progress] recibido:", msg);
-
-    const { players } = msg.data;
-
-    // Puedes mostrarlo en una tabla o UI si quieres
-    players.forEach((p) => {
-      console.log(`Jugador ${p.id}: ${p.completedWords} palabras completadas, estado: ${p.status}`);
-    });
-  });
-
-  });
 
 onUnmounted(() => {
-  socket.off("game_started");
-  socket.off("update_player_words");
-  socket.off("update_progress");
+  // Desregistrar eventos
+  communicationManager.off("game_started", onGameStarted);
+  communicationManager.off("update_player_words", onUpdatePlayerWords);
+  communicationManager.off("update_progress", onUpdateProgress);
+
+  // Desconectar socket
+  communicationManager.disconnect();
 });
 
-// Validación carácter a carácter
+// 🧩 Validación carácter a carácter
 function validarInput() {
   const palabraEscrita = palabraUser.value;
   const objetivo = palabraObjetivo.value;
-
   if (!objetivo) return true;
 
-  // Lógica de validación
   let esValidaAhora = true;
   for (let i = 0; i < palabraEscrita.length; i++) {
     if (palabraEscrita[i] !== objetivo[i]) {
@@ -110,46 +106,35 @@ function validarInput() {
   if (!esValidaAhora) {
     if (!palabraInvalida.value) {
       errorCount.value++;
-      console.warn("Error detectado en tiempo real. Total:", errorCount.value);
       palabraInvalida.value = true;
     }
   } else {
     palabraInvalida.value = false;
   }
-
   return esValidaAhora;
 }
 
-// Maneja la pulsación de tecla, específicamente el ESPACIO
+// 🧠 Maneja la pulsación de tecla (espacio)
 function onInputKeyDown(event) {
   if (event.key === " " && palabraUser.value.length > 0) {
     event.preventDefault();
 
     if (palabraUser.value === palabraObjetivo.value) {
       completedWords.value++;
-
-      // palabrasCompletadasEnBloque.value++;
-
       enviarPalabra(palabraUser.value);
-
-      // if (palabrasCompletadasEnBloque.value === 5) {
-      //   palabraActualIndex.value += 5;
-      //   palabrasCompletadasEnBloque.value = 0;
-      // }
     } else {
       console.warn("Palabra incorrecta. Errores:", errorCount.value);
     }
-
     palabraUser.value = "";
   }
 }
 
-// Previene que el usuario pueda pegar texto
+// 🛡️ Bloquea pegado
 function onInputPaste(event) {
   event.preventDefault();
 }
 
-// Enviar palabra al servidor via Socket.IO
+// 📤 Enviar palabra al servidor
 function enviarPalabra(palabraCompletada) {
   const payload = {
     wordId: 0,
@@ -160,37 +145,22 @@ function enviarPalabra(palabraCompletada) {
     roomId: roomId.value,
   };
 
-  const dataParaServidor = {
-    data: payload,
-  };
-
-  socket.emit("word_typed", dataParaServidor); // <--- ¡CAMBIO AQUÍ!
-  console.log("Datos enviados al servidor:", dataParaServidor);
+  const dataParaServidor = { data: payload };
+  communicationManager.emit("word_typed", dataParaServidor);
+  console.log("📤 Datos enviados al servidor:", dataParaServidor);
 }
 
-//Propiedades computadas
-// Para las palabras que se muestren en pantalla (5 palabras)
+// 🧮 Computadas
 const palabrasEnVista = computed(() => {
-  if (!Array.isArray(listaEntera.value)) {
-    return [];
-  }
-
-  return listaEntera.value.slice(
-    palabraActualIndex.value,
-    palabraActualIndex.value + 5
-  );
+  if (!Array.isArray(listaEntera.value)) return [];
+  return listaEntera.value.slice(palabraActualIndex.value, palabraActualIndex.value + 5);
 });
 
-// Palabra que el usuario debe escribir ahora
 const palabraObjetivo = computed(() => {
   const indexObjetivo = palabrasCompletadasEnBloque.value;
-
-  return palabrasEnVista.value.length > indexObjetivo
-    ? palabrasEnVista.value[indexObjetivo]
-    : "";
+  return palabrasEnVista.value.length > indexObjetivo ? palabrasEnVista.value[indexObjetivo] : "";
 });
 
-// Resultado de la validación carácter a carácter
 const esValido = computed(() => validarInput());
 </script>
 <template>
