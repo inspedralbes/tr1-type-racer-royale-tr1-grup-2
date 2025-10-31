@@ -1,5 +1,7 @@
 // utils/wordsManager.js
 
+import { getRoom } from "./roomsManager.js";
+
 // Array base con 600 palabras (puedes ampliarlo)
 const palabrasBase = [
   "casa", "perro", "gato", "árbol", "sol", "luna", "mar", "río", "nube", "montaña",
@@ -44,15 +46,17 @@ export const seleccionarRandom = (array, cantidad) => {
 // y devuelve la palabra eliminada para añadirla al resto
 // 🔹 CALCULA LAS PALABRAS RESTANTES Y AÑADE A LOS DEMÁS SI SE CUMPLE EL UMBRAL
 export const calcularPalabrasRestantes = (rooms, roomId, playerId, wordId, threshold = 3) => {
-  const room = rooms[roomId];
+  const room = getRoom(roomId);
+  console.log(room);
   if (!room) return;
-
+// console.log(`Calculando palabras restantes para ${jugador.name || playerId} en sala ${roomId}`);
   const jugador = room.players.find(p => p.id === playerId);
   if (!jugador) return;
 
   const copia = [...jugador.words];
   let completedWord = null;
 
+  console.log(`Calculando palabras restantes para ${jugador.name || playerId} en sala ${roomId}`);
   // ✅ Eliminar palabra completada
   if (wordId >= 0 && wordId < copia.length) {
     completedWord = copia[wordId];

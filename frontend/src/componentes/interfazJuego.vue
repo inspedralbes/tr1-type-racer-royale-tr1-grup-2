@@ -2,6 +2,13 @@
 import { ref, onMounted, onUnmounted, computed } from "vue";
 import socket from "@/servicios/socket.js";
 
+// 🟩 EDSO – 2025-10-30: Imports nuevos
+import pantallaFinal from './pantallaFinal.vue'
+
+// 🟩 EDSO – 2025-10-30: Variables para manejar la pantalla final
+const mostrarPantallaFinal = ref(false)
+const ganador = ref('')
+
 //Variables reactivas
 const listaEntera = ref([]);
 const palabraUser = ref("");
@@ -31,6 +38,8 @@ onMounted(() => {
       console.error("Hubo un error al reiniciar el juego:", error);
     });
 
+///// ESTA FUNCION QUEDA POR REVISAR
+
   socket.on("game_started", (listaPalabras) => {
     console.log("socket -> game_started payload:", listaPalabras);
     if (listaPalabras && Array.isArray(listaPalabras.initialWords)) {
@@ -41,10 +50,45 @@ onMounted(() => {
       palabraUser.value = "";
     }
   });
+
+socket.on("update_player_words", (msg) => {
+  // console.log("Jugador desde servidor:", jugador, "Jugador local:", playerId.value);
+
+  console.log("🧩 [update_player_words] recibido:", msg);
+
+  const { playerId: jugador, remainingWords, status} = msg.data;
+
+  // Si el mensaje es del jugador actual
+  if (jugador === playerId.value) {
+    listaEntera.value = remainingWords;
+
+    // 🟢 EDSO – 2025-10-30: Si el jugador termina, mostrar pantalla final
+    if (status === "finished") {
+      ganador.value = jugador; // podrías usar el nombre real si lo tienes
+      mostrarPantallaFinal.value = true;
+      console.log("🎉 Jugador ha terminado. Mostrando pantalla final.");
+    }
+  }
 });
+
+  // 🟦 EDSO – 2025-10-30: Escucha el progreso general de todos los jugadores
+  socket.on("update_progress", (msg) => {
+    console.log("🌍 [update_progress] recibido:", msg);
+
+    const { players } = msg.data;
+
+    // Puedes mostrarlo en una tabla o UI si quieres
+    players.forEach((p) => {
+      console.log(`Jugador ${p.id}: ${p.completedWords} palabras completadas, estado: ${p.status}`);
+    });
+  });
+
+  });
 
 onUnmounted(() => {
   socket.off("game_started");
+  socket.off("update_player_words");
+  socket.off("update_progress");
 });
 
 // Validación carácter a carácter
@@ -82,16 +126,16 @@ function onInputKeyDown(event) {
     event.preventDefault();
 
     if (palabraUser.value === palabraObjetivo.value) {
-      completedWords.value++;
+      // completedWords.value++;
 
-      palabrasCompletadasEnBloque.value++;
+      // palabrasCompletadasEnBloque.value++;
 
       enviarPalabra(palabraUser.value);
 
-      if (palabrasCompletadasEnBloque.value === 5) {
-        palabraActualIndex.value += 5;
-        palabrasCompletadasEnBloque.value = 0;
-      }
+      // if (palabrasCompletadasEnBloque.value === 5) {
+      //   palabraActualIndex.value += 5;
+      //   palabrasCompletadasEnBloque.value = 0;
+      // }
     } else {
       console.warn("Palabra incorrecta. Errores:", errorCount.value);
     }
@@ -108,6 +152,7 @@ function onInputPaste(event) {
 // Enviar palabra al servidor via Socket.IO
 function enviarPalabra(palabraCompletada) {
   const payload = {
+    wordId: 0,
     word: palabraCompletada,
     completedWords: completedWords.value,
     errorCount: errorCount.value,
@@ -149,6 +194,11 @@ const palabraObjetivo = computed(() => {
 const esValido = computed(() => validarInput());
 </script>
 <template>
+  <pantallaFinal
+  v-if="mostrarPantallaFinal"
+  :winner="ganador"
+  @go-home="mostrarPantallaFinal = false"
+/>
   <div id="contenedor-juego">
     <ul class="lista-palabras">
       <li
