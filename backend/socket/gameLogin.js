@@ -81,7 +81,7 @@ function initializeSocketIO(httpServer, corsOptions) {
           socketId: socket.id,
           username: username,
           completedWords: [],
-          isReady: false,
+          isReady: true,
         };
         rooms[roomId].players.push(newPlayer);
         console.log(

@@ -19,7 +19,7 @@ const jugadores = ref([...props.lobbyState.players]);
 // Estado local del jugador actual
 //
 
-const estoyPreparado = ref(false);
+const estoyPreparado = ref(true);
 
 //
 // Emitir evento al backend para cambiar estado de preparación
@@ -68,7 +68,7 @@ const todosListos = computed(() => {
 });
 
 //
-// Función qe inicia el juego
+// Función que inicia el juego
 //
 
 function iniciarJuego() {
