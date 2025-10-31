@@ -24,18 +24,13 @@ export function generatePlayerId() {
 
 // Usamos un ID de sala fijo, ¡Hay que quitarlo más adelante!.
 const roomId = "room_1";
-
+let playerCounter = 1;
 // Inicializar Socket.IO
 
-export function initializeSocketIO(httpServer, corsOptions) {
-  const io = new Server(httpServer, {
-    cors: corsOptions,
-  });
-
+export function initializeSocketIO(io) {
   io.on("connection", (socket) => {
     let joinedRoom = null;
     let joinedPlayerId = null;
-    let playerCounter = 1;
 
     // Evento: player_join (Pantalla Login)
     socket.on("player_join", (data) => {
@@ -58,6 +53,24 @@ export function initializeSocketIO(httpServer, corsOptions) {
         });
       }
 
+      // Lógica de Reconexión y Límite de Sala
+      const existingPlayer = room.players.find(
+        (p) => p.playerId === playerId
+      );
+
+      if (!existingPlayer && room.players.length >= 4) {
+        console.error(
+          `[ERROR] La sala ${roomId} está llena. No se pudo unir ${playerId}.`
+        );
+        socket.emit("join_error", { message: "La sala está llena." });
+        console.log(
+          `[S -> C] Evento: join_error, Datos: ${JSON.stringify({
+            message: "La sala está llena.",
+          })}`
+        );
+        return;
+      }
+
       // 3️⃣ Añadir jugador al array global de players
       globalPlayers.push(username);
       // Pendiente validación de sala.
@@ -77,28 +90,10 @@ export function initializeSocketIO(httpServer, corsOptions) {
         })),
       };
 
-      socket.emit("joined_lobby", responsePayload);
+      io.to(roomId).emit("joined_lobby", responsePayload);
       console.log(`[S -> C] Evento: joined_lobby enviado a ${playerId}`, responsePayload);
 
       // ...
-
-      // // Lógica de Reconexión y Límite de Sala
-      // const existingPlayer = rooms[roomId].players.find(
-      //   (p) => p.playerId === playerId
-      // );
-
-      // if (!existingPlayer && rooms[roomId].players.length >= 4) {
-      //   console.error(
-      //     `[ERROR] La sala ${roomId} está llena. No se pudo unir ${playerId}.`
-      //   );
-      //   socket.emit("join_error", { message: "La sala está llena." });
-      //   console.log(
-      //     `[S -> C] Evento: join_error, Datos: ${JSON.stringify({
-      //       message: "La sala está llena.",
-      //     })}`
-      //   );
-      //   return;
-      // }
 
       // // Asignar variables de estado de la conexión
       // joinedRoom = roomId;
@@ -155,29 +150,40 @@ export function initializeSocketIO(httpServer, corsOptions) {
 
     // --- Evento: player_ready (Pantalla Lobby) ---
     socket.on("player_ready", (data) => {
-      console.log(
-        `[C -> S] Evento: player_ready, Datos: ${JSON.stringify(data)}`
-      );
-      const { playerId, isReady } = data;
-      const room = Object.values(rooms).find((r) =>
-        r.players.some((p) => p.playerId === playerId)
-      );
-      if (room) {
-        const player = room.players.find((p) => p.playerId === playerId);
-        if (player) {
-          player.isReady = isReady;
-          console.log(
-            `[READY] El jugador ${playerId} ha cambiado su estado a ${isReady}`
-          );
-          io.to(roomId).emit("player_list_updated", { players: room.players });
-          console.log(
-            `[S -> C] Evento: player_list_updated, Datos: ${JSON.stringify({
-              players: room.players,
-            })}`
-          );
-        }
-      }
-    });
+  console.log(`[C -> S] Evento: player_ready, Datos: ${JSON.stringify(data)}`);
+  const { playerId, isReady } = data;
+
+  // Usar getRoom para obtener la sala donde está el jugador
+  // Suponemos que solo hay una sala fija 'room_1'
+  const roomId = "room_1";
+  const room = getRoom(roomId);
+
+  if (!room) {
+    console.error(`[ERROR] No se encontró la sala del jugador ${playerId}`);
+    return;
+  }
+
+  const player = room.players.find((p) => p.playerId === playerId);
+  if (player) {
+    player.isReady = isReady;
+    console.log(`[READY] El jugador ${playerId} ha cambiado su estado a ${isReady}`);
+
+    const responsePayload = {
+      playerId,
+      roomId,
+      isHost: room.host === playerId,
+      players: room.players.map((p) => ({
+        playerId: p.playerId,
+        username: p.username,
+        completedWords: p.completedWords,
+        isReady: p.isReady || false,
+      })),
+    };
+
+    io.to(roomId).emit("joined_lobby", responsePayload);
+    console.log(`[S -> C] Evento: joined_lobby emitido a sala ${roomId}`);
+  }
+});
 
     // --- Evento: start_game (Pantalla Lobby) ---
     socket.on("start_game", ({ roomId, playerId }) => {

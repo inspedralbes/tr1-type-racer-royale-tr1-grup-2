@@ -19,8 +19,8 @@ export const createRoom = (roomId, playerId, playerName, initialWords = []) => {
     };
   } else {
     rooms[roomId].players.push({
-      id: playerId,
-      name: playerName,
+      playerId: playerId,
+      username: playerName,
       words: [...initialWords],
       completedWords: 0,
       status: "playing",
