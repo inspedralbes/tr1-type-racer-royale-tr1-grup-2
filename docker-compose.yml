@@ -1,9 +1,30 @@
 version: '3.8'
+
 services:
-  app:
+  # --- Servicio del Backend ---
+  backend:
     build:
       context: .
-      dockerfile: docker/Dockerfile
-    image: tr1-type-racer-royale
+      dockerfile: Dockerfile
+      target: backend-final
+    image: tr1-backend
     ports:
-      - "3000:3000"
+      # (Host:Contenedor)
+      - "${BACKEND_HOST_IP:-127.0.0.1}:${BACKEND_HOST_PORT:-3000}:3000"
+    environment:
+      # Pasa variables del .env al contenedor
+      - NODE_ENV=${NODE_ENV}
+
+
+  # --- Servicio del Frontend ---
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: frontend-final
+    image: tr1-frontend
+    ports:
+      # (Host:Contenedor)
+      - "${FRONTEND_HOST_IP:-127.0.0.1}:${FRONTEND_HOST_PORT:-4000}:80"
+    depends_on:
+      - backend # Orden de arranque
