@@ -1,4 +1,4 @@
-const cors = require("cors");
+import cors from "cors";
 import { Server } from "socket.io";
 import { registerGameEvents } from "./socket/gameManager.js";
 import wordsRouter from "./routes/wordRoutes.js"; // tu router de palabras
@@ -8,9 +8,9 @@ const app = express();
 const server = http.createServer(app); // <-- Creamos el servidor HTTP
 
 // 1. Importamos NUESTRAS funciónes
-const { initializeSocketIO } = require("./socket/gameLogin.js");
+import { initializeSocketIO } from "./socket/gameLogin.js";
 
-const io = new Server(httpServer, {
+const io = new Server(server, {
   cors: { origin: "*" },
 });
 // --- Configuración de CORS para Express (rutas API) y Socket.IO ---

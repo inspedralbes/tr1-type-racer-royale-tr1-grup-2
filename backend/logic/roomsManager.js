@@ -8,8 +8,8 @@ export const createRoom = (roomId, playerId, playerName, initialWords = []) => {
       host: playerId,
       players: [
         {
-          id: playerId,
-          name: playerName,
+          playerId: playerId,
+          username: playerName,
           words: [...initialWords],
           completedWords: 0,
           status: "playing",
