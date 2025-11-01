@@ -6,9 +6,9 @@ const router = express.Router();
 
 router.get("/words", (req, res) => {
   try {
-    const roomId = "room-abc";
-    const playerId = "player-123";
-    const playerName = "Jugador 1";
+    const roomId = req.query.roomId || "room-abc";
+    const playerId = req.query.playerId || "player-123";
+    const playerName =   "Jugador 1";
     console.log(`🔹 Generando palabras para sala ${roomId}, jugador ${playerId} (${playerName})`);
     const count = parseInt(req.query.count) || 5;
 

@@ -5,6 +5,7 @@ import Lobby from "./componentes/Lobby.vue";
 import Juego from "./componentes/interfazJuego.vue";
 import PantallaFinal from "./componentes/pantallaFinal.vue";
 import communicationManager from "./services/communicationManager";
+import InterfazJuego from "./componentes/interfazJuego.vue";
 
 const vistaActual = ref("registroJugador"); // registroJugador | lobby | juego | final
 const lobbyState = ref(null);
@@ -92,6 +93,7 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <!-- <InterfazJuego>   </InterfazJuego> -->
   <RegistroJugador
     v-if="vistaActual === 'registroJugador'"
     @registrado="handleRegistration"

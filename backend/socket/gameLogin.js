@@ -93,60 +93,15 @@ export function initializeSocketIO(io) {
       io.to(roomId).emit("joined_lobby", responsePayload);
       console.log(`[S -> C] Evento: joined_lobby enviado a ${playerId}`, responsePayload);
 
-      // ...
-
-      // // Asignar variables de estado de la conexión
-      // joinedRoom = roomId;
-      // joinedPlayerId = playerId;
-
-      // if (existingPlayer) {
-      //   existingPlayer.socketId = socket.id;
-      // } else {
-      //   const newPlayer = {
-      //     playerId: playerId,
-      //     socketId: socket.id,
-      //     username: username,
-      //     completedWords: [],
-      //     isReady: false,
-      //   };
-      //   rooms[roomId].players.push(newPlayer);
-      //   console.log(
-      //     `[JOIN] Jugador ${playerId} - ${username} se unio a la sala ${roomId}.`
-      //   );
-      // }
-
-      // socket.join(roomId);
-
-      // const isHost = rooms[roomId].players[0].playerId === playerId;
-
-      // // PENDIENTE Revisar -->
-      // // --- Respuesta: joined_lobby ---
-      // const responsePayload = {
-      //   playerId: playerId,
-      //   roomId: roomId,
-      //   isHost: isHost,
-      //   players: rooms[roomId].players,
-      // };
-
-      // socket.emit("joined_lobby", responsePayload);
-      // console.log(
-      //   `[S -> C] Evento: joined_lobby, Datos: ${JSON.stringify(
-      //     responsePayload
-      //   )}`
-      // );
-      // console.log(`[EMIT] 'joined_lobby' enviado a ${playerId}`);
-
-      // // --- Notificación a los demás ---
-      // io.to(roomId).emit("player_list_updated", {
-      //   players: rooms[roomId].players,
-      // });
-      // console.log(
-      //   `[S -> C] Evento: player_list_updated, Datos: ${JSON.stringify({
-      //     players: rooms[roomId].players,
-      //   })}`
-      // );
-      // console.log(`[EMIT] 'player_list_updated' enviado a sala ${roomId}`);
     });
+
+
+    socket.on("start_game_signal", (data) => {
+  const { roomId } = data;
+  io.to(roomId).emit("start_game_signal");
+  console.log(`[S -> C] start_game_signal emitido a la sala ${roomId}`);
+});
+
 
     // --- Evento: player_ready (Pantalla Lobby) ---
     socket.on("player_ready", (data) => {

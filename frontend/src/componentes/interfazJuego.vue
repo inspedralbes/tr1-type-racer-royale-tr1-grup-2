@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from "vue";
-import communicationManager from "../services/CommunicationManager.js"; // ✅ Nuevo import
+import communicationManager from "../services/CommunicationManager.js"; 
 import pantallaFinal from "./pantallaFinal.vue";
 
 // 🟩 Variables para manejar la pantalla final
@@ -15,8 +15,8 @@ const errorCount = ref(0);
 const palabraActualIndex = ref(0);
 const palabrasCompletadasEnBloque = ref(0);
 const palabraInvalida = ref(false);
-const playerId = ref("player-123");
-const roomId = ref("room-abc");
+const playerId = ref("player-123");   // Cambiar dinámicamente si lo tienes desde login
+const roomId = ref("room-abc");       // Cambiar dinámicamente si lo tienes desde lobby
 
 // 🟦 FUNCIONES DE SOCKET ADAPTADAS A COMMUNICATION MANAGER
 function onGameStarted(listaPalabras) {
@@ -31,7 +31,6 @@ function onGameStarted(listaPalabras) {
 }
 
 function onUpdatePlayerWords(msg) {
-  console.log("🟢 [update_player_words] recibido:", msg);
   const { playerId: jugador, remainingWords, status } = msg.data;
 
   if (jugador === playerId.value) {
@@ -46,9 +45,7 @@ function onUpdatePlayerWords(msg) {
 }
 
 function onUpdateProgress(msg) {
-  console.log("🌍 [update_progress] recibido:", msg);
   const { players } = msg.data;
-
   players.forEach((p) => {
     console.log(`Jugador ${p.id}: ${p.completedWords} palabras completadas, estado: ${p.status}`);
   });
@@ -59,8 +56,9 @@ onMounted(() => {
   // Conectar socket
   communicationManager.connect();
 
-  // Cargar palabras iniciales desde el backend HTTP
-  fetch("/palabras/words")
+  // 🔹 Fetch palabras iniciales usando endpoint dinámico
+  const count = 60; // o el número de palabras que quieras
+  fetch(`/palabras/words?roomId=${roomId.value}&playerId=${playerId.value}&count=${count}`)
     .then((response) => {
       if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
       return response.json();
@@ -70,7 +68,7 @@ onMounted(() => {
       listaEntera.value = data.data.initialWords;
     })
     .catch((error) => {
-      console.error("Hubo un error al obtener las palabras:", error);
+      console.error("❌ Hubo un error al obtener las palabras:", error);
     });
 
   // Escuchar eventos del servidor
@@ -145,9 +143,8 @@ function enviarPalabra(palabraCompletada) {
     roomId: roomId.value,
   };
 
-  const dataParaServidor = { data: payload };
-  communicationManager.emit("word_typed", dataParaServidor);
-  console.log("📤 Datos enviados al servidor:", dataParaServidor);
+  communicationManager.emit("word_typed", { data: payload });
+  console.log("📤 Datos enviados al servidor:", payload);
 }
 
 // 🧮 Computadas
@@ -163,6 +160,7 @@ const palabraObjetivo = computed(() => {
 
 const esValido = computed(() => validarInput());
 </script>
+
 <template>
   <pantallaFinal
   v-if="mostrarPantallaFinal"
