@@ -29,18 +29,18 @@ if (!jugador) return;
       },
     });
 
-    io.to(roomId).emit("update_progress", {
-      data: {
-        roomId,
-        players: room.players.map(p => ({
-          playerId: p.playerId,
-          username: p.username,
-          remainingWords: p.words,
-          status: p.status,
-          completedWords: p.completedWords,
-        })),
-      },
-    });
+    // io.to(roomId).emit("update_progress", {
+    //   data: {
+    //     roomId,
+    //     players: room.players.map(p => ({
+    //       playerId: p.playerId,
+    //       username: p.username,
+    //       remainingWords: p.words,
+    //       status: p.status,
+    //       completedWords: p.completedWords,
+    //     })),
+    //   },
+    // });
 
     socket.broadcast.to(roomId).emit("update_progress", {
       data: { roomId, players: room.players },

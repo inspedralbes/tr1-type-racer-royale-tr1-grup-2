@@ -26,11 +26,21 @@ const props = defineProps({
   }
 })
 
-// Evento que se emite cuando el usuario quiere volver al inicio
-const emit = defineEmits(['go-home'])
+function handleGoHome() {
+  // 1️⃣ Desconecta el socket
+  communicationManager.disconnect();
 
-function goHome() {
-  emit('go-home')
+  // 2️⃣ Limpia variables globales
+  playerId.value = "";
+  playerName.value = "";
+  roomId.value = "";
+  globalPlayers.value = [];
+
+  // 3️⃣ Oculta la pantalla final (opcional, si vas a redirigir)
+  mostrarPantallaFinal.value = false;
+
+  // 4️⃣ Redirige al inicio
+  window.location.href = "/"; // ✅ Forzar regreso a la pantalla inicial
 }
 </script>
 

@@ -20,6 +20,9 @@ const playerIdActual = playerId.value;   // Cambiar dinámicamente si lo tienes 
 const roomId = ref("room-abc");
 const playerNameActual = playerName.value;       // Cambiar dinámicamente si lo tienes desde lobby
 
+
+const progresoJugadores = ref([]);
+
 // 🟦 FUNCIONES DE SOCKET ADAPTADAS A COMMUNICATION MANAGER
 
 function onUpdatePlayerWords(msg) {
@@ -35,7 +38,7 @@ console.log("📥 playerId backend:", jugador, typeof jugador);
     console.log("🔴 DESPUÉS - listaEntera:", listaEntera.value);
     console.log("🔤 Palabras status actualizadas:", status);
     if (status === "finished") {
-      ganador.value = jugador;
+      ganador.value = playerName.value;
       mostrarPantallaFinal.value = true;
       console.log("🎉 Jugador ha terminado. Mostrando pantalla final.");
     }
@@ -43,9 +46,24 @@ console.log("📥 playerId backend:", jugador, typeof jugador);
 }
 
 function onUpdateProgress(msg) {
-  const { players } = msg.data;
+  const { roomId: roomRecibido, players } = msg.data;
+  if (roomRecibido !== roomId.value) return; // Ignora si no es la misma sala
+
+  progresoJugadores.value = players;
+
+  // 🔹 Buscar si alguien terminó
+  const ganadorEncontrado = players.find((p) => p.status === "finished");
+  if (ganadorEncontrado) {
+    ganador.value = ganadorEncontrado.username || playerName.value;
+    mostrarPantallaFinal.value = true;
+    console.log(`🏁 El jugador ${ganador.value} ha ganado la partida.`);
+  }
+
+  // (Opcional) Log visual para debug
   players.forEach((p) => {
-    console.log(`Jugador ${p.id}: ${p.completedWords} palabras completadas, estado: ${p.status}`);
+    console.log(
+      `Jugador ${p.username}: ${p.completedWords} completadas, estado: ${p.status}`
+    );
   });
 }
 
