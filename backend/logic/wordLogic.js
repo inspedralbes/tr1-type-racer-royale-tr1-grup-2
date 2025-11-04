@@ -49,12 +49,17 @@ export const calcularPalabrasRestantes = (rooms, roomId, playerId, wordId, thres
   const room = getRoom(roomId);
   if (!room) return;
 // console.log(`Calculando palabras restantes para ${jugador.name || playerId} en sala ${roomId}`);
-  const jugador = room.players.find(p => p.id === playerId);
+  const jugador = room.players.find(p => p.playerId === playerId);
+  console.log("🟢 PRECAMBIO -- room.players:", room.players);
   if (!jugador) return;
 
   const copia = [...jugador.words];
 
   console.log(`Calculando palabras restantes para ${jugador.name || playerId} en sala ${roomId}`);
+ 
+  const palabraCompletada =
+  wordId >= 0 && wordId < copia.length ? copia[wordId] : null;
+
   // ✅ Eliminar palabra completada
   if (wordId >= 0 && wordId < copia.length) {
     copia.splice(wordId, 1);
@@ -64,13 +69,14 @@ export const calcularPalabrasRestantes = (rooms, roomId, playerId, wordId, thres
   jugador.words = copia;
   jugador.completedWords = completedWords;
     console.log(completedWords);
+    console.log("🟢 POSTCAMBIO -- room.players:", room.players);
 
     // ⚡ Si alcanza múltiplo del threshold → enviar palabra a los demás
     if (completedWords % threshold === 0) {
       console.log(
         `⚡ ${jugador.name || playerId} ha completado ${jugador.completedWords} palabras — enviando "${completedWords}" a los demás`
       );
-      añadirPalabraCompletada(rooms, roomId, playerId, completedWords);
+      añadirPalabraCompletada(rooms, roomId, playerId, palabraCompletada);
     }
 };
 
@@ -86,7 +92,7 @@ export const añadirPalabraCompletada = (rooms, roomId, playerId, palabraElimina
 
   // Añadir la palabra completada al resto de jugadores
   room.players.forEach(p => {
-    if (p.id !== playerId) {
+    if (p.playerId !== playerId) {
       p.words.push(palabraEliminada);
     }
   });
