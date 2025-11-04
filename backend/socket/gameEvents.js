@@ -1,5 +1,6 @@
 import { calcularPalabrasRestantes } from "../logic/wordLogic.js";
 import { getRoom } from "../logic/roomsManager.js";
+import { verificarCartaCompletada, asignarCartaAJugador } from "../logic/cardsManager.js";
 
 export function registerGameEvents(io, socket) {
   socket.on("word_typed", (msg) => {
@@ -13,6 +14,19 @@ console.log("🟢 jugador encontrado:", jugador, "buscando playerId:", playerId)
 if (!jugador) return;
 
     calcularPalabrasRestantes({ [roomId]: room }, roomId, playerId, wordId, threshold, completedWords);
+
+if (verificarCartaCompletada(jugador)) {
+  io.to(roomId).emit("carta_completada", {
+    data: {
+      playerId,
+      carta: jugador.cartaActiva,
+      powerUps: jugador.powerUps,
+    },
+  });
+
+  asignarCartaAJugador(jugador);
+}
+
 
     if (jugador.words.length === 0) jugador.status = "finished";
 

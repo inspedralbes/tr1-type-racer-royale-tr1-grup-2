@@ -323,4 +323,17 @@ const esValido = computed(() => validarInput());
   color: red;
   font-weight: bold;
 }
+.carta-palo.spade {
+  background-image: url("../../public/assets/img/picas.png");
+}
+.carta-palo.heart {
+  background-image: url("../../public/assets/img/corazones.png");
+}
+.carta-palo.diamond {
+  background-image: url("../../public/assets/img/diamantes.png");
+}
+.carta-palo.club {
+  background-image: url("../../public/assets/img/treboles.png");
+}
+
 </style>
