@@ -1,0 +1,35 @@
+import { calcularPalabrasRestantes } from "../logic/wordLogic.js";
+import { getRoom } from "../logic/roomsManager.js";
+
+export function registerGameEvents(io, socket) {
+  socket.on("word_typed", (msg) => {
+    const { wordId, completedWords, playerId, roomId, threshold = 3 } = msg.data;
+    const room = getRoom(roomId);
+    if (!room) return;
+
+    console.log("🟢 room.players:", room.players);
+const jugador = room.players.find(p => p.playerId === playerId);
+console.log("🟢 jugador encontrado:", jugador, "buscando playerId:", playerId);
+if (!jugador) return;
+
+    calcularPalabrasRestantes({ [roomId]: room }, roomId, playerId, wordId, threshold, completedWords);
+
+    if (jugador.words.length === 0) jugador.status = "finished";
+
+    io.to(roomId).emit("update_player_words", {
+      data: {
+        playerId,
+        remainingWords: jugador.words,
+        status: jugador.status,
+        completedWords: jugador.completedWords,
+        roomId,
+      },
+    });
+
+    socket.broadcast.to(roomId).emit("update_progress", {
+      data: { roomId, players: room.players },
+    });
+
+    console.log(`✅ [Game] ${jugador.playerId} completó palabra en ${roomId}`);
+  });
+}

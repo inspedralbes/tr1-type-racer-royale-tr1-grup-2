@@ -1,111 +1,93 @@
 [
-    {
+  {
     "event": "joined_lobby",
     "data": {
-        "playerId": "u42",
-        "roomId": "room_1",
-        "isHost": true,
-        "players": [
+      "playerId": "u42",
+      "roomId": "room_1",
+      "isHost": true,
+      "players": [
         { "playerId": "u42", "username": "Alex", "completedWords": 0 }
-        ]
+      ]
     },
     "__comment__": "PANTALLA LOBBY servidor -> cliente, respuesta al unirse a la sala solo al cliente que se ha unido"
+  },
+
+  {
+    "event": "join_error",
+    "data": {
+      "error": "La sala está llena.",
+      "roomId": "room_1"
     },
+    "__comment__": "PANTALLA LOBBY servidor -> cliente, respuesta al unirse a la sala y la sala está llena"
+  },
 
-
-
-    {
+  {
     "event": "player_joined",
     "data": {
-        "playerId": "u51",
-        "username": "Marta",
-        "players": [
+      "playerId": "u51",
+      "username": "Marta",
+      "players": [
         { "playerId": "u42", "username": "Alex", "completedWords": 0 },
         { "playerId": "u51", "username": "Marta", "completedWords": 0 }
-        ],
-        "roomId": "room_1"
+      ],
+      "roomId": "room_1"
     },
     "__comment__": "PANTALLA LOBBY servidor -> cliente, respuesta al unirse a la sala un jugador a todos los jugadores"
-    },
+  },
 
-
-    {
+  {
     "event": "game_started",
     "data": {
         "initialWords": ["CINCUENTA PALABRAS"],
         "wordLimit": 60,
-        "roomId": "room_1"
+        "roomId": "room_1",
+        "status": "playing"
     },
     "__comment__": "PANTALLA JOC servidor -> cliente, envio de las palabras a todos los jugadores cuando empieza la partida"
-    },
+  },
 
-
-    {
+  {
     "event": "update_player_words",
     "data": {
         "remainingWords": ["CINCUENTA PALABRAS DE LAS QUE QUEDAN"],
-        "completedWords": 3,
-        "totalLimit": 10,
-        "playerId": "u42"
+        "playerId": "u42",
+        "status": "playing"
     },
     "__comment__": "PANTALLA JOC servidor -> cliente, respuesta a el jugador al haber escrito la palabra correctamente"
-    },
+  },
 
-
-    {
+  {
     "event": "update_progress",
     "data": {
-        "playersProgress": [
+      "playersProgress": [
         { "playerId": "u42", "username": "Alex", "completedWords": 3 },
         { "playerId": "u51", "username": "Marta", "completedWords": 1 },
         { "playerId": "u63", "username": "Leo", "completedWords": 0 }
-        ],
-        "roomId": "room_1"
+      ],
+      "roomId": "room_1"
     },
     "__comment__": "PANTALLA LOBBY servidor -> cliente, respuesta al unirse a la sala solo al cliente que se ha unido"
-    },
+  },
 
-
-
-    {
+  {
     "event": "word_penalty",
     "data": {
-        "addedWords": ["río"],
-        "fromPlayer": "u42",
-        "roomId": "room_1"
+      "addedWords": ["río"],
+      "fromPlayer": "u42",
+      "roomId": "room_1"
     },
     "__comment__": "PANTALLA JOC servidor -> cliente, respuesta al completar una palabra correctamente y añadir una penalización a todos los jugadores"
-    },
+  },
 
-
-
-    {
+  {
     "event": "player_eliminated",
     "data": {
         "playerId": "u51",
-        "username": "Marta",
         "reason": "word_limit_exceeded",
-        "roomId": "room_1"
+        "roomId": "room_1",
+        "status": "eliminated"
     },
     "__comment__": "PANTALLA JOC servidor -> cliente, respuesta del servidor a todos los jugadores cuando un jugador es eliminado"
-    },
-
-
-
-    {
-    "event": "game_over",
-    "data": {
-        "winner": {
-        "playerId": "u42",
-        "username": "Alex"
-        },
-        "ranking": [
-        { "username": "Alex", "completedWords": 10 },
-        { "username": "Marta", "completedWords": 7 },
-        { "username": "Leo", "completedWords": 5 }
-        ],
-        "roomId": "room_1"
-    },
-    "__comment__": "PANTALLA JOC servidor -> cliente, respuesta del servidor a todos los jugadores cuando la partida ha terminado"
     }
+
 ]
