@@ -2,10 +2,9 @@
 import { ref, onMounted, onUnmounted } from "vue";
 import RegistroJugador from "./componentes/registroJugador.vue";
 import Lobby from "./componentes/Lobby.vue";
-import Juego from "./componentes/interfazJuego.vue";
+import Juego from "./componentes/InterfazJuego.vue";
 import PantallaFinal from "./componentes/pantallaFinal.vue";
 import communicationManager from "./services/communicationManager";
-import InterfazJuego from "./componentes/interfazJuego.vue";
 
 const vistaActual = ref("registroJugador"); // registroJugador | lobby | juego | final
 const lobbyState = ref(null);

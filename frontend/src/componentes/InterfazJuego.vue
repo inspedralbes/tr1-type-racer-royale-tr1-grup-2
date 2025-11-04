@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from "vue";
-import communicationManager from "../services/CommunicationManager.js"; 
+import communicationManager from "../services/communicationManager.js"; 
 import pantallaFinal from "./pantallaFinal.vue";
 import { playerName, playerId } from "../logic/globalState.js";
 
