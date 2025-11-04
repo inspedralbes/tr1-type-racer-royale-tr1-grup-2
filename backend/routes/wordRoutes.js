@@ -4,17 +4,14 @@ import { createRoom, getRoom } from "../logic/roomsManager.js";
 
 const router = express.Router();
 
-router.get("/words", (req, res) => {
+router.post("/words", (req, res) => {
   try {
-    const roomId = req.query.roomId || "room-abc";
-    const playerId = req.query.playerId || "player-123";
-    const playerName =   "Jugador 1";
+    const { roomId, playerId, playerName, count } = req.body;
     console.log(`🔹 Generando palabras para sala ${roomId}, jugador ${playerId} (${playerName})`);
-    const count = parseInt(req.query.count) || 5;
 
     let room = getRoom(roomId);
-
     let selected;
+    
     if (!room) {
       const allWords = generarPalabras(600);
       selected = seleccionarRandom(allWords, count);

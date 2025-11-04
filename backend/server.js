@@ -2,9 +2,9 @@ import cors from "cors";
 import { Server } from "socket.io";
 import express from "express";
 import http from "http";
-import { registerGameEvents } from "./socket/gameManager.js";
+// import { registerGameEvents } from "./socket/gameManager.js";
 import wordsRouter from "./routes/wordRoutes.js";
-import { initializeSocketIO } from "./socket/gameLogin.js";
+import { initializeSocketIO } from "./socket/socketInit.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -19,7 +19,7 @@ app.use("/palabras", wordsRouter);
 const io = new Server(server, { cors: corsOptions });
 
 // Registrar eventos
-registerGameEvents(io);
+// registerGameEvents(io);
 initializeSocketIO(io);
 
 // --- Puerto de escucha ---

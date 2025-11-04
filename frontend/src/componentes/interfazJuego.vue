@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, computed } from "vue";
 import communicationManager from "../services/CommunicationManager.js"; 
 import pantallaFinal from "./pantallaFinal.vue";
+import { playerName, playerId } from "../logic/globalState.js";
 
 // 🟩 Variables para manejar la pantalla final
 const mostrarPantallaFinal = ref(false);
@@ -15,20 +16,11 @@ const errorCount = ref(0);
 const palabraActualIndex = ref(0);
 const palabrasCompletadasEnBloque = ref(0);
 const palabraInvalida = ref(false);
-const playerId = ref("player-123");   // Cambiar dinámicamente si lo tienes desde login
-const roomId = ref("room-abc");       // Cambiar dinámicamente si lo tienes desde lobby
+const playerIdActual = playerId.value;   // Cambiar dinámicamente si lo tienes desde login
+const roomId = ref("room-abc");
+const playerNameActual = playerName.value;       // Cambiar dinámicamente si lo tienes desde lobby
 
 // 🟦 FUNCIONES DE SOCKET ADAPTADAS A COMMUNICATION MANAGER
-function onGameStarted(listaPalabras) {
-  console.log("🟢 [game_started] recibido:", listaPalabras);
-  if (listaPalabras && Array.isArray(listaPalabras.initialWords)) {
-    listaEntera.value = listaPalabras.initialWords;
-    palabraActualIndex.value = 0;
-    completedWords.value = 0;
-    errorCount.value = 0;
-    palabraUser.value = "";
-  }
-}
 
 function onUpdatePlayerWords(msg) {
   const { playerId: jugador, remainingWords, status } = msg.data;
@@ -57,14 +49,27 @@ onMounted(() => {
   communicationManager.connect();
 
   // 🔹 Fetch palabras iniciales usando endpoint dinámico
-  const count = 60; // o el número de palabras que quieras
-  fetch(`/palabras/words?roomId=${roomId.value}&playerId=${playerId.value}&count=${count}`)
+  const count = 10; // o el número de palabras que quieras
+  const payload = {
+    roomId: roomId.value,
+    playerId: playerId.value,
+    playerName: playerName.value, // 👈 asegúrate de tener esta ref/reactive variable definida
+    count,
+  };
+
+  fetch("/palabras/words", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  })
     .then((response) => {
       if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
       return response.json();
     })
     .then((data) => {
-      console.log("Palabras recibidas:", data);
+      console.log("✅ Palabras recibidas:", data);
       listaEntera.value = data.data.initialWords;
     })
     .catch((error) => {
@@ -72,14 +77,12 @@ onMounted(() => {
     });
 
   // Escuchar eventos del servidor
-  communicationManager.on("game_started", onGameStarted);
   communicationManager.on("update_player_words", onUpdatePlayerWords);
   communicationManager.on("update_progress", onUpdateProgress);
 });
 
 onUnmounted(() => {
   // Desregistrar eventos
-  communicationManager.off("game_started", onGameStarted);
   communicationManager.off("update_player_words", onUpdatePlayerWords);
   communicationManager.off("update_progress", onUpdateProgress);
 
@@ -120,6 +123,13 @@ function onInputKeyDown(event) {
     if (palabraUser.value === palabraObjetivo.value) {
       completedWords.value++;
       enviarPalabra(palabraUser.value);
+      palabrasCompletadasEnBloque.value++;
+
+  // 🔹 Si alcanzas el final del bloque de 5, avanzar el bloque
+      if (palabrasCompletadasEnBloque.value >= 5) {
+       palabraActualIndex.value += 5;
+        palabrasCompletadasEnBloque.value = 0;
+      } 
     } else {
       console.warn("Palabra incorrecta. Errores:", errorCount.value);
     }

@@ -1,22 +1,32 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
 import communicationManager from "../services/communicationManager";
+import { playerName, playerId } from "../logic/globalState.js";
 
 const emit = defineEmits(["registrado"]);
 const nomJugador = ref("");
 const errorMessage = ref("");
 
 // Función para generar un ID de jugador simple
-function generatePlayerId() {
-  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const randomLetter = letters[Math.floor(Math.random() * letters.length)];
-  const randomNumber = Math.floor(100 + Math.random() * 900);
-  return `${randomLetter}${randomNumber}`;
-}
+
+
+// NOS AHORRMAMOS ESTO AQUI YA QUE EN EL BACK YA MANEJAMOS LA GENERACIÓN DE ID 
+// function generatePlayerId() {
+//   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+//   const randomLetter = letters[Math.floor(Math.random() * letters.length)];
+//   const randomNumber = Math.floor(100 + Math.random() * 900);
+//   return `${randomLetter}${randomNumber}`;
+// }
 
 const handleJoinedLobby = (payload) => {
   console.log("Successfully joined lobby:", payload);
   emit("registrado", payload);
+};
+
+const handlePlayerRegistered = (payload) => {
+  console.log("Jugador registrado:", payload);
+  playerId.value = payload.playerId;    // tu ID único
+  playerName.value = payload.username;  // tu nombre
 };
 
 const handleJoinError = (payload) => {
@@ -28,20 +38,19 @@ function connectarAlServidor() {
   errorMessage.value = ""; // Reset error message
   communicationManager.connect();
   
-  const newPlayerId = generatePlayerId();
-
   communicationManager.emit("player_join", {
     username: nomJugador.value,
-    playerId: newPlayerId,
   });
 }
 
 onMounted(() => {
+  communicationManager.on("player_registered", handlePlayerRegistered);
   communicationManager.on("joined_lobby", handleJoinedLobby);
   communicationManager.on("join_error", handleJoinError);
 });
 
 onUnmounted(() => {
+  communicationManager.off("player_registered", handlePlayerRegistered);
   communicationManager.off("joined_lobby", handleJoinedLobby);
   communicationManager.off("join_error", handleJoinError);
 });
