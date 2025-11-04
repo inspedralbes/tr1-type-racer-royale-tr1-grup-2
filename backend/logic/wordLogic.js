@@ -1,7 +1,7 @@
 // utils/wordsManager.js
 
 import { getRoom } from "./roomsManager.js";
-
+  
 // Array base con 600 palabras (puedes ampliarlo)
 const palabrasBase = [
   "casa", "perro", "gato", "árbol", "sol", "luna", "mar", "río", "nube", "montaña",

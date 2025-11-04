@@ -4,7 +4,7 @@ import { seleccionarRandom } from "./wordLogic.js";
 const PALOS = ["♠", "♥", "♦", "♣"];
 const VALORES = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 
-// Genera una carta con 5 palabras únicas
+// 🔹 Genera una carta con 5 palabras únicas
 export const generarCartaPoker = () => {
   const palo = PALOS[Math.floor(Math.random() * PALOS.length)];
   const valor = VALORES[Math.floor(Math.random() * VALORES.length)];
@@ -19,7 +19,7 @@ export const generarCartaPoker = () => {
   };
 };
 
-// Asigna una nueva carta al jugador
+// 🔹 Asigna una nueva carta al jugador
 export const asignarCartaAJugador = (jugador) => {
   const carta = generarCartaPoker();
   jugador.cartaActiva = carta;
@@ -35,11 +35,19 @@ export const verificarCartaCompletada = (jugador) => {
     !jugador.cartaActiva.completada
   ) {
     jugador.cartaActiva.completada = true;
-    aplicarPowerUp(jugador, jugador.cartaActiva);
+    //aplicarPowerUp(jugador, jugador.cartaActiva);
     return true;
   }
   return false;
 };
+
+// 🔹 Power-up básico (puedes personalizarlo)
+//const aplicarPowerUp = (jugador, carta) => {
+//  console.log(`🎉 Power-up aplicado a ${jugador.name || jugador.id} por completar la carta ${carta.id}`);
+  // Aquí puedes añadir lógica real de bonificación
+//};
+
+
 
 // Aplica un power-up según el palo de la carta
 // export const aplicarPowerUp = (jugador, carta) => {
