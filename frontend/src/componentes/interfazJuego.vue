@@ -130,18 +130,6 @@ function onInputKeyDown(event) {
       completedWords.value++;
      enviarPalabra(palabraUser.value);
       
-  //     // 🔹 Primero limpiamos el input
-  //     palabraUser.value = "";
-      
-  //     // 🔹 LUEGO incrementamos los contadores
-  //     completedWords.value++;
-  //     palabrasCompletadasEnBloque.value++;
-
-  // // 🔹 Si alcanzas el final del bloque de 5, avanzar el bloque
-  //     if (palabrasCompletadasEnBloque.value >= 5) {
-  //      palabraActualIndex.value += 5;
-  //       palabrasCompletadasEnBloque.value = 0;
-  //     } 
     } else {
       console.warn("Palabra incorrecta. Errores:", errorCount.value);
     }

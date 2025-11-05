@@ -9,15 +9,6 @@ const errorMessage = ref("");
 
 // Función para generar un ID de jugador simple
 
-
-// NOS AHORRMAMOS ESTO AQUI YA QUE EN EL BACK YA MANEJAMOS LA GENERACIÓN DE ID 
-// function generatePlayerId() {
-//   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-//   const randomLetter = letters[Math.floor(Math.random() * letters.length)];
-//   const randomNumber = Math.floor(100 + Math.random() * 900);
-//   return `${randomLetter}${randomNumber}`;
-// }
-
 const handleJoinedLobby = (payload) => {
   console.log("Successfully joined lobby:", payload);
   emit("registrado", payload);

@@ -10,18 +10,8 @@ export function registerLobbyEvents(io, socket) {
     const playerId = `u${playerCounter++}`;
 
     let room = getRoom(roomId);
-    // if (!room) {
       createRoom(roomId, playerId, username);
       room = getRoom(roomId);
-    // } else {
-    //   room.players.push({
-    //     playerId,
-    //     username,
-    //     completedWords: 0,
-    //     status: "playing",
-    //   });
-    // }
-
     // Lógica de Reconexión y Límite de Sala
     const existingPlayer = room.players.find(
     (p) => p.playerId === playerId
@@ -39,12 +29,6 @@ export function registerLobbyEvents(io, socket) {
         );
         return;
     }
-
-  //   if (room.players.length > 4) {
-  //   socket.emit("join_error", { message: "La sala está llena." });
-  //   return;
-  // }
-
     globalPlayers.push({playerId,username});
 
     socket.join(roomId);
