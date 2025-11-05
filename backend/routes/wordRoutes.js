@@ -12,6 +12,8 @@ router.post("/words", (req, res) => {
     let room = getRoom(roomId);
     let selected;
 
+
+    
     if (!room) {
       // 🆕 Crear sala con jugador inicial y su carta
       const jugadorInicial = {

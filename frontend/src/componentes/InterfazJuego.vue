@@ -20,16 +20,25 @@ const playerIdActual = playerId.value;   // Cambiar dinámicamente si lo tienes 
 const roomId = ref("room-abc");
 const playerNameActual = playerName.value;       // Cambiar dinámicamente si lo tienes desde lobby
 
+
+const progresoJugadores = ref([]);
+
 // 🟦 FUNCIONES DE SOCKET ADAPTADAS A COMMUNICATION MANAGER
 
 function onUpdatePlayerWords(msg) {
   const { playerId: jugador, remainingWords, status } = msg.data;
 
-  if (jugador === playerId.value) {
-    listaEntera.value = remainingWords;
+  console.log("📤 playerId front:", playerId.value, typeof playerId.value);
+console.log("📥 playerId backend:", jugador, typeof jugador);
 
+  if (jugador === playerId.value) {
+    console.log("🔴 ANTES - listaEntera:", listaEntera.value);
+    console.log("🔴 NUEVAS remainingWords:", remainingWords);
+    listaEntera.value = remainingWords;
+    console.log("🔴 DESPUÉS - listaEntera:", listaEntera.value);
+    console.log("🔤 Palabras status actualizadas:", status);
     if (status === "finished") {
-      ganador.value = jugador;
+      ganador.value = playerName.value;
       mostrarPantallaFinal.value = true;
       console.log("🎉 Jugador ha terminado. Mostrando pantalla final.");
     }
@@ -37,9 +46,24 @@ function onUpdatePlayerWords(msg) {
 }
 
 function onUpdateProgress(msg) {
-  const { players } = msg.data;
+  const { roomId: roomRecibido, players } = msg.data;
+  if (roomRecibido !== roomId.value) return; // Ignora si no es la misma sala
+
+  progresoJugadores.value = players;
+
+  // 🔹 Buscar si alguien terminó
+  const ganadorEncontrado = players.find((p) => p.status === "finished");
+  if (ganadorEncontrado) {
+    ganador.value = ganadorEncontrado.username || playerName.value;
+    mostrarPantallaFinal.value = true;
+    console.log(`🏁 El jugador ${ganador.value} ha ganado la partida.`);
+  }
+
+  // (Opcional) Log visual para debug
   players.forEach((p) => {
-    console.log(`Jugador ${p.id}: ${p.completedWords} palabras completadas, estado: ${p.status}`);
+    console.log(
+      `Jugador ${p.username}: ${p.completedWords} completadas, estado: ${p.status}`
+    );
   });
 }
 
@@ -122,14 +146,20 @@ function onInputKeyDown(event) {
 
     if (palabraUser.value === palabraObjetivo.value) {
       completedWords.value++;
-      enviarPalabra(palabraUser.value);
-      palabrasCompletadasEnBloque.value++;
+     enviarPalabra(palabraUser.value);
+      
+  //     // 🔹 Primero limpiamos el input
+  //     palabraUser.value = "";
+      
+  //     // 🔹 LUEGO incrementamos los contadores
+  //     completedWords.value++;
+  //     palabrasCompletadasEnBloque.value++;
 
-  // 🔹 Si alcanzas el final del bloque de 5, avanzar el bloque
-      if (palabrasCompletadasEnBloque.value >= 5) {
-       palabraActualIndex.value += 5;
-        palabrasCompletadasEnBloque.value = 0;
-      } 
+  // // 🔹 Si alcanzas el final del bloque de 5, avanzar el bloque
+  //     if (palabrasCompletadasEnBloque.value >= 5) {
+  //      palabraActualIndex.value += 5;
+  //       palabrasCompletadasEnBloque.value = 0;
+  //     } 
     } else {
       console.warn("Palabra incorrecta. Errores:", errorCount.value);
     }
@@ -160,12 +190,14 @@ function enviarPalabra(palabraCompletada) {
 // 🧮 Computadas
 const palabrasEnVista = computed(() => {
   if (!Array.isArray(listaEntera.value)) return [];
-  return listaEntera.value.slice(palabraActualIndex.value, palabraActualIndex.value + 5);
+  // 🔹 SIEMPRE muestra las primeras 5 palabras del array
+  return listaEntera.value.slice(0, 5);
 });
 
+
 const palabraObjetivo = computed(() => {
-  const indexObjetivo = palabrasCompletadasEnBloque.value;
-  return palabrasEnVista.value.length > indexObjetivo ? palabrasEnVista.value[indexObjetivo] : "";
+  // 🔹 La palabra objetivo es siempre la primera del array que viene del servidor
+  return palabrasEnVista.value.length > 0 ? palabrasEnVista.value[0] : "";
 });
 
 const esValido = computed(() => validarInput());
@@ -187,7 +219,6 @@ const esValido = computed(() => validarInput());
           'palabra-completada-bloque': index < palabrasCompletadasEnBloque,
         }"
       >
-        <template v-if="index >= palabrasCompletadasEnBloque">
           <template v-if="index === palabrasCompletadasEnBloque">
             <span class="escrita-correcta">{{
               esValido ? palabraUser : ""
@@ -200,7 +231,6 @@ const esValido = computed(() => validarInput());
           <template v-else>
             <span class="restante">{{ palabra }}</span>
           </template>
-        </template>
       </li>
     </ul>
 

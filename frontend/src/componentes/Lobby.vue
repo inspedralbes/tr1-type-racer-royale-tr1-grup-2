@@ -36,7 +36,6 @@ onMounted(() => {
   communicationManager.on("joined_lobby", (data) => {
     console.log("📥 joined_lobby recibido:", data);
     players.value = data.players;
-    props.lobbyState.players = data.players; // sincroniza con el estado padre
   });
 
   communicationManager.on("start_game_signal", () => {

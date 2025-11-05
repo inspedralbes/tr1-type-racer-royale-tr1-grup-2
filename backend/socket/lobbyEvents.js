@@ -6,7 +6,7 @@ let playerCounter = 1;
 export function registerLobbyEvents(io, socket) {
   socket.on("player_join", (data) => {
     const { username } = data;
-    const roomId = "room_abc"; // futuro: createLobbyId()
+    const roomId = "room-abc"; // futuro: createLobbyId()
     const playerId = `u${playerCounter++}`;
 
     let room = getRoom(roomId);
@@ -68,14 +68,14 @@ export function registerLobbyEvents(io, socket) {
   });
 
   socket.on("player_ready", ({ playerId, isReady }) => {
-    const room = getRoom("room_abc");
+    const room = getRoom("room-abc");
     if (!room) return;
 
     const player = room.players.find(p => p.playerId === playerId);
     if (player) player.isReady = isReady;
 
-    io.to("room_abc").emit("joined_lobby", { players: room.players });
-    console.log(`[✅ READY] ${playerId} está ${isReady ? "listo" : "no listo"}`);
+    io.to("room-abc").emit("joined_lobby", { players: room.players });
+    // console.log(`[✅ READY] ${playerId} está ${isReady ? "listo" : "no listo"}`);
   });
 
   socket.on("start_game_signal", ({ roomId }) => {
