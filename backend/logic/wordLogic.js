@@ -1,4 +1,4 @@
-// utils/wordsManager.js
+// utils/wordLogic.js
 
 import { getRoom } from "./roomsManager.js";
   
@@ -18,6 +18,19 @@ const palabrasBase = [
   "fábrica", "trabajo", "dinero", "banco", "tiempo", "hora", "día", "noche",
   "semana", "mes", "año", "siglo", "memoria", "pensamiento", "idea", "sueño"
 ];
+
+// power-ups segun el tipo de palo de la carta
+
+const crearPowerUpDesdeCarta = (carta) => {
+  switch (carta.palo) {
+    case "♠": return { tipo: "bloqueo", descripcion: "Bloquea a otro jugador por 5 segundos" };
+    case "♥": return { tipo: "curar", descripcion: "Recupera una palabra fallida" };
+    case "♦": return { tipo: "doble", descripcion: "Duplica tus puntos por 10 segundos" };
+    case "♣": return { tipo: "robo", descripcion: "Roba una palabra a otro jugador" };
+    default: return { tipo: "basico", descripcion: "Power-up genérico" };
+  }
+};
+
 
 // 🔹 Genera un array con `cantidad` de palabras random (repetidas o no)
 export const generarPalabras = (cantidad) => {
@@ -75,9 +88,6 @@ export const calcularPalabrasRestantes = (rooms, roomId, playerId, wordId, thres
 };
 
 
-
-
-
 // FUNCION QUE AÑADE LA PALABRA  QUE COMPLETA UN JUGADOR 
 // AL RESTO DE JUGADORES
 export const añadirPalabraCompletada = (rooms, roomId, playerId, palabraEliminada) => {
@@ -91,3 +101,57 @@ export const añadirPalabraCompletada = (rooms, roomId, playerId, palabraElimina
     }
   });
 };
+
+export const procesarRespuesta = (rooms, roomId, playerId, palabraEscrita) => {
+  const room = rooms[roomId];
+  if (!room || !room.cartaActiva || room.estado === "resolviendo") return;
+
+  const jugador = room.players.find(p => p.id === playerId);
+  if (!jugador) return;
+
+  // Inicializar respuestas si no existe
+  if (!room.respuestas) room.respuestas = [];
+
+  // Verificar si ya respondió
+  const yaRespondio = room.respuestas.find(r => r.playerId === playerId);
+  if (yaRespondio) return;
+
+  // Verificar si la palabra es correcta
+  const palabraCorrecta = room.cartaActiva.palabra.toLowerCase();
+  if (palabraEscrita.trim().toLowerCase() === palabraCorrecta) {
+    room.respuestas.push({ playerId, timestamp: Date.now() });
+
+    // Si es el primero en responder correctamente
+    if (room.respuestas.length === 1) {
+      asignarCartaComoPowerUp(room, playerId);
+      return { mensaje: "¡Correcto! Has ganado la carta.", powerUp: jugador.powerUp };
+    } else {
+      return { mensaje: "¡Correcto! Pero otro jugador fue más rápido." };
+    }
+  } else {
+    return { mensaje: "❌ Palabra incorrecta." };
+  }
+};
+
+const asignarCartaComoPowerUp = (room, playerId) => {
+  const carta = room.cartaActiva;
+  const jugador = room.players.find(p => p.id === playerId);
+  if (!jugador) return;
+
+  const powerUp = crearPowerUpDesdeCarta(carta);
+
+  if (!jugador.powerUp) {
+    jugador.powerUp = powerUp;
+    jugador.cartasGanadas = [...(jugador.cartasGanadas || []), carta];
+  } else {
+    const siguiente = room.players.find(p => !p.powerUp && p.id !== playerId);
+    if (siguiente) {
+      siguiente.powerUp = powerUp;
+      siguiente.cartasGanadas = [...(siguiente.cartasGanadas || []), carta];
+    }
+  }
+
+  room.estado = "resolviendo";
+  room.cartaActiva.completada = true;
+};
+

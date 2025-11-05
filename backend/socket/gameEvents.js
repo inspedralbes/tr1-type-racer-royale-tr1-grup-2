@@ -27,7 +27,6 @@ if (verificarCartaCompletada(jugador)) {
   asignarCartaAJugador(jugador);
 }
 
-
     if (jugador.words.length === 0) jugador.status = "finished";
 
     io.to(roomId).emit("update_player_words", {

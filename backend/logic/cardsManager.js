@@ -1,20 +1,26 @@
 import { seleccionarRandom } from "./wordLogic.js";
+import respuestaRoutes from "./routes/cardRoutes.js";
+app.use("/", respuestaRoutes);
+
 
 // Palos y valores de cartas
 const PALOS = ["♠", "♥", "♦", "♣"];
 const VALORES = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 
-// 🔹 Genera una carta con 5 palabras únicas
+// Tiempo de espera entre que se acaba una carta y la siguiente
+let tiempoEsperaCarta=Math.random(15,30);
+
+// 🔹 Genera una carta con 1 palabra igual para todos los jugadores
 export const generarCartaPoker = () => {
   const palo = PALOS[Math.floor(Math.random() * PALOS.length)];
   const valor = VALORES[Math.floor(Math.random() * VALORES.length)];
-  const palabras = seleccionarRandom(palabrasBase, 5);
+  const palabra = seleccionarRandom(palabrasBase, 1);
 
   return {
     id: `${valor}${palo}-${Date.now()}`,
     palo,
     valor,
-    palabras,
+    palabra,
     completada: false,
   };
 };
@@ -23,7 +29,7 @@ export const generarCartaPoker = () => {
 export const asignarCartaAJugador = (jugador) => {
   const carta = generarCartaPoker();
   jugador.cartaActiva = carta;
-  jugador.words = [...carta.palabras];
+  jugador.words = [...carta.palabra];
   jugador.completedWords = 0;
 };
 
