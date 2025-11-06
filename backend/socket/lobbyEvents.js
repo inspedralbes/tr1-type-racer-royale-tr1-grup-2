@@ -1,55 +1,38 @@
-import { createRoom, getRoom } from "../logic/roomsManager.js";
+import { createRoom, getRoom, getPublicRooms, joinRoom } from "../logic/roomsManager.js";
 import { globalPlayers } from "../logic/globalState.js";
 
 let playerCounter = 1;
 
 export function registerLobbyEvents(io, socket) {
-  socket.on("player_join", (data) => {
-    const { username } = data;
-    const roomId = "room-abc"; // futuro: createLobbyId()
-    const playerId = `u${playerCounter++}`;
+  socket.on("join_room", ({ roomId, playerId, username }) => {
+  try {
+    const room = joinRoom(roomId, playerId, username);
 
-    let room = getRoom(roomId);
-      createRoom(roomId, playerId, username);
-      room = getRoom(roomId);
-    // Lógica de Reconexión y Límite de Sala
-    const existingPlayer = room.players.find(
-    (p) => p.playerId === playerId
-    );
-
-    if (!existingPlayer && room.players.length >= 4) {
-        console.error(
-            `[ERROR] La sala ${roomId} está llena. No se pudo unir ${playerId}.`
-        );
-        socket.emit("join_error", { message: "La sala está llena." });
-        console.log(
-            `[S -> C] Evento: join_error, Datos: ${JSON.stringify({
-            message: "La sala está llena.",
-            })}`
-        );
-        return;
+    // Añadir a globalPlayers si no estaba
+    if (!globalPlayers.some(p => p.playerId === playerId)) {
+      globalPlayers.push({ playerId, username });
     }
-    globalPlayers.push({playerId,username});
 
     socket.join(roomId);
 
-    // EMITIR DATOS DEL JUGADOR ACTUAL
-    socket.emit("player_registered", {
-    playerId,
-    username
-   });
-   console.log(`[🎮 Lobby] Jugador registrado: ${username} (${playerId})`);
+    // Info solo al jugador actual para que le envie un mensaje personalizado
+    socket.emit("player_registered", { playerId, username });
 
-    const responsePayload = {
+    // Info de la sala a todos los jugadores de la sala para mensaje general de union
+    io.to(roomId).emit("joined_lobby", {
+      roomId: room.roomId,
       playerId,
-      roomId,
       isHost: room.host === playerId,
       players: room.players,
-    };
+    });
 
-    io.to(roomId).emit("joined_lobby", responsePayload);
     console.log(`[🎮 Lobby] Jugador ${username} (${playerId}) unido a ${roomId}`);
-  });
+  } catch (err) {
+    socket.emit("join_error", { message: err.message });
+    console.error(`[ERROR] player_join: ${err.message}`);
+  }
+
+});
 
   socket.on("player_ready", ({ playerId, isReady }) => {
     const room = getRoom("room-abc");
@@ -66,4 +49,25 @@ export function registerLobbyEvents(io, socket) {
     io.to(roomId).emit("start_game_signal");
     console.log(`[🚀] Partida iniciada en ${roomId}`);
   });
+
+  // SOCKETS DE LA SALA
+  socket.on("create_room", ({ roomName, playerId, username }) => {
+    try {
+      const room = createRoom(playerId, username, roomName);
+      console.log("🆕 Sala creada:", room);
+
+      socket.emit("room_created", room);
+      io.emit("rooms_list", getPublicRooms()); // actualizar lista global
+    } catch (err) {
+      console.error("❌ Error al crear sala:", err.message);
+      socket.emit("room_error", { message: err.message });
+    }
+  });
+
+  // socket que recibe petición de lista de salas
+  socket.on("get_rooms", () => {
+    const rooms = getPublicRooms();
+    console.log("📜 Enviando lista de salas:", rooms);
+    socket.emit("rooms_list", rooms); // 👈 solo al cliente que hizo la petición
+});
 }

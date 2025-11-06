@@ -1,58 +1,44 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
-import communicationManager from "../services/communicationManager";
+import { ref } from "vue";
 import { playerName, playerId } from "../logic/globalState.js";
 
 const emit = defineEmits(["registrado"]);
 const nomJugador = ref("");
 const errorMessage = ref("");
 
-// Función para generar un ID de jugador simple
+async function registrarJugador() {
+  errorMessage.value = "";
 
-const handleJoinedLobby = (payload) => {
-  console.log("Successfully joined lobby:", payload);
-  emit("registrado", payload);
-};
+  try {
+    const res = await fetch("/user/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: nomJugador.value }),
+    });
 
-const handlePlayerRegistered = (payload) => {
-  console.log("Jugador registrado:", payload);
-  playerId.value = payload.playerId;    // tu ID único
-  playerName.value = payload.username;  // tu nombre
-};
+    if (!res.ok) throw new Error("Error al registrar jugador");
 
-const handleJoinError = (payload) => {
-  console.error("Join error:", payload.message);
-  errorMessage.value = payload.message;
-};
+    const data = await res.json();
 
-function connectarAlServidor() {
-  errorMessage.value = ""; // Reset error message
-  communicationManager.connect();
-  
-  communicationManager.emit("player_join", {
-    username: nomJugador.value,
-  });
+    // Guardar solo los datos del jugador actual en globalState
+    playerId.value = data.playerId;
+    playerName.value = data.username;
+
+    emit("registrado", data); // pasa al componente de salas
+  } catch (err) {
+    console.error(err);
+    errorMessage.value = "No se pudo registrar el jugador";
+  }
 }
 
-onMounted(() => {
-  communicationManager.on("player_registered", handlePlayerRegistered);
-  communicationManager.on("joined_lobby", handleJoinedLobby);
-  communicationManager.on("join_error", handleJoinError);
-});
-
-onUnmounted(() => {
-  communicationManager.off("player_registered", handlePlayerRegistered);
-  communicationManager.off("joined_lobby", handleJoinedLobby);
-  communicationManager.off("join_error", handleJoinError);
-});
-
 </script>
+
 <template>
   <div id="contenedor-juego">
     <div class="vista-container">
       <h1>Type Racer Royale</h1>
-      <input type="text" v-model="nomJugador" placeholder="Exemple: Paco" />
-      <button @click="connectarAlServidor">Entra al Lobby</button>
+      <input type="text" v-model="nomJugador" placeholder="Ejemplo: Paco" />
+      <button @click="registrarJugador">Entrar</button>
       <p v-if="errorMessage" style="color: red;">{{ errorMessage }}</p>
     </div>
   </div>
