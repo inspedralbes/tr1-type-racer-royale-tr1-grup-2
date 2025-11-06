@@ -168,6 +168,22 @@ function onJuegoFinalizado(winner) {
   vistaActual.value = "final";
 }
 
+function handleGoHome() {
+  try {
+    communicationManager.reset(); // desconecta y limpia todo
+  } catch (e) {
+    console.error("Error al desconectar socket:", e);
+  }
+
+  console.log("🔹 Cambiando vistaActual a 'registro'");
+  // Cambiar la vista al registro
+  vistaActual.value = 'registro';
+  // Limpiar variables si quieres
+  jugador.value = null;
+  roomSeleccionada.value = null;
+  ganador.value = null;
+}
+
 // FUNCIONES QUE MANEJAN EL CAMBIO DE PANTALLA CON SOCKETS
 // function handleRoomJoined(lobbyData) {
 //   console.log("🏠 Datos recibidos para el lobby:", lobbyData);
@@ -201,11 +217,11 @@ function onJuegoFinalizado(winner) {
     :room="roomSeleccionada"
     @juego-finalizado="onJuegoFinalizado"
   />
-
+  <p>Vista actual: {{ vistaActual }}</p>
   <PantallaFinal
     v-if="vistaActual === 'final'"
     :winner="ganador"
-    @go-home="vistaActual = 'registro'"
+    @go-home="handleGoHome"
   />
 </template>
 
