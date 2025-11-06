@@ -10,7 +10,7 @@ const app = express();
 const server = http.createServer(app);
 
 // CORS
-const corsOptions = { origin: "*", methods: ["GET","POST"] };
+const corsOptions = { origin: "*", methods: ["GET", "POST"] };
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use("/palabras", wordsRouter);
