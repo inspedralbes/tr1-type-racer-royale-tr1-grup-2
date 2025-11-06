@@ -1,49 +1,53 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import communicationManager from "../services/communicationManager";
-import GameScreen from "./interfazJuego.vue"; // Pantalla de juego
+import GameScreen from "./interfazJuego.vue";
 
 const showGameScreen = ref(false);
 const players = ref([]);
 
+// Recibimos el estado completo del lobby desde App.vue
 const props = defineProps({
-  lobbyState: {
+  room: {
     type: Object,
     required: true,
   },
 });
 
-// 🔹 El host solo puede iniciar si hay al menos 2 jugadores
+// 🔹 Solo el host puede iniciar la partida si hay al menos 2 jugadores
 const canStartGame = computed(() => players.value.length >= 2);
 
-// 🔹 Iniciar juego → montar la pantalla de juego
+// 🔹 Función para iniciar el juego
 function iniciarJuego() {
-  console.log("⏳ Host inicia la partida...");
+  console.log("⏳ El host inicia la partida...");
 
-  // Avisamos al servidor que la partida empieza
   communicationManager.emit("start_game_signal", {
-    roomId: props.lobbyState.roomId,
-    hostId: props.lobbyState.playerId,
+    roomId: props.room.roomId,
+    hostId: props.room.playerId,
   });
 }
 
-
+// 🔹 Montamos los listeners de socket
 onMounted(() => {
-  // Inicializar jugadores desde props
-  players.value = props.lobbyState.players || [];
+  // Inicializamos la lista de jugadores
+  players.value = [];
 
-  // 🔸 Escuchar actualizaciones del lobby (nuevos jugadores)
+  // Escuchar cuando un jugador se une
   communicationManager.on("joined_lobby", (data) => {
     console.log("📥 joined_lobby recibido:", data);
-    players.value = data.players;
-    props.lobbyState.players = data.players; // sincroniza con el estado padre
+
+    // Solo actualizar si es la misma sala
+    if (data.roomId === props.room.roomId) {
+      players.value = data.players;
+    }
   });
 
   communicationManager.on("start_game_signal", () => {
-    showGameScreen.value = true; // Cambia la vista de todos los jugadores
+    showGameScreen.value = true;
   });
 });
 
+// Limpiar listeners al desmontar
 onUnmounted(() => {
   communicationManager.off("joined_lobby");
   communicationManager.off("start_game_signal");
@@ -52,7 +56,7 @@ onUnmounted(() => {
 
 <template>
   <div v-if="!showGameScreen">
-    <h1>Lobby de la Sala: {{ lobbyState.roomId }}</h1>
+    <h1>Lobby de la Sala: {{ room.roomId }}</h1>
 
     <h2>Jugadores Conectados:</h2>
     <ul>
@@ -61,21 +65,49 @@ onUnmounted(() => {
       </li>
     </ul>
 
+    <!-- Botón solo visible para el host -->
     <button
-      v-if="lobbyState.isHost"
+      v-if="room.isHost"
       @click="iniciarJuego"
       :disabled="!canStartGame"
     >
-      Comença la partida
+      Comenzar Partida
     </button>
 
-    <p v-if="lobbyState.isHost && !canStartGame">
-      🕓 Es necesiten almenys 2 jugadors per començar.
+    <p v-if="room.isHost && !canStartGame" style="color: orange;">
+      🕓 Se necesitan al menos 2 jugadores para comenzar.
     </p>
   </div>
 
   <div v-else>
-    <!-- Monta la pantalla de juego (fetch de palabras se hace ahí) -->
-    <GameScreen :playerId="lobbyState.playerId" :roomId="lobbyState.roomId" />
+    <GameScreen
+      :player-id="room.playerId"
+      :room-id="room.roomId"
+    />
   </div>
 </template>
+
+<style scoped>
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+li {
+  margin: 5px 0;
+}
+button {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+button:disabled {
+  background-color: #aaa;
+  cursor: not-allowed;
+}
+</style>
