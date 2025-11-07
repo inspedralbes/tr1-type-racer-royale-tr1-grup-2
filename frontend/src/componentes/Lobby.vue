@@ -14,36 +14,40 @@ const props = defineProps({
   },
 });
 
-// 🔹 Solo el host puede iniciar la partida si hay al menos 2 jugadores
+// Emitir al padre cuando la partida debe comenzar
+const emit = defineEmits(["juego-iniciado"]);
+
+// Solo el host puede iniciar la partida si hay al menos 2 jugadores
 const canStartGame = computed(() => players.value.length >= 2);
 
-// 🔹 Función para iniciar el juego
+// Función para iniciar el juego
 function iniciarJuego() {
   console.log("⏳ El host inicia la partida...");
 
+  // Emitimos al backend
   communicationManager.emit("start_game_signal", {
     roomId: props.room.roomId,
     hostId: props.room.playerId,
   });
+
+  // Emitimos a App.vue que la partida empieza (cambio de pantalla)
+  emit("juego-iniciado", props.room);
 }
 
-// 🔹 Montamos los listeners de socket
+// Montamos los listeners de socket
 onMounted(() => {
-  // Inicializamos la lista de jugadores
   players.value = [];
 
-  // Escuchar cuando un jugador se une
   communicationManager.on("joined_lobby", (data) => {
     console.log("📥 joined_lobby recibido:", data);
-
-    // Solo actualizar si es la misma sala
     if (data.roomId === props.room.roomId) {
       players.value = data.players;
     }
   });
 
   communicationManager.on("start_game_signal", () => {
-    showGameScreen.value = true;
+    // Esto también puede disparar el cambio de pantalla para los no-host
+    emit("juego-iniciado", props.room);
   });
 });
 
@@ -53,9 +57,8 @@ onUnmounted(() => {
   communicationManager.off("start_game_signal");
 });
 </script>
-
 <template>
-  <div v-if="!showGameScreen">
+  <div>
     <h1>Lobby de la Sala: {{ room.roomId }}</h1>
 
     <h2>Jugadores Conectados:</h2>
@@ -77,13 +80,6 @@ onUnmounted(() => {
     <p v-if="room.isHost && !canStartGame" style="color: orange;">
       🕓 Se necesitan al menos 2 jugadores para comenzar.
     </p>
-  </div>
-
-  <div v-else>
-    <GameScreen
-      :player-id="room.playerId"
-      :room-id="room.roomId"
-    />
   </div>
 </template>
 

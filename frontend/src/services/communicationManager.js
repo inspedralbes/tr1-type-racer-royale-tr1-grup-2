@@ -40,6 +40,22 @@ class CommunicationManager {
     this.socket.off(event, callback);
     console.log(`Unregistered callback for event: ${event}`);
   }
+
+  reset() {
+  if (!this.socket) return;
+
+  // Elimina todos los listeners registrados en el socket
+  this.socket.off(); 
+  console.log("✅ Todos los listeners han sido eliminados.");
+
+  // Desconecta el socket
+  this.socket.disconnect();
+  console.log("✅ Socket desconectado.");
+
+  // Limpieza interna
+  this.socket = null;
+  }
+  
 }
 
 export default new CommunicationManager();

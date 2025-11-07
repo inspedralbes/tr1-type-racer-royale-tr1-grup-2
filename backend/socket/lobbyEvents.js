@@ -1,7 +1,6 @@
 import { createRoom, getRoom, getPublicRooms, joinRoom } from "../logic/roomsManager.js";
 import { globalPlayers } from "../logic/globalState.js";
 
-let playerCounter = 1;
 
 export function registerLobbyEvents(io, socket) {
   socket.on("join_room", ({ roomId, playerId, username }) => {
@@ -17,6 +16,8 @@ export function registerLobbyEvents(io, socket) {
 
     // Info solo al jugador actual para que le envie un mensaje personalizado
     socket.emit("player_registered", { playerId, username });
+
+    console.log("🔎 Sockets dentro de la sala", roomId, io.sockets.adapter.rooms.get(roomId));
 
     // Info de la sala a todos los jugadores de la sala para mensaje general de union
     io.to(roomId).emit("joined_lobby", {
@@ -56,6 +57,8 @@ export function registerLobbyEvents(io, socket) {
       const room = createRoom(playerId, username, roomName);
       console.log("🆕 Sala creada:", room);
 
+      socket.join(room.roomId);
+      
       socket.emit("room_created", room);
       io.emit("rooms_list", getPublicRooms()); // actualizar lista global
     } catch (err) {
