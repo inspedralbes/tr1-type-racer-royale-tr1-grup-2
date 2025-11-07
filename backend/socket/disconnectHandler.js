@@ -1,18 +1,20 @@
-import { getAllRooms, getRoom, deleteRoom } from "../logic/roomsManager.js";
+import { getAllRooms, leaveRoom, getPublicRooms } from "../logic/roomsManager.js";
 
 export function handleDisconnect(io, socket) {
+  const playerId = socket.playerId;
+  if (!playerId) return;
+
   const allRooms = getAllRooms();
   for (const roomId in allRooms) {
-    const room = getRoom(roomId);
-    if (!room) continue;
+    const room = allRooms[roomId];
+    const player = room.players.find(p => p.playerId === playerId);
 
-    room.players = room.players.filter(p => p.id !== socket.id);
-
-    if (room.players.length === 0) {
-      deleteRoom(roomId);
-      console.log(`🗑️ Sala eliminada: ${roomId}`);
-    } else {
+    if (player) {
+      leaveRoom(roomId, playerId);
+      io.emit("rooms_list", getPublicRooms());
       io.to(roomId).emit("update_players", room.players);
+      console.log(`[👋] Jugador ${playerId} ha salido de la sala ${roomId}`);
+      break; 
     }
   }
   console.log(`🔴 Jugador desconectado: ${socket.id}`);

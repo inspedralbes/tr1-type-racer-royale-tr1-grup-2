@@ -13,6 +13,7 @@ export function registerLobbyEvents(io, socket) {
     }
 
     socket.join(roomId);
+    socket.playerId = playerId; // Guardar el playerId en el socket
 
     // Info solo al jugador actual para que le envie un mensaje personalizado
     socket.emit("player_registered", { playerId, username });
@@ -26,6 +27,8 @@ export function registerLobbyEvents(io, socket) {
       isHost: room.host === playerId,
       players: room.players,
     });
+
+    io.emit("rooms_list", getPublicRooms()); // actualizar lista global
 
     console.log(`[🎮 Lobby] Jugador ${username} (${playerId}) unido a ${roomId}`);
   } catch (err) {

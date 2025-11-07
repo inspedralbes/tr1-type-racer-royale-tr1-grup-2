@@ -1,9 +1,11 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import communicationManager from "../services/communicationManager";
-import GameScreen from "./interfazJuego.vue";
+// ❌ ELIMINADO: import GameScreen from "./interfazJuego.vue";
+// ✅ AÑADIDO: Importamos el playerId del usuario actual
+import { playerId } from "../logic/globalState.js";
 
-const showGameScreen = ref(false);
+// ❌ ELIMINADO: const showGameScreen = ref(false);
 const players = ref([]);
 
 // Recibimos el estado completo del lobby desde App.vue
@@ -18,7 +20,6 @@ const props = defineProps({
 const emit = defineEmits(["juego-iniciado"]);
 
 // Solo el host puede iniciar la partida si hay al menos 2 jugadores
-// 🔹 El host solo puede iniciar si hay al menos 2 jugadores (incluido él mismo)
 const canStartGame = computed(() => players.value.length >= 2);
 
 // Función para iniciar el juego
@@ -35,6 +36,7 @@ function iniciarJuego() {
   emit("juego-iniciado", props.room);
 }
 
+// Montamos los listeners de socket
 onMounted(() => {
   players.value = [];
 
@@ -45,8 +47,9 @@ onMounted(() => {
     }
   });
 
-  communicationManager.on("start_game_signal", (data) => {
-    showGameScreen.value = true; // Cambia la vista de todos los jugadores
+  communicationManager.on("start_game_signal", () => {
+    // Esto también puede disparar el cambio de pantalla para los no-host
+    emit("juego-iniciado", props.room);
   });
 });
 
@@ -56,44 +59,40 @@ onUnmounted(() => {
   communicationManager.off("start_game_signal");
 });
 </script>
+
 <template>
-  <div class="flip-phone-container" v-if="!showGameScreen">
+  <div class="flip-phone-container">
     <div class="phone-top-wrapper">
       <div class="speaker"></div>
       <div class="screen">
         <div class="screen-body">
-          <div class="room-id">Sala: {{ lobbyState.roomId }}</div>
+          <div class="room-id">Sala: {{ props.room.roomId }}</div>
 
           <div class="players-header">Jugadores ({{ players.length }}):</div>
           <ul class="player-list">
             <li
               v-for="jugador in players"
               :key="jugador.playerId"
-              :class="{ 'is-self': jugador.playerId === lobbyState.playerId }"
+              :class="{ 'is-self': jugador.playerId === playerId }"
             >
               <span>{{ jugador.username }}</span>
-              <span
-                v-if="jugador.playerId === lobbyState.playerId"
-                class="tag-self"
+              <span v-if="jugador.playerId === playerId" class="tag-self"
                 >(Tú)</span
               >
             </li>
           </ul>
 
-          <p class="info-message" v-if="lobbyState.isHost && !canStartGame">
+          <p class="info-message" v-if="props.room.isHost && !canStartGame">
             🕓 Se necesitan 2 jugadores para empezar.
           </p>
-          <p class="info-message" v-if="!lobbyState.isHost">
+          <p class="info-message" v-if="!props.room.isHost">
             Esperando a que el host inicie la partida...
           </p>
         </div>
       </div>
       <div class="phone-face phone-back"></div>
-
       <div class="phone-face phone-top-edge"></div>
-
       <div class="phone-face phone-left-edge"></div>
-
       <div class="phone-face phone-right-edge"></div>
     </div>
 
@@ -109,7 +108,7 @@ onUnmounted(() => {
           <div class="nav-ring">
             <button
               class="nav-ok"
-              v-if="lobbyState.isHost"
+              v-if="props.room.isHost"
               @click="iniciarJuego"
               :disabled="!canStartGame"
               :class="{ 'can-start': canStartGame }"
@@ -128,10 +127,6 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
-  </div>
-
-  <div v-else>
-    <GameScreen :roomId="lobbyState.roomId" />
   </div>
 </template>
 

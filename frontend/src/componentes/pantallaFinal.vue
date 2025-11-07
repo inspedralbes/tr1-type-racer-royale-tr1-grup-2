@@ -16,7 +16,6 @@
 
 <script setup>
 import { defineEmits, defineProps } from 'vue'
-import communicationManager from '../services/communicationManager';
 
 // Prop para recibir el nombre del ganador
 const props = defineProps({

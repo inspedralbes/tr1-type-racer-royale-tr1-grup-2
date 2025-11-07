@@ -1,44 +1,3 @@
-<!-- <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
-import RegistroJugador from "./componentes/registroJugador.vue";
-import Lobby from "./componentes/Lobby.vue";
-import Juego from "./componentes/interfazJuego.vue";
-import PantallaFinal from "./componentes/pantallaFinal.vue";
-import PuertaGaraje from "./componentes/puertaGaraje.vue";
-import communicationManager from "./services/communicationManager";
-</script>
-
-<template>
-  <!-- <InterfazJuego>   </InterfazJuego> -->
-<!-- <RegistroJugador
-    v-if="vistaActual === 'registroJugador'"
-    @registrado="handleRegistration"
-  />
-
-  <Lobby
-    v-if="vistaActual === 'lobby'"
-    :lobby-state="lobbyState"
-  />
-
-  <Juego
-    v-if="vistaActual === 'juego'"
-    :player-id="playerId"
-    :room-id="roomId"
-    :game-state="gameState"
-  />
-
-  <PantallaFinal
-    v-if="vistaActual === 'final'"
-    :winner="ganador"
-    @go-home="vistaActual = 'registroJugador'"
-  />
-</template>
-
-<style>
-body {
-  font-family: "Inter", sans-serif;
-}
-</style> -->
 <script setup>
 import { ref, onMounted } from "vue";
 import communicationManager from "./services/communicationManager";
@@ -54,17 +13,9 @@ const lobbyState = ref(null);
 const roomSeleccionada = ref(null);
 const ganador = ref(null);
 
-// onMounted(() => {
-//   communicationManager.on("joined_lobby_info", handleRoomJoined);
-//   communicationManager.on("room_error", (err) => {
-//     console.error("Error al unirse a sala:", err.message);
-//   });
-// });
-
-// 🔹 Evento: jugador registrado
 function onJugadorRegistrado(data) {
   jugador.value = data;
-  vistaActual.value = "salas"; // vamos a PantallaSalas
+  vistaActual.value = "salas";
 }
 
 // 🔹 Evento: jugador entra a sala
