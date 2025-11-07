@@ -270,6 +270,7 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   z-index: 3;
+  /* Tinte oscuro y rojizo intenso para simular la luz tenue del sótano */
   box-shadow: inset 0 0 100px rgba(50, 0, 0, 0.95);
 }
 </style>

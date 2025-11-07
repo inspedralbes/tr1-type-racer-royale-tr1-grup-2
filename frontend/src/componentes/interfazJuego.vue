@@ -23,44 +23,23 @@ const errorCount = ref(0);
 const palabraActualIndex = ref(0);
 const palabrasCompletadasEnBloque = ref(0);
 const palabraInvalida = ref(false);
-const playerIdActual = playerId.value; // Cambiar dinámicamente si lo tienes desde login
-// const roomId = ref("room-abc");
-const playerNameActual = playerName.value; // Cambiar dinámicamente si lo tienes desde lobby
+const playerIdActual = playerId.value;
+const roomId = ref("room-abc");
+const playerNameActual = playerName.value;
 
-const emit = defineEmits(["juego-finalizado"]);
-
-const props = defineProps({
-  jugador: {
-    type: Object,
-    required: true,
-  },
-  room: {
-    type: Object,
-    required: true,
-  },
-});
-
-const roomId = ref(props.room.roomId);
-
-// 🟦 FUNCIONES DE SOCKET ADAPTADAS A COMMUNICATION MANAGER
-
-// FUNCION QUE MANEJA LA ACTUALIZACION DE PALABRAS DEL JUGADOR
+// 🟦 FUNCIONES DE SOCKET ADAPTADAS A COMMUNICATION MANAGER (LÓGICA DEL JUEGO - NO TOCAR)
 function onUpdatePlayerWords(msg) {
   const { playerId: jugador, remainingWords, status } = msg.data;
 
   if (jugador === playerId.value) {
     listaEntera.value = remainingWords;
     if (status === "finished") {
-      ganador.value = playerNameActual || playerIdActual;
-      emit("juego-finalizado", ganador.value);
-      console.log(
-        `🎉 Has terminado todas las palabras. Eres el ganador: ${ganador.value}`
-      );
+      ganador.value = jugador;
+      mostrarPantallaFinal.value = true;
     }
   }
 }
 
-// FUNCION QUE MANEJA LA ACTUALIZACION DEL PROGRESO DE TODOS LOS JUGADORES
 function onUpdateProgress(msg) {
   const { players } = msg.data;
   players.forEach((p) => {
@@ -68,20 +47,12 @@ function onUpdateProgress(msg) {
       `Jugador ${p.id}: ${p.completedWords} palabras completadas, estado: ${p.status}`
     );
   });
-
-  const ganadorJugador = players.find((p) => p.status === "finished");
-  if (ganadorJugador) {
-    ganador.value = ganadorJugador.username;
-    emit("juego-finalizado", ganador.value);
-    console.log(`🎉 La partida terminó. Ganador: ${ganadorJugador.playerId}`);
-  }
 }
 
 // 🟩 MOUNT / UNMOUNT (LÓGICA DEL JUEGO - NO TOCAR)
 onMounted(() => {
   communicationManager.connect();
 
-  // 🔹 Fetch palabras iniciales usando endpoint dinámico
   const count = 10;
   const payload = {
     roomId: roomId.value,
@@ -106,7 +77,6 @@ onMounted(() => {
       console.error("❌ Hubo un error al obtener las palabras:", error);
     });
 
-  // Escuchar eventos del servidor
   communicationManager.on("update_player_words", onUpdatePlayerWords);
   communicationManager.on("update_progress", onUpdateProgress);
 });
@@ -117,7 +87,7 @@ onUnmounted(() => {
   communicationManager.disconnect();
 });
 
-// 🧩 FUNCION QUE VALIDA SI CADA CARÁCTER ESTA BIEN ESCRITO
+// 🧩 Validación y Manejo de Input (LÓGICA DEL JUEGO - NO TOCAR)
 function validarInput() {
   const palabraEscrita = palabraUser.value;
   const objetivo = palabraObjetivo.value;
@@ -142,7 +112,6 @@ function validarInput() {
   return esValidaAhora;
 }
 
-// 🧠 MANEJA LA PULSACIÓN DE LA TECLA ESPACIO
 function onInputKeyDown(event) {
   if (event.key === " " && palabraUser.value.length > 0) {
     event.preventDefault();
@@ -161,9 +130,6 @@ function onInputPaste(event) {
   event.preventDefault();
 }
 
-//
-// FUNCION QUE ENVIA LA PALABRA COMPLETADA AL SERVIDOR
-//
 function enviarPalabra(palabraCompletada) {
   const payload = {
     wordId: 0,
@@ -303,13 +269,19 @@ const slideInUpClass = computed(() => ({
           id="crupier-normal"
           :style="{ display: showPowerupImage ? 'none' : 'flex' }"
         >
-          <img src="/img/crupier-normal_oficial.png" alt="Crupier Normal" />
+          <img
+            src="/assets/img/crupier-normal_oficial.png"
+            alt="Crupier Normal"
+          />
         </div>
         <div
           id="crupier-caarta"
           :style="{ display: showPowerupImage ? 'flex' : 'none' }"
         >
-          <img src="/img/crupier-carta_oficial.png" alt="Crupier Carta" />
+          <img
+            src="/assets/img/crupier-carta_oficial.png"
+            alt="Crupier Carta"
+          />
         </div>
       </div>
 
