@@ -14,25 +14,24 @@ const refContenedor = ref(null);
 const refEscena = ref(null);
 const refCamara = ref(null);
 const refRenderizador = ref(null);
-const refMezclador = ref(null); // AnimationMixer
+const refMezclador = ref(null);
 const refGrupoModelo = ref(null);
-let reloj; // Clock
+let reloj;
 
 // --- ESTADOS REACTIVOS (Controlan la UI) ---
 const animacionesDisponibles = ref([]);
 const estaListo = ref(false);
 const estaReproduciendo = ref(false);
 
-// CLAVE: Definición de evento para notificar al componente padre
+// Definición de evento para notificar al componente padre
 const emit = defineEmits(["animationFinished", "animationDurationCalculated"]);
 
 // -------------------------------------------------------------------
 // FUNCIONES DE CONTROL DE ANIMACIÓN
 // -------------------------------------------------------------------
 
-/**
- * Función central que activa solo las animaciones permitidas simultáneamente.
- */
+//Función central que activa solo las animaciones permitidas simultáneamente.
+
 const iniciarAnimacion = () => {
   if (!refMezclador.value || estaReproduciendo.value) {
     return;
@@ -79,10 +78,10 @@ const iniciarAnimacion = () => {
     }
   });
 
-  // 4. Configurar un temporizador para desactivar el estado 'estaReproduciendo'
+  // Configurar un temporizador para desactivar el estado 'estaReproduciendo'
   const duracionMs = duracionMaxima * 1000;
 
-  // CLAVE: Emitir la duración de la animación total para la aparición anticipada de la UI 2D
+  // Emitir la duración de la animación total para la aparición anticipada de la UI 2D
   emit("animationDurationCalculated", duracionMaxima);
 
   setTimeout(() => {
@@ -138,7 +137,7 @@ onMounted(() => {
   escena.background = null;
   refEscena.value = markRaw(escena);
 
-  // --- SETUP INICIAL DE CÁMARA (Temporal) ---
+  // --- SETUP INICIAL DE CÁMARA ---
   const camara = new THREE.PerspectiveCamera(45, ancho / alto, 0.1, 1000);
   camara.position.set(0, 5, 10);
   refCamara.value = markRaw(camara);
@@ -149,7 +148,6 @@ onMounted(() => {
     alpha: true,
   });
   renderizador.setSize(ancho, alto);
-  // CLAVE: Habilitar sombras
   renderizador.shadowMap.enabled = true;
   renderizador.shadowMap.type = THREE.PCFSoftShadowMap;
   refRenderizador.value = markRaw(renderizador);
@@ -160,23 +158,11 @@ onMounted(() => {
 
   // --- LUCES (ILUMINACIÓN CLANDESTINA) ---
 
-  // 1. Luz Ambiental: Tono marrón/amarillo muy oscuro.
-  // 0x443300 es un marrón oscuro/ámbar
   escena.add(new THREE.AmbientLight(0x443300, 0.25));
-
-  // 2. Luz Direccional (o Spot): La luz principal.
-  // Simula una bombilla vieja (Amarillo sucio/ámbar).
-  const luzDireccional = new THREE.DirectionalLight(0xffb000, 0.4); // Amarillo anaranjado sucio, intensidad muy baja
+  const luzDireccional = new THREE.DirectionalLight(0xffb000, 0.4);
   luzDireccional.position.set(0, 10, 0);
   luzDireccional.castShadow = true;
-
-  // ELIMINAMOS la luz de Acento Verde Esmeralda.
-
-  // Configuración de las sombras: Mantenemos sombras nítidas
-  // ... (resto de configuración de luzDireccional) ...
   escena.add(luzDireccional);
-
-  // Niebla: Tono gris/marrón muy oscuro (aire viciado)
   escena.fog = new THREE.Fog(0x111111, 8, 30);
 
   // --- CARGA DEL MODELO GLB ---
@@ -197,7 +183,7 @@ onMounted(() => {
 
       refGrupoModelo.value.position.z = DESPLAZAMIENTO_Z;
 
-      // --- CLAVE: USAR LA CÁMARA DE BLENDER ---
+      // USAR LA CÁMARA DE BLENDER
       const camaraGltf = gltf.cameras.find((cam) => cam.parent);
       if (camaraGltf) {
         refCamara.value = camaraGltf;
@@ -205,7 +191,7 @@ onMounted(() => {
         refCamara.value.updateProjectionMatrix();
       }
 
-      // --- SETUP DEL MEZCLADOR DE ANIMACIONES ---
+      // SETUP DEL MEZCLADOR DE ANIMACIONES
       const mezclador = new THREE.AnimationMixer(gltf.scene);
       refMezclador.value = markRaw(mezclador);
 
@@ -253,7 +239,6 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* ESTILOS (Para que ocupe toda la ventana y el botón se vea bien) */
 .main-container {
   display: flex;
   justify-content: center;
@@ -262,7 +247,6 @@ onUnmounted(() => {
   font-family: "Inter", sans-serif;
 }
 
-/* 1. Ajuste de Z-Index para el Canvas (la mesa 3D) */
 .canvas-container {
   position: fixed;
   top: 0;
@@ -270,7 +254,6 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   z-index: 3;
-  /* Tinte oscuro y rojizo intenso para simular la luz tenue del sótano */
   box-shadow: inset 0 0 100px rgba(50, 0, 0, 0.95);
 }
 </style>

@@ -169,7 +169,7 @@ const handleAnimationDuration = (durationInSeconds) => {
 
   setTimeout(() => {
     show2DUI.value = true;
-    // CLAVE: nextTick para asegurar que la animación CSS se aplique.
+    // nextTick para asegurar que la animación CSS se aplique.
     nextTick(() => {
       console.log("Crupier y Diálogo 2D/UI de juego mostrados con nextTick.");
     });
@@ -320,8 +320,8 @@ const slideInUpClass = computed(() => ({
   left: 0;
   width: 100vw;
   height: 100vh;
-  z-index: 2; /* Por encima del 3D */
-  pointer-events: none; /* Permite clicks a través, excepto a elementos interactivos */
+  z-index: 2;
+  pointer-events: none;
 }
 
 /* ------------------------------------------------ */
@@ -330,30 +330,25 @@ const slideInUpClass = computed(() => ({
 
 .bottom-ui-container {
   position: fixed;
-  bottom: 5vh; /* Levantado 5% de la altura de la vista */
+  bottom: 5vh;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding-bottom: 0;
-  pointer-events: auto; /* Permite interacción */
-  z-index: 3; /* Por encima del 3D */
-
-  /* Estado inicial: Fuera de la vista (Oculto) */
+  pointer-events: auto;
+  z-index: 3;
   transform: translateY(100%);
   opacity: 0;
-  /* Transición suave hacia arriba */
   transition: transform 0.8s cubic-bezier(0.23, 1, 0.32, 1),
     opacity 0.5s ease-out;
 }
 
 .bottom-ui-container.slide-in-up {
-  /* Estado final: Visible, en su posición levantada */
   transform: translateY(0);
   opacity: 1;
 }
 
-/* --- BLOQUE: CASINO CREEPY con Degradado (Mesa de juego) --- */
 .input-stats-row {
   display: flex;
   justify-content: space-between;
@@ -367,8 +362,6 @@ const slideInUpClass = computed(() => ({
   position: relative;
   z-index: 10;
   overflow: hidden;
-
-  /* Degradado de Negro Rojizo (Terciopelo Oscuro) a Transparente */
   background: linear-gradient(
     to bottom,
     rgba(10, 0, 0, 0.9) 0%,
@@ -376,14 +369,10 @@ const slideInUpClass = computed(() => ({
     rgba(0, 0, 0, 0) 100%
   );
 
-  /* Borde sutil dorado/bronce para el toque de casino */
   border: 1px solid rgba(139, 90, 43, 0.4);
-
-  /* Sombra proyectada con un toque rojizo/dorado */
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7), 0 0 15px rgba(139, 90, 43, 0.3);
 }
 
-/* Limpieza de pseudo-elementos */
 .input-stats-row::before {
   content: none;
 }
@@ -404,15 +393,12 @@ const slideInUpClass = computed(() => ({
   min-height: 30px;
   border-radius: 6px;
   text-align: center;
-
-  /* Estilo de input: Ficha de juego */
   border: 2px solid #8b5a2b;
   background-color: rgba(20, 5, 5, 0.9);
   color: #f0e68c;
   position: relative;
   z-index: 5;
   padding: 10px;
-
   box-shadow: inset 0 0 8px rgba(139, 90, 43, 0.6), 0 0 5px rgba(0, 0, 0, 0.5);
 }
 
@@ -451,33 +437,32 @@ const slideInUpClass = computed(() => ({
   text-shadow: 0 0 8px rgba(255, 69, 0, 0.5);
 }
 
-/* --- MODIFICACIÓN: Lista de palabras (Cartas) --- */
 .lista-palabras {
   list-style: none;
   padding: 0;
   margin-top: 0;
   margin-bottom: 20px;
-  font-family: "Georgia", serif; /* Fuente de casino */
+  font-family: "Georgia", serif;
   font-size: 28px;
   display: flex;
   gap: 15px;
-  color: #d4af37; /* Color oro viejo */
+  color: #d4af37;
   white-space: nowrap;
   justify-content: center;
-  text-shadow: 0 0 8px rgba(212, 175, 55, 0.4); /* Glow dorado sutil */
+  text-shadow: 0 0 8px rgba(212, 175, 55, 0.4);
 }
 .palabra-actual {
-  color: #ffffff; /* La palabra actual en blanco brillante */
+  color: #ffffff;
   font-weight: bold;
   text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
 }
 .escrita-correcta {
-  color: #32cd32; /* Verde esmeralda/neón para lo correcto (color de paño de mesa) */
+  color: #32cd32;
   font-weight: bold;
   text-shadow: 0 0 8px rgba(50, 205, 50, 0.5);
 }
 .restante {
-  color: #555555; /* Gris oscuro para el resto de la palabra */
+  color: #555555;
   font-weight: normal;
 }
 
@@ -510,9 +495,8 @@ const slideInUpClass = computed(() => ({
 
 #crupier-entero img {
   max-height: 70vh;
-  /* FILTRO CREEPY DE CASINO: Tinte Sepia y Rojo Oscuro */
   filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.5) sepia(0.5)
-    hue-rotate(340deg) saturate(1.5); /* Más oscuro y rojizo */
+    hue-rotate(340deg) saturate(1.5);
 }
 
 #crupier-normal,
@@ -543,9 +527,9 @@ const slideInUpClass = computed(() => ({
 
 .input__container {
   position: relative;
-  background: #330000; /* Fondo de terciopelo rojo oscuro */
+  background: #330000;
   padding: 20px;
-  border: 4px solid #8b5a2b; /* Borde dorado/bronce */
+  border: 4px solid #8b5a2b;
   max-width: 350px;
   box-shadow: 8px 8px 0 #000;
   pointer-events: none;
@@ -575,7 +559,7 @@ const slideInUpClass = computed(() => ({
   position: absolute;
   top: -15px;
   left: 20px;
-  background: #8b5a2b; /* Dorado/Bronce para la etiqueta */
+  background: #8b5a2b;
   color: #000000;
   font-weight: bold;
   padding: 5px 10px;
