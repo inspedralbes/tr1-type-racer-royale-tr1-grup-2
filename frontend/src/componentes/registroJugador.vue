@@ -184,10 +184,15 @@ async function registrarJugador() {
   color: white;
   transform: scale(2);
   transition: transform 0.6s ease-in, opacity 0.6s ease-in;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(2);
+  z-index: 10;
 }
 
 .flip-card.desapareciendo {
-  transform: scale(2) translateY(200px);
+  transform: translate(-50%, -50%) scale(2) translateY(200px);
   opacity: 0;
 }
 

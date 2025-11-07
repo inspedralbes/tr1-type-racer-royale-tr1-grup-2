@@ -60,15 +60,15 @@ function handleGoHome() {
 </script>
 
 <template>
+  <PantallaSalas
+    v-if="vistaActual === 'registro' || vistaActual === 'salas'"
+    :jugador="jugador"
+    @sala-seleccionada="onSalaSeleccionada"
+    :escena="vistaActual"
+  />
   <RegistroJugador
     v-if="vistaActual === 'registro'"
     @registrado="onJugadorRegistrado"
-  />
-
-  <PantallaSalas
-    v-if="vistaActual === 'salas'"
-    :jugador="jugador"
-    @sala-seleccionada="onSalaSeleccionada"
   />
 
   <Lobby
@@ -84,7 +84,7 @@ function handleGoHome() {
     :room="roomSeleccionada"
     @juego-finalizado="onJuegoFinalizado"
   />
-  <p>Vista actual: {{ vistaActual }}</p>
+
   <PantallaFinal
     v-if="vistaActual === 'final'"
     :winner="ganador"

@@ -1,8 +1,10 @@
 <!-- components/PantallaSalas.vue -->
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, defineProps } from "vue";
 import communicationManager from "../services/communicationManager";
 import { playerName, playerId, rooms } from "../logic/globalState.js";
+
+const props = defineProps({ escena: String });
 
 const emit = defineEmits(["sala-seleccionada"]);
 const nuevaSala = ref("");
@@ -84,7 +86,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="scene">
+  <div class="scene" :class="props.escena">
     <div class="room-scene">
       <div class="wall wall-back">
         <div class="wall-light"></div>
@@ -165,6 +167,15 @@ onUnmounted(() => {
 
   /* Perspectiva para la "cámara" */
   perspective: 700px;
+  transition: transform 1s ease-in-out;
+}
+
+.scene.registro {
+  transform: translateZ(500px) scale(1);
+}
+
+.scene.salas {
+  transform: translateZ(0) scale(2);
 }
 
 .room-scene {
