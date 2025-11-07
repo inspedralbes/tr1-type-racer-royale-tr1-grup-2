@@ -332,6 +332,7 @@ const slideInUpClass = computed(() => ({
   position: fixed;
   bottom: 5vh;
   width: 100%;
+  left: 5%;
   display: flex;
   flex-direction: column;
   align-items: center;
