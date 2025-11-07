@@ -1,41 +1,48 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import communicationManager from "../services/communicationManager";
-import GameScreen from "./interfazJuego.vue"; // Pantalla de juego
+import GameScreen from "./interfazJuego.vue";
 
 const showGameScreen = ref(false);
 const players = ref([]);
 
+// Recibimos el estado completo del lobby desde App.vue
 const props = defineProps({
-  lobbyState: {
+  room: {
     type: Object,
     required: true,
   },
 });
 
+// Emitir al padre cuando la partida debe comenzar
+const emit = defineEmits(["juego-iniciado"]);
+
+// Solo el host puede iniciar la partida si hay al menos 2 jugadores
 // 🔹 El host solo puede iniciar si hay al menos 2 jugadores (incluido él mismo)
 const canStartGame = computed(() => players.value.length >= 2);
 
-// 🔹 Iniciar juego → montar la pantalla de juego
+// Función para iniciar el juego
 function iniciarJuego() {
-  console.log("⏳ Host inicia la partida...");
+  console.log("⏳ El host inicia la partida...");
 
-  // Avisamos al servidor que la partida empieza
+  // Emitimos al backend
   communicationManager.emit("start_game_signal", {
-    roomId: props.lobbyState.roomId,
-    hostId: props.lobbyState.playerId,
+    roomId: props.room.roomId,
+    hostId: props.room.playerId,
   });
+
+  // Emitimos a App.vue que la partida empieza (cambio de pantalla)
+  emit("juego-iniciado", props.room);
 }
 
 onMounted(() => {
-  // Inicializar jugadores desde props
-  players.value = props.lobbyState.players || [];
+  players.value = [];
 
-  // 🔸 Escuchar actualizaciones del lobby (nuevos jugadores)
   communicationManager.on("joined_lobby", (data) => {
     console.log("📥 joined_lobby recibido:", data);
-    players.value = data.players;
-    props.lobbyState.players = data.players; // sincroniza con el estado padre
+    if (data.roomId === props.room.roomId) {
+      players.value = data.players;
+    }
   });
 
   communicationManager.on("start_game_signal", (data) => {
@@ -43,12 +50,12 @@ onMounted(() => {
   });
 });
 
+// Limpiar listeners al desmontar
 onUnmounted(() => {
   communicationManager.off("joined_lobby");
   communicationManager.off("start_game_signal");
 });
 </script>
-
 <template>
   <div class="flip-phone-container" v-if="!showGameScreen">
     <div class="phone-top-wrapper">
@@ -155,7 +162,7 @@ onUnmounted(() => {
   width: 280px;
   /* Sombra principal del teléfono, más difusa y suave */
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5), 0 5px 10px rgba(0, 0, 0, 0.3);
-  font-family: 'Roboto', sans-serif; /* Fuente más moderna */
+  font-family: "Roboto", sans-serif; /* Fuente más moderna */
   perspective: 1200px; /* Aumentado para un efecto 3D más sutil */
   position: fixed;
   bottom: 20px;
@@ -185,7 +192,8 @@ onUnmounted(() => {
   position: relative;
   transform-style: preserve-3d;
   /* Sombra interna para dar la sensación de un borde elevado alrededor de la tapa */
-  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.3), inset 0 -1px 2px rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.3),
+    inset 0 -1px 2px rgba(255, 255, 255, 0.1);
 }
 
 /* === ESTILOS PARA LAS NUEVAS CARAS 3D === */
@@ -234,10 +242,13 @@ onUnmounted(() => {
   height: var(--phone-thickness);
   transform: rotateX(90deg) translateZ(calc(var(--phone-thickness) / 2)); /* Ajuste Z para centrarlo */
   transform-origin: top center;
-  background: var(--phone-plastic-dark); /* Color más oscuro para el borde superior */
+  background: var(
+    --phone-plastic-dark
+  ); /* Color más oscuro para el borde superior */
   border-top-left-radius: 10px; /* Bordes suaves */
   border-top-right-radius: 10px;
-  box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.1), inset 0 -2px 5px rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.1),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.5);
 }
 
 /* --- BORDE IZQUIERDO --- */
@@ -253,7 +264,8 @@ onUnmounted(() => {
     var(--phone-plastic-medium),
     var(--phone-plastic-dark)
   );
-  box-shadow: inset 2px 0 5px rgba(255, 255, 255, 0.05), inset -2px 0 5px rgba(0, 0, 0, 0.4);
+  box-shadow: inset 2px 0 5px rgba(255, 255, 255, 0.05),
+    inset -2px 0 5px rgba(0, 0, 0, 0.4);
 }
 
 /* --- BORDE DERECHO --- */
@@ -269,7 +281,8 @@ onUnmounted(() => {
     var(--phone-plastic-medium),
     var(--phone-plastic-dark)
   );
-  box-shadow: inset -2px 0 5px rgba(255, 255, 255, 0.05), inset 2px 0 5px rgba(0, 0, 0, 0.4);
+  box-shadow: inset -2px 0 5px rgba(255, 255, 255, 0.05),
+    inset 2px 0 5px rgba(0, 0, 0, 0.4);
 }
 
 /* --- Estilo del altavoz (más relieve) --- */
@@ -279,8 +292,8 @@ onUnmounted(() => {
   background-color: #1a1a1a; /* Más oscuro */
   border-radius: 5px; /* Más redondo */
   margin: 0 auto 12px auto;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.9), /* Sombra más pronunciada */
-    0 1px 0 rgba(255, 255, 255, 0.15); /* Brillo sutil */
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.9),
+    /* Sombra más pronunciada */ 0 1px 0 rgba(255, 255, 255, 0.15); /* Brillo sutil */
   background-image: radial-gradient(
     circle at 3px 3px,
     #333 1px,
@@ -294,15 +307,15 @@ onUnmounted(() => {
   height: 350px;
   border-radius: 10px; /* Bordes más suaves */
   border: 2px solid #000;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8), /* Sombra interna más fuerte */
-              0 0 5px rgba(0, 0, 0, 0.5); /* Reflejo suave externo */
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8),
+    /* Sombra interna más fuerte */ 0 0 5px rgba(0, 0, 0, 0.5); /* Reflejo suave externo */
 
   /* --- LOOK LCD ANTIGUO (más auténtico) --- */
   background-color: #a8c4b0;
   color: #223a26;
   text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2); /* Sombra sutil para el texto */
-  font-family: 'Press Start 2P', cursive; /* Fuente pixelada si la cargas, sino Courier */
-  
+  font-family: "Press Start 2P", cursive; /* Fuente pixelada si la cargas, sino Courier */
+
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -310,7 +323,7 @@ onUnmounted(() => {
 
   /* Reflejo sutil en la pantalla */
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
@@ -410,8 +423,8 @@ onUnmounted(() => {
   ); /* Gradiente más metálico */
   border-top: 3px solid #666; /* Bordes más gruesos */
   border-bottom: 3px solid #111;
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.6), /* Sombra más definida */
-    inset 0 2px 4px rgba(255, 255, 255, 0.1); /* Brillo interno */
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.6),
+    /* Sombra más definida */ inset 0 2px 4px rgba(255, 255, 255, 0.1); /* Brillo interno */
   position: relative;
   z-index: 10; /* Asegura que esté por encima de las tapas */
 }
@@ -420,8 +433,9 @@ onUnmounted(() => {
 .phone-bottom {
   /* Mismo estilo de material que la tapa superior */
   background: linear-gradient(
-    to bottom, /* Cambiado a bottom para reflejar la orientación */
-    var(--phone-plastic-dark) 0%,
+    to bottom,
+    /* Cambiado a bottom para reflejar la orientación */
+      var(--phone-plastic-dark) 0%,
     var(--phone-plastic-medium) 70%,
     var(--phone-plastic-light) 100%
   );
@@ -430,7 +444,8 @@ onUnmounted(() => {
   border-bottom-right-radius: 15px;
   border: 2px solid rgba(0, 0, 0, 0.8);
   border-top: none;
-  box-shadow: inset 0 -3px 6px rgba(0, 0, 0, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 -3px 6px rgba(0, 0, 0, 0.3),
+    inset 0 1px 2px rgba(255, 255, 255, 0.1);
 }
 
 /* --- TECLADO Y BOTONES (más 3D y realismo) --- */
@@ -444,20 +459,23 @@ onUnmounted(() => {
   border-top-color: #666; /* Borde superior más claro para relieve */
   color: white;
   border-radius: 6px; /* Bordes más suaves */
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
   cursor: pointer;
   transition: all 0.1s ease-out; /* Transición más rápida */
   /* Sombras para dar volumen y profundidad */
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.6), /* Sombra principal */
-    inset 0 2px 3px rgba(255, 255, 255, 0.1), /* Brillo superior */
-    inset 0 -2px 3px rgba(0, 0, 0, 0.4); /* Sombra inferior */
-  transform: translateZ(0); /* Asegura que los botones tienen su propio plano 3D */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.6),
+    /* Sombra principal */ inset 0 2px 3px rgba(255, 255, 255, 0.1),
+    /* Brillo superior */ inset 0 -2px 3px rgba(0, 0, 0, 0.4); /* Sombra inferior */
+  transform: translateZ(
+    0
+  ); /* Asegura que los botones tienen su propio plano 3D */
 }
 
 .keypad button:hover {
   background: linear-gradient(to bottom, #444444, #2a2a2a);
   box-shadow: 0 5px 8px rgba(0, 0, 0, 0.7),
-    inset 0 2px 4px rgba(255, 255, 255, 0.15), inset 0 -2px 4px rgba(0, 0, 0, 0.5);
+    inset 0 2px 4px rgba(255, 255, 255, 0.15),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.5);
   transform: translateY(-1px) translateZ(1px); /* Ligeramente elevado */
 }
 .keypad button:active {
@@ -479,7 +497,11 @@ onUnmounted(() => {
   font-weight: bold;
 }
 .soft-keys .call-red {
-  background: linear-gradient(to bottom, #f44336, var(--accent-red)); /* Gradiente de rojo */
+  background: linear-gradient(
+    to bottom,
+    #f44336,
+    var(--accent-red)
+  ); /* Gradiente de rojo */
   color: white;
   font-size: 1rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.6),
@@ -513,8 +535,8 @@ onUnmounted(() => {
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.7), /* Sombra interna para profundidad */
-              0 3px 8px rgba(0, 0, 0, 0.5); /* Sombra externa */
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.7),
+    /* Sombra interna para profundidad */ 0 3px 8px rgba(0, 0, 0, 0.5); /* Sombra externa */
 }
 
 .nav-ok {

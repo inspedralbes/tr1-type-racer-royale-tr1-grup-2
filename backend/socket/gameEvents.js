@@ -2,21 +2,30 @@ import { calcularPalabrasRestantes } from "../logic/wordLogic.js";
 import { getRoom } from "../logic/roomsManager.js";
 
 export function registerGameEvents(io, socket) {
+
+  //
+  // SOCKET QUE ESCUCHA CUANDO UN JUGADOR ESCRIBE UNA PALABRA
+  //
   socket.on("word_typed", (msg) => {
     const { wordId, completedWords, playerId, roomId, threshold = 3 } = msg.data;
     const room = getRoom(roomId);
+    console.log("🟢 room obtenida en word_typed:", room, "para roomId:", roomId);
     if (!room) return;
 
-    console.log("🟢 room.players:", room.players);
-const jugador = room.players.find(p => p.playerId === playerId);
-console.log("🟢 jugador encontrado:", jugador, "buscando playerId:", playerId);
-if (!jugador) return;
+    const jugador = room.players.find(p => p.playerId === playerId);
+    console.log("🟢 jugador encontrado:", jugador, "buscando playerId:", playerId);
+    if (!jugador) return;
 
     calcularPalabrasRestantes({ [roomId]: room }, roomId, playerId, wordId, threshold, completedWords);
 
     if (jugador.words.length === 0) jugador.status = "finished";
+    console.log(`📝 [Game] Palabra completada por ${jugador.playerId} en ${roomId} y el status ${jugador.status}`);
+    console.log("🟢 jugador encontradoFIEHIER:", jugador, "buscando playerId:", playerId);
+    console.log("🔹 Emitiendo update_player_words a roomId:", roomId, "socket.id:", socket.id, "playerId:", playerId);
+    console.log("🟢 Sockets en room:", io.sockets.adapter.rooms.get(roomId));
 
-    io.to(roomId).emit("update_player_words", {
+    // ENVIAR LA ACTUALIZACIÓN SOLO AL JUGADOR QUE HA ESCRITO LA PALABRA
+    socket.emit("update_player_words", {
       data: {
         playerId,
         remainingWords: jugador.words,
@@ -26,9 +35,23 @@ if (!jugador) return;
       },
     });
 
+    //ENVIAR LA ACTUALIZACIÓN A TODOS LOS DEMÁS JUGADORES EN LA SALA
     socket.broadcast.to(roomId).emit("update_progress", {
-      data: { roomId, players: room.players },
+      data: {
+        players: room.players.map(p => ({
+          roomId,
+          playerId: p.playerId,
+          username: p.username,
+          remainingWords: p.words,
+          status: p.status,
+          completedWords: p.completedWords,
+        })),
+      },
     });
+
+    // socket.broadcast.to(roomId).emit("update_progress", {
+    //   data: { roomId, players: room.players },
+    // });
 
     console.log(`✅ [Game] ${jugador.playerId} completó palabra en ${roomId}`);
   });

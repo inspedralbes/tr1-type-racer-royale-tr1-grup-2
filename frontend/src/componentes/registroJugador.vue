@@ -1,5 +1,9 @@
 <script setup>
 import { ref } from "vue";
+<<<<<<< HEAD
+=======
+import { playerName, playerId } from "../logic/globalState.js";
+>>>>>>> origin/Edson
 
 // Emit
 const emit = defineEmits(["registrado"]);
@@ -9,6 +13,7 @@ const nomJugador = ref("");
 const errorMessage = ref("");
 const estaDesapareciendo = ref(false);
 
+<<<<<<< HEAD
 import communicationManager from "../services/communicationManager";
 
 // --- Lógica de la Tarjeta ---
@@ -162,6 +167,42 @@ function connectarAlServidor() {
 
       <button class="confirmar-btn" @click="intentarGirar">OK</button>
       <p v-if="errorMessage" class="error-frontal">{{ errorMessage }}</p>
+=======
+async function registrarJugador() {
+  errorMessage.value = "";
+
+  try {
+    const res = await fetch("/user/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: nomJugador.value }),
+    });
+
+    if (!res.ok) throw new Error("Error al registrar jugador");
+
+    const data = await res.json();
+
+    // Guardar solo los datos del jugador actual en globalState
+    playerId.value = data.playerId;
+    playerName.value = data.username;
+
+    emit("registrado", data); // pasa al componente de salas
+  } catch (err) {
+    console.error(err);
+    errorMessage.value = "No se pudo registrar el jugador";
+  }
+}
+
+</script>
+
+<template>
+  <div id="contenedor-juego">
+    <div class="vista-container">
+      <h1>Type Racer Royale</h1>
+      <input type="text" v-model="nomJugador" placeholder="Ejemplo: Paco" />
+      <button @click="registrarJugador">Entrar</button>
+      <p v-if="errorMessage" style="color: red;">{{ errorMessage }}</p>
+>>>>>>> origin/Edson
     </div>
   </div>
 </template>

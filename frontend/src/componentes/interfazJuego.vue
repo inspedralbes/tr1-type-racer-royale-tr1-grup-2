@@ -17,31 +17,65 @@ const palabraActualIndex = ref(0);
 const palabrasCompletadasEnBloque = ref(0);
 const palabraInvalida = ref(false);
 const playerIdActual = playerId.value;   // Cambiar dinámicamente si lo tienes desde login
-const roomId = ref("room-abc");
+// const roomId = ref("room-abc");
 const playerNameActual = playerName.value;       // Cambiar dinámicamente si lo tienes desde lobby
+
+const emit = defineEmits(['juego-finalizado'])
+
+const props = defineProps({
+  jugador: {
+    type: Object,
+    required: true
+  },
+  room: {
+    type: Object,
+    required: true,
+  },
+});
+
+const roomId = ref(props.room.roomId);
 
 // 🟦 FUNCIONES DE SOCKET ADAPTADAS A COMMUNICATION MANAGER
 
+
+// FUNCION QUE MANEJA LA ACTUALIZACION DE PALABRAS DEL JUGADOR
 function onUpdatePlayerWords(msg) {
   const { playerId: jugador, remainingWords, status } = msg.data;
 
-  if (jugador === playerId.value) {
-    listaEntera.value = remainingWords;
+  console.log("📤 playerId front:", playerId.value, typeof playerId.value);
+console.log("📥 playerId backend:", jugador, typeof jugador);
 
+  if (jugador === playerId.value) {
+    console.log("🔴 ANTES - listaEntera:", listaEntera.value);
+    console.log("🔴 NUEVAS remainingWords:", remainingWords);
+    listaEntera.value = remainingWords;
+    console.log("🔴 DESPUÉS - listaEntera:", listaEntera.value);
+    console.log("🔤 Palabras status actualizadas:", status);
     if (status === "finished") {
-      ganador.value = jugador;
-      mostrarPantallaFinal.value = true;
-      console.log("🎉 Jugador ha terminado. Mostrando pantalla final.");
+      ganador.value = playerNameActual || playerIdActual;
+      emit('juego-finalizado', ganador.value);
+      console.log(`🎉 Has terminado todas las palabras. Eres el ganador: ${ganador.value}`);
     }
   }
 }
 
+
+// FUNCION QUE MANEJA LA ACTUALIZACION DEL PROGRESO DE TODOS LOS JUGADORES
 function onUpdateProgress(msg) {
   const { players } = msg.data;
   players.forEach((p) => {
     console.log(`Jugador ${p.id}: ${p.completedWords} palabras completadas, estado: ${p.status}`);
   });
+
+  const ganadorJugador = players.find(p => p.status === "finished");
+  if (ganadorJugador) {
+    ganador.value = ganadorJugador.username;
+    emit('juego-finalizado', ganador.value);
+    console.log(`🎉 La partida terminó. Ganador: ${ganadorJugador.playerId}`);
+  }
 }
+
+
 
 // 🟩 MOUNT / UNMOUNT
 onMounted(() => {
@@ -49,11 +83,11 @@ onMounted(() => {
   communicationManager.connect();
 
   // 🔹 Fetch palabras iniciales usando endpoint dinámico
-  const count = 10; // o el número de palabras que quieras
+  const count = 10; 
   const payload = {
     roomId: roomId.value,
     playerId: playerId.value,
-    playerName: playerName.value, // 👈 asegúrate de tener esta ref/reactive variable definida
+    playerName: playerName.value, 
     count,
   };
 
@@ -76,10 +110,12 @@ onMounted(() => {
       console.error("❌ Hubo un error al obtener las palabras:", error);
     });
 
+
   // Escuchar eventos del servidor
   communicationManager.on("update_player_words", onUpdatePlayerWords);
   communicationManager.on("update_progress", onUpdateProgress);
 });
+
 
 onUnmounted(() => {
   // Desregistrar eventos
@@ -90,7 +126,8 @@ onUnmounted(() => {
   communicationManager.disconnect();
 });
 
-// 🧩 Validación carácter a carácter
+
+// 🧩 FUNCION QUE VALIDA SI CADA CARÁCTER ESTA BIEN ESCRITO
 function validarInput() {
   const palabraEscrita = palabraUser.value;
   const objetivo = palabraObjetivo.value;
@@ -115,21 +152,15 @@ function validarInput() {
   return esValidaAhora;
 }
 
-// 🧠 Maneja la pulsación de tecla (espacio)
+// 🧠 MANEJA LA PULSACIÓN DE LA TECLA ESPACIO
 function onInputKeyDown(event) {
   if (event.key === " " && palabraUser.value.length > 0) {
     event.preventDefault();
 
     if (palabraUser.value === palabraObjetivo.value) {
       completedWords.value++;
-      enviarPalabra(palabraUser.value);
-      palabrasCompletadasEnBloque.value++;
-
-  // 🔹 Si alcanzas el final del bloque de 5, avanzar el bloque
-      if (palabrasCompletadasEnBloque.value >= 5) {
-       palabraActualIndex.value += 5;
-        palabrasCompletadasEnBloque.value = 0;
-      } 
+     enviarPalabra(palabraUser.value);
+      
     } else {
       console.warn("Palabra incorrecta. Errores:", errorCount.value);
     }
@@ -142,7 +173,9 @@ function onInputPaste(event) {
   event.preventDefault();
 }
 
-// 📤 Enviar palabra al servidor
+//
+// FUNCION QUE ENVIA LA PALABRA COMPLETADA AL SERVIDOR
+//
 function enviarPalabra(palabraCompletada) {
   const payload = {
     wordId: 0,
@@ -160,12 +193,14 @@ function enviarPalabra(palabraCompletada) {
 // 🧮 Computadas
 const palabrasEnVista = computed(() => {
   if (!Array.isArray(listaEntera.value)) return [];
-  return listaEntera.value.slice(palabraActualIndex.value, palabraActualIndex.value + 5);
+  // 🔹 SIEMPRE muestra las primeras 5 palabras del array
+  return listaEntera.value.slice(0, 5);
 });
 
+
 const palabraObjetivo = computed(() => {
-  const indexObjetivo = palabrasCompletadasEnBloque.value;
-  return palabrasEnVista.value.length > indexObjetivo ? palabrasEnVista.value[indexObjetivo] : "";
+  // 🔹 La palabra objetivo es siempre la primera del array que viene del servidor
+  return palabrasEnVista.value.length > 0 ? palabrasEnVista.value[0] : "";
 });
 
 const esValido = computed(() => validarInput());
@@ -187,7 +222,6 @@ const esValido = computed(() => validarInput());
           'palabra-completada-bloque': index < palabrasCompletadasEnBloque,
         }"
       >
-        <template v-if="index >= palabrasCompletadasEnBloque">
           <template v-if="index === palabrasCompletadasEnBloque">
             <span class="escrita-correcta">{{
               esValido ? palabraUser : ""
@@ -200,7 +234,6 @@ const esValido = computed(() => validarInput());
           <template v-else>
             <span class="restante">{{ palabra }}</span>
           </template>
-        </template>
       </li>
     </ul>
 
