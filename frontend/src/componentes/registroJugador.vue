@@ -39,15 +39,6 @@ function intentarGirar() {
 // --- Lógica de Conexión (Tu lógica, llamada por el botón trasero) ---
 function connectarAlServidor() {
   errorMessage.value = "";
-
-  // Re-validación por si acaso
-  if (!nomJugador.value || nomJugador.value.trim() === "") {
-    errorMessage.value = "Error: El nom ha desaparegut.";
-    estaGirada.value = false;
-    return;
-  }
-
-  // Lógica de conexión
   communicationManager.connect();
   communicationManager.emit("player_join", {
     username: nomJugador.value,
