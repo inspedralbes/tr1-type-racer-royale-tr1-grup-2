@@ -1,14 +1,21 @@
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from "vue";
-import communicationManager from "../services/CommunicationManager.js"; 
-import pantallaFinal from "./pantallaFinal.vue";
+import { ref, onMounted, onUnmounted, computed, nextTick } from "vue";
+import communicationManager from "../services/CommunicationManager.js";
 import { playerName, playerId } from "../logic/globalState.js";
+// 🚨 Importar el componente 3D renombrado
+import AnimacionJuego from "./interfazAnimacion.vue";
 
-// 🟩 Variables para manejar la pantalla final
+// --- 3D / CRUPIER ESTADO (TRAÍDO DEL ANTIGUO juego.vue) ---
+const crupierState = ref("normal"); // 'normal' o 'powerup'.
+const dialogText = ref("Bienvenidos todos."); // Diálogo inicial
+const show2DUI = ref(false); // Controla la visibilidad del Crupier y Diálogo
+const animationDuration = ref(0); // Duración de la animación 3D
+
+// 🟩 Variables para manejar la pantalla final (LÓGICA DEL JUEGO - NO TOCAR)
 const mostrarPantallaFinal = ref(false);
 const ganador = ref("");
 
-// 🟩 Variables reactivas
+// 🟩 Variables reactivas (LÓGICA DEL JUEGO - NO TOCAR)
 const listaEntera = ref([]);
 const palabraUser = ref("");
 const completedWords = ref(0);
@@ -16,28 +23,19 @@ const errorCount = ref(0);
 const palabraActualIndex = ref(0);
 const palabrasCompletadasEnBloque = ref(0);
 const palabraInvalida = ref(false);
-const playerIdActual = playerId.value;   // Cambiar dinámicamente si lo tienes desde login
+const playerIdActual = playerId.value;
 const roomId = ref("room-abc");
-const playerNameActual = playerName.value;       // Cambiar dinámicamente si lo tienes desde lobby
+const playerNameActual = playerName.value;
 
-// 🟦 FUNCIONES DE SOCKET ADAPTADAS A COMMUNICATION MANAGER
-
+// 🟦 FUNCIONES DE SOCKET ADAPTADAS A COMMUNICATION MANAGER (LÓGICA DEL JUEGO - NO TOCAR)
 function onUpdatePlayerWords(msg) {
   const { playerId: jugador, remainingWords, status } = msg.data;
 
-  console.log("📤 playerId front:", playerId.value, typeof playerId.value);
-console.log("📥 playerId backend:", jugador, typeof jugador);
-
   if (jugador === playerId.value) {
-    console.log("🔴 ANTES - listaEntera:", listaEntera.value);
-    console.log("🔴 NUEVAS remainingWords:", remainingWords);
     listaEntera.value = remainingWords;
-    console.log("🔴 DESPUÉS - listaEntera:", listaEntera.value);
-    console.log("🔤 Palabras status actualizadas:", status);
     if (status === "finished") {
       ganador.value = jugador;
       mostrarPantallaFinal.value = true;
-      console.log("🎉 Jugador ha terminado. Mostrando pantalla final.");
     }
   }
 }
@@ -45,29 +43,27 @@ console.log("📥 playerId backend:", jugador, typeof jugador);
 function onUpdateProgress(msg) {
   const { players } = msg.data;
   players.forEach((p) => {
-    console.log(`Jugador ${p.id}: ${p.completedWords} palabras completadas, estado: ${p.status}`);
+    console.log(
+      `Jugador ${p.id}: ${p.completedWords} palabras completadas, estado: ${p.status}`
+    );
   });
 }
 
-// 🟩 MOUNT / UNMOUNT
+// 🟩 MOUNT / UNMOUNT (LÓGICA DEL JUEGO - NO TOCAR)
 onMounted(() => {
-  // Conectar socket
   communicationManager.connect();
 
-  // 🔹 Fetch palabras iniciales usando endpoint dinámico
-  const count = 10; // o el número de palabras que quieras
+  const count = 10;
   const payload = {
     roomId: roomId.value,
     playerId: playerId.value,
-    playerName: playerName.value, // 👈 asegúrate de tener esta ref/reactive variable definida
+    playerName: playerName.value,
     count,
   };
 
   fetch("/palabras/words", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   })
     .then((response) => {
@@ -75,28 +71,23 @@ onMounted(() => {
       return response.json();
     })
     .then((data) => {
-      console.log("✅ Palabras recibidas:", data);
       listaEntera.value = data.data.initialWords;
     })
     .catch((error) => {
       console.error("❌ Hubo un error al obtener las palabras:", error);
     });
 
-  // Escuchar eventos del servidor
   communicationManager.on("update_player_words", onUpdatePlayerWords);
   communicationManager.on("update_progress", onUpdateProgress);
 });
 
 onUnmounted(() => {
-  // Desregistrar eventos
   communicationManager.off("update_player_words", onUpdatePlayerWords);
   communicationManager.off("update_progress", onUpdateProgress);
-
-  // Desconectar socket
   communicationManager.disconnect();
 });
 
-// 🧩 Validación carácter a carácter
+// 🧩 Validación y Manejo de Input (LÓGICA DEL JUEGO - NO TOCAR)
 function validarInput() {
   const palabraEscrita = palabraUser.value;
   const objetivo = palabraObjetivo.value;
@@ -121,15 +112,13 @@ function validarInput() {
   return esValidaAhora;
 }
 
-// 🧠 Maneja la pulsación de tecla (espacio)
 function onInputKeyDown(event) {
   if (event.key === " " && palabraUser.value.length > 0) {
     event.preventDefault();
 
     if (palabraUser.value === palabraObjetivo.value) {
       completedWords.value++;
-     enviarPalabra(palabraUser.value);
-      
+      enviarPalabra(palabraUser.value);
     } else {
       console.warn("Palabra incorrecta. Errores:", errorCount.value);
     }
@@ -137,12 +126,10 @@ function onInputKeyDown(event) {
   }
 }
 
-// 🛡️ Bloquea pegado
 function onInputPaste(event) {
   event.preventDefault();
 }
 
-// 📤 Enviar palabra al servidor
 function enviarPalabra(palabraCompletada) {
   const payload = {
     wordId: 0,
@@ -154,173 +141,441 @@ function enviarPalabra(palabraCompletada) {
   };
 
   communicationManager.emit("word_typed", { data: payload });
-  console.log("📤 Datos enviados al servidor:", payload);
 }
 
-// 🧮 Computadas
+// 🧮 Computadas (LÓGICA DEL JUEGO - NO TOCAR)
 const palabrasEnVista = computed(() => {
   if (!Array.isArray(listaEntera.value)) return [];
-  // 🔹 SIEMPRE muestra las primeras 5 palabras del array
   return listaEntera.value.slice(0, 5);
 });
 
-
 const palabraObjetivo = computed(() => {
-  // 🔹 La palabra objetivo es siempre la primera del array que viene del servidor
   return palabrasEnVista.value.length > 0 ? palabrasEnVista.value[0] : "";
 });
 
 const esValido = computed(() => validarInput());
+
+// --- MANEJADORES DE EVENTO DE ANIMACIÓN 3D (TRAÍDO DEL ANTIGUO juego.vue) ---
+
+/**
+ * Captura la duración total de la animación 3D y programa la aparición de la UI 2D.
+ */
+const handleAnimationDuration = (durationInSeconds) => {
+  animationDuration.value = durationInSeconds;
+
+  // UI 2D (Crupier y juego) aparece 2 segundos antes del final.
+  const delayBeforeEnd = 2;
+  const delayMs = Math.max(100, (durationInSeconds - delayBeforeEnd) * 1000);
+
+  setTimeout(() => {
+    show2DUI.value = true;
+    // CLAVE: nextTick para asegurar que la animación CSS se aplique.
+    nextTick(() => {
+      console.log("Crupier y Diálogo 2D/UI de juego mostrados con nextTick.");
+    });
+  }, delayMs);
+};
+
+/**
+ * Se llama cuando el componente 3D emite 'animationFinished' (al final real).
+ */
+const handleAnimationFinished = () => {
+  console.log("Animación 3D oficialmente terminada. El juego comienza.");
+};
+
+// 🧮 Computadas de Estética
+const showPowerupImage = computed(() => crupierState.value === "powerup");
+
+const reboteClass = computed(() => ({
+  "rebote-entrada": show2DUI.value,
+}));
+
+const slideInUpClass = computed(() => ({
+  "slide-in-up": show2DUI.value,
+}));
 </script>
 
 <template>
   <pantallaFinal
-  v-if="mostrarPantallaFinal"
-  :winner="ganador"
-  @go-home="mostrarPantallaFinal = false"
-/>
-  <div id="contenedor-juego">
+    v-if="mostrarPantallaFinal"
+    :winner="ganador"
+    @go-home="mostrarPantallaFinal = false"
+  />
+
+  <div class="bottom-ui-container" :class="slideInUpClass">
     <ul class="lista-palabras">
       <li
         v-for="(palabra, index) in palabrasEnVista"
-        :key="index + palabraActualIndex"
-        :class="{
-          'palabra-actual': index === palabrasCompletadasEnBloque,
-          'palabra-completada-bloque': index < palabrasCompletadasEnBloque,
-        }"
+        :key="index"
+        :class="{ 'palabra-actual': index === 0 }"
       >
-          <template v-if="index === palabrasCompletadasEnBloque">
-            <span class="escrita-correcta">{{
-              esValido ? palabraUser : ""
-            }}</span>
-            <span class="restante">{{
-              palabra.substring(palabraUser.length)
-            }}</span>
-          </template>
-
-          <template v-else>
-            <span class="restante">{{ palabra }}</span>
-          </template>
+        <template v-if="index === 0">
+          <span class="escrita-correcta">{{
+            esValido ? palabraUser : ""
+          }}</span>
+          <span class="restante">{{
+            palabra.substring(palabraUser.length)
+          }}</span>
+        </template>
+        <template v-else>
+          <span class="restante">{{ palabra }}</span>
+        </template>
       </li>
     </ul>
 
-    <div class="contenedor-texto">
-      <input
-        type="text"
-        class="text-input"
-        :class="{
-          'input-error': !esValido && palabraUser.length > 0,
-          'input-ok': esValido && palabraUser.length > 0,
-        }"
-        v-model="palabraUser"
-        @keydown="onInputKeyDown"
-        @paste="onInputPaste"
-        :placeholder="
-          palabraObjetivo
-            ? `Escribe: ${palabraObjetivo}`
-            : 'Cargando palabras...'
-        "
-        autofocus
-      />
-    </div>
+    <div class="input-stats-row">
+      <div class="contenedor-texto">
+        <input
+          type="text"
+          class="text-input"
+          :class="{
+            'input-error': !esValido && palabraUser.length > 0,
+            'input-ok': esValido && palabraUser.length > 0,
+          }"
+          v-model="palabraUser"
+          @keydown="onInputKeyDown"
+          @paste="onInputPaste"
+          :placeholder="
+            palabraObjetivo
+              ? `Escribe: ${palabraObjetivo}`
+              : 'Cargando palabras...'
+          "
+          autofocus
+        />
+      </div>
 
-    <div class="info-juego">
-      <p>
-        Palabras Completadas: <span>{{ completedWords }}</span>
-      </p>
-      <p>
-        Errores:
-        <span :class="{ 'error-count': errorCount > 0 }">{{ errorCount }}</span>
-      </p>
+      <div class="stats-right">
+        <p>
+          Palabras Completadas: <span>{{ completedWords }}</span>
+        </p>
+        <p>
+          Errores:<span :class="{ 'error-count': errorCount > 0 }">{{
+            errorCount
+          }}</span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="game-background">
+    <AnimacionJuego
+      @animationFinished="handleAnimationFinished"
+      @animationDurationCalculated="handleAnimationDuration"
+    />
+
+    <div id="contenedor-juego">
+      <div id="crupier-entero" :class="reboteClass">
+        <div
+          id="crupier-normal"
+          :style="{ display: showPowerupImage ? 'none' : 'flex' }"
+        >
+          <img src="/img/crupier-normal_oficial.png" alt="Crupier Normal" />
+        </div>
+        <div
+          id="crupier-caarta"
+          :style="{ display: showPowerupImage ? 'flex' : 'none' }"
+        >
+          <img src="/img/crupier-carta_oficial.png" alt="Crupier Carta" />
+        </div>
+      </div>
+
+      <div class="input-dialog-container" :class="reboteClass">
+        <div class="input__container">
+          <div class="shadow__input"></div>
+          <p style="font-size: 1rem; color: #e0e8f0; margin: 0; padding: 0">
+            {{ dialogText }}
+          </p>
+        </div>
+      </div>
     </div>
   </div>
 </template>
+
 <style scoped>
+/* ------------------------------------------------ */
+/* --- ESTILOS DE FONDO Y ESTRUCTURA (CREEPY) --- */
+/* ------------------------------------------------ */
+
+.game-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #050505;
+  z-index: 0;
+  font-family: "Inter", sans-serif;
+}
+
+/* Contenedor principal de la UI 2D (por encima del 3D) */
 #contenedor-juego {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 2; /* Por encima del 3D */
+  pointer-events: none; /* Permite clicks a través, excepto a elementos interactivos */
+}
+
+/* ------------------------------------------------ */
+/* --- ESTILOS DE UI DE JUEGO (SLIDE-IN-UP) --- */
+/* ------------------------------------------------ */
+
+.bottom-ui-container {
+  position: fixed;
+  bottom: 5vh; /* Levantado 5% de la altura de la vista */
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
-  width: 100vw;
-  height: 100vh;
-  padding: 20px;
-  box-sizing: border-box;
-  background-color: rgba(0, 0, 0, 0.5);
+  padding-bottom: 0;
+  pointer-events: auto; /* Permite interacción */
+  z-index: 3; /* Por encima del 3D */
+
+  /* Estado inicial: Fuera de la vista (Oculto) */
+  transform: translateY(100%);
+  opacity: 0;
+  /* Transición suave hacia arriba */
+  transition: transform 0.8s cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 0.5s ease-out;
 }
 
-#contenedor-mesa {
-  margin-top: 15%;
-  background-image: url(../../public/assets/img/Mesa-sinfondo-nopixel.png);
-  background-size: cover;
+.bottom-ui-container.slide-in-up {
+  /* Estado final: Visible, en su posición levantada */
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* --- BLOQUE: CASINO CREEPY con Degradado (Mesa de juego) --- */
+.input-stats-row {
   display: flex;
-  min-width: 1000px;
-  min-height: 600px;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 900px;
+  padding: 20px 30px;
+  margin-top: 20px;
+  box-sizing: border-box;
+  border-radius: 12px;
+  position: relative;
+  z-index: 10;
+  overflow: hidden;
+
+  /* Degradado de Negro Rojizo (Terciopelo Oscuro) a Transparente */
+  background: linear-gradient(
+    to bottom,
+    rgba(10, 0, 0, 0.9) 0%,
+    rgba(20, 0, 0, 0.7) 70%,
+    rgba(0, 0, 0, 0) 100%
+  );
+
+  /* Borde sutil dorado/bronce para el toque de casino */
+  border: 1px solid rgba(139, 90, 43, 0.4);
+
+  /* Sombra proyectada con un toque rojizo/dorado */
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7), 0 0 15px rgba(139, 90, 43, 0.3);
 }
 
-#contenedor-mesa span {
-  color: white;
-  font-size: 24px;
-  align-self: center;
-  margin: auto;
+/* Limpieza de pseudo-elementos */
+.input-stats-row::before {
+  content: none;
 }
 
 .contenedor-texto {
-  margin-top: 50px;
-}
-.text-input {
-  font-family: "Courier New", Courier, monospace;
-  font-size: 20px;
-  min-width: 500px;
-  min-height: 30px;
-  border-radius: 5px;
-  text-align: center;
-  border-color: rgba(137, 43, 226, 0);
-  background-color: rgba(240, 248, 255, 0);
-  color: wheat;
-  position: relative;
-  z-index: 5;
+  flex-grow: 1;
+  display: flex;
+  justify-content: flex-start;
+  margin: 0;
 }
 
-.lista-palabras {
-  list-style: none;
-  padding: 0;
-  margin-top: 20px;
-  font-size: 28px;
-  display: flex;
-  gap: 15px;
-  color: #ffffff;
-  white-space: nowrap;
-  justify-content: center;
-}
-.palabra-actual {
-  color: #fff;
-  font-weight: bold;
-}
-.escrita-correcta {
-  color: yellowgreen;
-  font-weight: bold;
-}
-.restante {
-  color: #fff;
-  font-weight: normal;
+.text-input {
+  font-family: "Georgia", serif;
+  font-size: 20px;
+  width: 350px;
+  max-width: 350px;
+  min-width: 250px;
+  min-height: 30px;
+  border-radius: 6px;
+  text-align: center;
+
+  /* Estilo de input: Ficha de juego */
+  border: 2px solid #8b5a2b;
+  background-color: rgba(20, 5, 5, 0.9);
+  color: #f0e68c;
+  position: relative;
+  z-index: 5;
+  padding: 10px;
+
+  box-shadow: inset 0 0 8px rgba(139, 90, 43, 0.6), 0 0 5px rgba(0, 0, 0, 0.5);
 }
 
 .input-error {
-  border: 2px solid red !important;
-  color: red !important;
+  border: 2px solid #ff4500 !important;
+  color: #ffd700 !important;
+  box-shadow: 0 0 8px rgba(255, 69, 0, 0.8), inset 0 0 8px rgba(255, 69, 0, 0.5);
 }
 .input-ok {
-  border: 2px solid yellowgreen !important;
+  border: 2px solid #32cd32 !important;
+  box-shadow: 0 0 8px rgba(50, 205, 50, 0.6),
+    inset 0 0 8px rgba(50, 205, 50, 0.4);
 }
-.info-juego {
-  margin-top: 20px;
-  color: #fff;
+
+.stats-right {
+  font-family: "Georgia", serif;
+  color: #f0e68c;
   font-size: 18px;
-  display: flex;
-  gap: 30px;
+  white-space: nowrap;
+  text-align: right;
+  padding-left: 30px;
+  text-shadow: 0 0 5px rgba(240, 230, 140, 0.3);
 }
-.error-count {
-  color: red;
+
+.stats-right p {
+  margin: 5px 0;
+}
+
+.stats-right span {
   font-weight: bold;
+}
+
+.error-count {
+  color: #ff4500;
+  font-weight: bold;
+  text-shadow: 0 0 8px rgba(255, 69, 0, 0.5);
+}
+
+/* --- MODIFICACIÓN: Lista de palabras (Cartas) --- */
+.lista-palabras {
+  list-style: none;
+  padding: 0;
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-family: "Georgia", serif; /* Fuente de casino */
+  font-size: 28px;
+  display: flex;
+  gap: 15px;
+  color: #d4af37; /* Color oro viejo */
+  white-space: nowrap;
+  justify-content: center;
+  text-shadow: 0 0 8px rgba(212, 175, 55, 0.4); /* Glow dorado sutil */
+}
+.palabra-actual {
+  color: #ffffff; /* La palabra actual en blanco brillante */
+  font-weight: bold;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+}
+.escrita-correcta {
+  color: #32cd32; /* Verde esmeralda/neón para lo correcto (color de paño de mesa) */
+  font-weight: bold;
+  text-shadow: 0 0 8px rgba(50, 205, 50, 0.5);
+}
+.restante {
+  color: #555555; /* Gris oscuro para el resto de la palabra */
+  font-weight: normal;
+}
+
+/* ------------------------------------------------ */
+/* --- AJUSTES DEL CRUPIER Y DIÁLOGO (CASINO CREEPY) --- */
+/* ------------------------------------------------ */
+
+#crupier-entero {
+  position: fixed;
+  left: 50%;
+  top: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  z-index: 4;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateX(-50%) translateY(70vh);
+  transition: opacity 0.5s ease-out 0.1s,
+    transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.1s;
+  pointer-events: none;
+}
+
+#crupier-entero.rebote-entrada {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+#crupier-entero img {
+  max-height: 70vh;
+  /* FILTRO CREEPY DE CASINO: Tinte Sepia y Rojo Oscuro */
+  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.5) sepia(0.5)
+    hue-rotate(340deg) saturate(1.5); /* Más oscuro y rojizo */
+}
+
+#crupier-normal,
+#crupier-caarta {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  justify-content: center;
+}
+
+.input-dialog-container {
+  position: fixed;
+  top: 25%;
+  margin-left: 20%;
+  padding-left: 30px;
+  z-index: 3;
+  opacity: 0;
+  transform: translateY(calc(-50% + 70vh));
+  transition: opacity 0.5s ease-out 0.1s,
+    transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.1s;
+  pointer-events: none;
+}
+
+.input-dialog-container.rebote-entrada {
+  opacity: 1;
+  transform: translateY(-50%);
+}
+
+.input__container {
+  position: relative;
+  background: #330000; /* Fondo de terciopelo rojo oscuro */
+  padding: 20px;
+  border: 4px solid #8b5a2b; /* Borde dorado/bronce */
+  max-width: 350px;
+  box-shadow: 8px 8px 0 #000;
+  pointer-events: none;
+  font-family: "Georgia", serif;
+  color: #f0e68c;
+}
+
+.shadow__input {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  bottom: 0;
+  z-index: -1;
+  transform: translateZ(-50px);
+  background: linear-gradient(
+    45deg,
+    rgba(0, 0, 0, 0.6) 0%,
+    rgba(0, 0, 0, 0.3) 100%
+  );
+  filter: blur(30px);
+}
+
+.input__container::before {
+  content: "CRUPIER";
+  position: absolute;
+  top: -15px;
+  left: 20px;
+  background: #8b5a2b; /* Dorado/Bronce para la etiqueta */
+  color: #000000;
+  font-weight: bold;
+  padding: 5px 10px;
+  font-size: 14px;
+  transform: translateZ(50px);
+  z-index: 4;
+  border: 2px solid #000000;
 }
 </style>
