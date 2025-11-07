@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted, markRaw } from "vue";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
-const URL_MODELO = "/animacion-entrada.glb";
+const URL_MODELO = "/assets/animacion-entrada.glb";
 
 // --- CONFIGURACIÓN DE ANIMACIÓN PERSONALIZADA ---
 const DESPLAZAMIENTO_Z = -3.0;
