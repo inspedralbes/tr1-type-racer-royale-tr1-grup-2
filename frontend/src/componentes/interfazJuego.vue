@@ -27,6 +27,9 @@ const playerIdActual = playerId.value; // Cambiar dinámicamente si lo tienes de
 // const roomId = ref("room-abc");
 const playerNameActual = playerName.value; // Cambiar dinámicamente si lo tienes desde lobby
 
+// 🆕 ALMACENA LA INFORMACIÓN DE LOS OTROS JUGADORES
+const otrosJugadores = ref([]);
+
 const emit = defineEmits(["juego-finalizado"]);
 
 const props = defineProps({
@@ -67,29 +70,48 @@ function onUpdatePlayerWords(msg) {
   }
 }
 
-// FUNCION QUE MANEJA LA ACTUALIZACION DEL PROGRESO DE TODOS LOS JUGADORES
+// ⬇️ MODIFICACIÓN: USO DE UN BUCLE SIMPLE EN LUGAR DE MAP/FILTER
 function onUpdateProgress(msg) {
-  const { players } = msg.data;
-  players.forEach((p) => {
+  const { players } = msg.data; // 1. Reiniciar la lista de otros jugadores
+  otrosJugadores.value = [];
+
+  let ganadorJugador = null; // Iteramos sobre CADA jugador en la lista recibida
+
+  for (const p of players) {
     console.log(
       `Jugador ${p.id}: ${p.completedWords} palabras completadas, estado: ${p.status}`
-    );
-  });
+    ); // Comprobamos si el jugador es el jugador local
 
-  const ganadorJugador = players.find((p) => p.status === "finished");
+    if (p.id === playerId.value) {
+      // Actualizar las stats del jugador local
+      completedWords.value = p.completedWords; // Aquí podrías actualizar errorCount si viniera del servidor
+    } else {
+      // Si NO es el jugador local, lo añadimos a la lista de otros jugadores
+      otrosJugadores.value.push({
+        id: p.id,
+        name: p.username || `Player ${p.id.substring(0, 4)}`,
+        completedWords: p.completedWords || 0,
+      });
+    } // Comprobación del ganador
+    if (p.status === "finished") {
+      ganadorJugador = p;
+    }
+  }
+
   if (ganadorJugador) {
     ganador.value = ganadorJugador.username;
     emit("juego-finalizado", ganador.value);
     console.log(`🎉 La partida terminó. Ganador: ${ganadorJugador.playerId}`);
   }
 }
+// ⬆️ FIN DE LA MODIFICACIÓN
 
 // 🟩 MOUNT / UNMOUNT
 onMounted(() => {
+  // ... (resto de onMounted es idéntico) ...
   // Conectar socket
-  communicationManager.connect();
+  communicationManager.connect(); // 🔹 Fetch palabras iniciales usando endpoint dinámico
 
-  // 🔹 Fetch palabras iniciales usando endpoint dinámico
   const count = 10;
   const payload = {
     roomId: roomId.value,
@@ -115,24 +137,24 @@ onMounted(() => {
     })
     .catch((error) => {
       console.error("❌ Hubo un error al obtener las palabras:", error);
-    });
+    }); // Escuchar eventos del servidor
 
-  // Escuchar eventos del servidor
   communicationManager.on("update_player_words", onUpdatePlayerWords);
   communicationManager.on("update_progress", onUpdateProgress);
 });
 
 onUnmounted(() => {
+  // ... (resto de onUnmounted es idéntico) ...
   // Desregistrar eventos
   communicationManager.off("update_player_words", onUpdatePlayerWords);
-  communicationManager.off("update_progress", onUpdateProgress);
+  communicationManager.off("update_progress", onUpdateProgress); // Desconectar socket
 
-  // Desconectar socket
   communicationManager.disconnect();
 });
 
 // 🧩 FUNCION QUE VALIDA SI CADA CARÁCTER ESTA BIEN ESCRITO
 function validarInput() {
+  // ... (resto de validarInput es idéntico) ...
   const palabraEscrita = palabraUser.value;
   const objetivo = palabraObjetivo.value;
   if (!objetivo) return true;
@@ -158,6 +180,7 @@ function validarInput() {
 
 // 🧠 MANEJA LA PULSACIÓN DE LA TECLA ESPACIO
 function onInputKeyDown(event) {
+  // ... (resto de onInputKeyDown es idéntico) ...
   if (event.key === " " && palabraUser.value.length > 0) {
     event.preventDefault();
 
@@ -180,6 +203,7 @@ function onInputPaste(event) {
 // FUNCION QUE ENVIA LA PALABRA COMPLETADA AL SERVIDOR
 //
 function enviarPalabra(palabraCompletada) {
+  // ... (resto de enviarPalabra es idéntico) ...
   const payload = {
     wordId: 0,
     word: palabraCompletada,
@@ -195,12 +219,13 @@ function enviarPalabra(palabraCompletada) {
 
 // 🧮 Computadas
 const palabrasEnVista = computed(() => {
-  if (!Array.isArray(listaEntera.value)) return [];
-  // 🔹 SIEMPRE muestra las primeras 5 palabras del array
+  // ... (resto de palabrasEnVista es idéntico) ...
+  if (!Array.isArray(listaEntera.value)) return []; // 🔹 SIEMPRE muestra las primeras 5 palabras del array
   return listaEntera.value.slice(0, 5);
 });
 
 const palabraObjetivo = computed(() => {
+  // ... (resto de palabraObjetivo es idéntico) ...
   // 🔹 La palabra objetivo es siempre la primera del array que viene del servidor
   return palabrasEnVista.value.length > 0 ? palabrasEnVista.value[0] : "";
 });
@@ -213,15 +238,14 @@ const esValido = computed(() => validarInput());
  * Captura la duración total de la animación 3D y programa la aparición de la UI 2D.
  */
 const handleAnimationDuration = (durationInSeconds) => {
-  animationDuration.value = durationInSeconds;
+  // ... (resto de handleAnimationDuration es idéntico) ...
+  animationDuration.value = durationInSeconds; // UI 2D (Crupier y juego) aparece 2 segundos antes del final.
 
-  // UI 2D (Crupier y juego) aparece 2 segundos antes del final.
   const delayBeforeEnd = 2;
   const delayMs = Math.max(100, (durationInSeconds - delayBeforeEnd) * 1000);
 
   setTimeout(() => {
-    show2DUI.value = true;
-    // nextTick para asegurar que la animación CSS se aplique.
+    show2DUI.value = true; // nextTick para asegurar que la animación CSS se aplique.
     nextTick(() => {
       console.log("Crupier y Diálogo 2D/UI de juego mostrados con nextTick.");
     });
@@ -254,6 +278,21 @@ const slideInUpClass = computed(() => ({
     @go-home="mostrarPantallaFinal = false"
   />
 
+  <div class="player-container-exterior" v-if="show2DUI">
+    <div
+      v-for="(jugador, index) in otrosJugadores"
+      :key="jugador.id"
+      class="other-player-stat"
+      :class="`player-pos-${index}`"
+    >
+      <div class="player-name-chip">{{ jugador.name }}</div>
+
+      <div class="player-stats-chip">
+        <span> {{ jugador.completedWords }}</span>
+      </div>
+    </div>
+  </div>
+
   <div class="bottom-ui-container" :class="slideInUpClass">
     <ul class="lista-palabras">
       <li
@@ -265,10 +304,12 @@ const slideInUpClass = computed(() => ({
           <span class="escrita-correcta">{{
             esValido ? palabraUser : ""
           }}</span>
+
           <span class="restante">{{
             palabra.substring(palabraUser.length)
           }}</span>
         </template>
+
         <template v-else>
           <span class="restante">{{ palabra }}</span>
         </template>
@@ -295,11 +336,11 @@ const slideInUpClass = computed(() => ({
           autofocus
         />
       </div>
-
       <div class="stats-right">
         <p>
           Palabras Completadas: <span>{{ completedWords }}</span>
         </p>
+
         <p>
           Errores:<span :class="{ 'error-count': errorCount > 0 }">{{
             errorCount
@@ -326,6 +367,7 @@ const slideInUpClass = computed(() => ({
             alt="Crupier Normal"
           />
         </div>
+
         <div
           id="crupier-caarta"
           :style="{ display: showPowerupImage ? 'flex' : 'none' }"
@@ -340,6 +382,7 @@ const slideInUpClass = computed(() => ({
       <div class="input-dialog-container" :class="reboteClass">
         <div class="input__container">
           <div class="shadow__input"></div>
+
           <p style="font-size: 1rem; color: #e0e8f0; margin: 0; padding: 0">
             {{ dialogText }}
           </p>
@@ -384,21 +427,21 @@ const slideInUpClass = computed(() => ({
   position: fixed;
   bottom: 5vh;
   width: 100%;
-  left: 5%;
+  left: 50%;
+  transform: translateX(-50%) translateY(100%); /* Ajustado left y transform para centrar */
   display: flex;
   flex-direction: column;
   align-items: center;
   padding-bottom: 0;
   pointer-events: auto;
   z-index: 3;
-  transform: translateY(100%);
   opacity: 0;
   transition: transform 0.8s cubic-bezier(0.23, 1, 0.32, 1),
     opacity 0.5s ease-out;
 }
 
 .bottom-ui-container.slide-in-up {
-  transform: translateY(0);
+  transform: translateX(-50%) translateY(0);
   opacity: 1;
 }
 
@@ -602,7 +645,7 @@ const slideInUpClass = computed(() => ({
   background: linear-gradient(
     45deg,
     rgba(0, 0, 0, 0.6) 0%,
-    rgba(0, 0, 0, 0.3) 100%
+    + rgba(0, 0, 0, 0.3) 100%
   );
   filter: blur(30px);
 }
@@ -620,5 +663,80 @@ const slideInUpClass = computed(() => ({
   transform: translateZ(50px);
   z-index: 4;
   border: 2px solid #000000;
+}
+
+/* ------------------------------------------------ */
+/* --- 🆕 ESTILOS DE OTROS JUGADORES (ALREDEDOR) --- */
+/* ------------------------------------------------ */
+
+.player-container-exterior {
+  position: fixed;
+  bottom: 15vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80vw;
+  max-width: 1200px;
+  height: 60vh;
+  pointer-events: none; /* Para que no interfiera con clics */
+  z-index: 3;
+}
+
+.other-player-stat {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 15px;
+  border-radius: 15px;
+  background-color: rgba(0, 0, 0, 0.75);
+  border: 2px solid #5a0000;
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.3),
+    inset 0 0 5px rgba(255, 255, 255, 0.1);
+  font-family: "Inter", sans-serif;
+  color: #fff;
+  transition: all 0.5s ease;
+  width: 150px;
+}
+
+.player-name-chip {
+  font-size: 14px;
+  font-weight: bold;
+  color: #d4af37;
+  margin-bottom: 4px;
+  text-shadow: 0 0 5px rgba(212, 175, 55, 0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.player-stats-chip span {
+  font-size: 16px;
+  font-weight: 600;
+  color: #7fbf7f;
+}
+
+.player-pos-0 {
+  top: 0%;
+  left: 90%;
+  transform: translateX(-50%);
+}
+
+.player-pos-1 {
+  top: 20%;
+  left: 90%;
+  transform: translateX(-50%);
+}
+
+.player-pos-2 {
+  top: 40%;
+  left: 90%;
+  transform: translateX(-50%);
+}
+
+.player-pos-3 {
+  top: 60%;
+  left: 90%;
+  transform: translateX(-50%);
 }
 </style>
