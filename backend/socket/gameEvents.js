@@ -25,24 +25,21 @@ setInterval(() => {
 
 export function registerGameEvents(io, socket) {
   socket.on("word_typed", ({ data }) => {
-    if (!data || typeof data.palabraEscrita !== "string") {
-      console.warn("⚠️ palabraEscrita inválida:", data?.palabraEscrita);
+    if (!data || typeof data.word !== "string") {
+      console.warn("⚠️ palabraEscrita inválida:", data?.word);
       return;
     }
 
-    const respuesta = data.palabraEscrita.trim().toLowerCase();
+    const respuesta = data.word.trim().toLowerCase();
     const { roomId, playerId } = data;
 
     const room = getRoom(roomId);
     if (!room) return;
 
-    const jugador = room.players.find((p) => p.playerId === playerId);
+    const jugador = room.players.find(
+      (p) => p.playerId === playerId || p.id === playerId
+    );
     if (!jugador) return;
-
-    if (!palabraEscrita || typeof palabraEscrita !== "string") {
-      console.warn(`⚠️ palabraEscrita inválida:`, palabraEscrita);
-      return;
-    }
 
     const palabraCarta = room.cartaActiva?.palabra[0]?.toLowerCase();
 
@@ -78,6 +75,10 @@ export function registerGameEvents(io, socket) {
     }
 
     // 🔹 Si es palabra personal
+    const wordId = 0; // ✅ siempre eliminar la primera palabra
+    const threshold = 3;
+    const completedWords = (jugador.completedWords || 0) + 1;
+
     calcularPalabrasRestantes(
       { [roomId]: room },
       roomId,
@@ -87,7 +88,18 @@ export function registerGameEvents(io, socket) {
       completedWords
     );
 
-    if (jugador.words.length === 0) jugador.status = "finished";
+    if (jugador.completedWords >= 34) {
+      jugador.status = "finished";
+
+      io.to(roomId).emit("jugador_ganador", {
+        playerId,
+        mensaje: `🎉 ¡${jugador.name || playerId} ha ganado la partida!`,
+      });
+
+      console.log(
+        `🏁 Jugador ${playerId} ha ganado la partida en sala ${roomId}`
+      );
+    }
 
     io.to(roomId).emit("update_player_words", {
       data: {
@@ -104,7 +116,9 @@ export function registerGameEvents(io, socket) {
     });
 
     console.log(
-      `✅ [Game] ${jugador.playerId} completó palabra personal en ${roomId}`
+      `✅ [Game] ${
+        jugador.playerId || jugador.id
+      } completó palabra personal en ${roomId}`
     );
   });
 }

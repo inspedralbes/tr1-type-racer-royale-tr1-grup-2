@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from "vue";
-import communicationManager from "../services/communicationManager.js"; 
+import communicationManager from "../services/communicationManager.js";
 import pantallaFinal from "./pantallaFinal.vue";
 import { playerName, playerId } from "../logic/globalState.js";
 
@@ -16,10 +16,9 @@ const errorCount = ref(0);
 const palabraActualIndex = ref(0);
 const palabrasCompletadasEnBloque = ref(0);
 const palabraInvalida = ref(false);
-const playerIdActual = playerId.value;   // Cambiar dinámicamente si lo tienes desde login
+const playerIdActual = playerId.value; // Cambiar dinámicamente si lo tienes desde login
 const roomId = ref("room-abc");
-const playerNameActual = playerName.value;       // Cambiar dinámicamente si lo tienes desde lobby
-
+const playerNameActual = playerName.value; // Cambiar dinámicamente si lo tienes desde lobby
 
 const progresoJugadores = ref([]);
 
@@ -29,7 +28,7 @@ function onUpdatePlayerWords(msg) {
   const { playerId: jugador, remainingWords, status } = msg.data;
 
   console.log("📤 playerId front:", playerId.value, typeof playerId.value);
-console.log("📥 playerId backend:", jugador, typeof jugador);
+  console.log("📥 playerId backend:", jugador, typeof jugador);
 
   if (jugador === playerId.value) {
     console.log("🔴 ANTES - listaEntera:", listaEntera.value);
@@ -146,20 +145,20 @@ function onInputKeyDown(event) {
 
     if (palabraUser.value === palabraObjetivo.value) {
       completedWords.value++;
-     enviarPalabra(palabraUser.value);
-      
-  //     // 🔹 Primero limpiamos el input
-  //     palabraUser.value = "";
-      
-  //     // 🔹 LUEGO incrementamos los contadores
-  //     completedWords.value++;
-  //     palabrasCompletadasEnBloque.value++;
+      enviarPalabra(palabraUser.value);
 
-  // // 🔹 Si alcanzas el final del bloque de 5, avanzar el bloque
-  //     if (palabrasCompletadasEnBloque.value >= 5) {
-  //      palabraActualIndex.value += 5;
-  //       palabrasCompletadasEnBloque.value = 0;
-  //     } 
+      //     // 🔹 Primero limpiamos el input
+      //     palabraUser.value = "";
+
+      //     // 🔹 LUEGO incrementamos los contadores
+      //     completedWords.value++;
+      //     palabrasCompletadasEnBloque.value++;
+
+      // // 🔹 Si alcanzas el final del bloque de 5, avanzar el bloque
+      //     if (palabrasCompletadasEnBloque.value >= 5) {
+      //      palabraActualIndex.value += 5;
+      //       palabrasCompletadasEnBloque.value = 0;
+      //     }
     } else {
       console.warn("Palabra incorrecta. Errores:", errorCount.value);
     }
@@ -194,7 +193,6 @@ const palabrasEnVista = computed(() => {
   return listaEntera.value.slice(0, 5);
 });
 
-
 const palabraObjetivo = computed(() => {
   // 🔹 La palabra objetivo es siempre la primera del array que viene del servidor
   return palabrasEnVista.value.length > 0 ? palabrasEnVista.value[0] : "";
@@ -205,10 +203,10 @@ const esValido = computed(() => validarInput());
 
 <template>
   <pantallaFinal
-  v-if="mostrarPantallaFinal"
-  :winner="ganador"
-  @go-home="mostrarPantallaFinal = false"
-/>
+    v-if="mostrarPantallaFinal"
+    :winner="ganador"
+    @go-home="mostrarPantallaFinal = false"
+  />
   <div id="contenedor-juego">
     <ul class="lista-palabras">
       <li
@@ -219,18 +217,18 @@ const esValido = computed(() => validarInput());
           'palabra-completada-bloque': index < palabrasCompletadasEnBloque,
         }"
       >
-          <template v-if="index === palabrasCompletadasEnBloque">
-            <span class="escrita-correcta">{{
-              esValido ? palabraUser : ""
-            }}</span>
-            <span class="restante">{{
-              palabra.substring(palabraUser.length)
-            }}</span>
-          </template>
+        <template v-if="index === palabrasCompletadasEnBloque">
+          <span class="escrita-correcta">{{
+            esValido ? palabraUser : ""
+          }}</span>
+          <span class="restante">{{
+            palabra.substring(palabraUser.length)
+          }}</span>
+        </template>
 
-          <template v-else>
-            <span class="restante">{{ palabra }}</span>
-          </template>
+        <template v-else>
+          <span class="restante">{{ palabra }}</span>
+        </template>
       </li>
     </ul>
 
@@ -365,5 +363,4 @@ const esValido = computed(() => validarInput());
 .carta-palo.club {
   background-image: url("../../public/assets/img/treboles.png");
 }
-
 </style>

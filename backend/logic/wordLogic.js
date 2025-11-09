@@ -176,18 +176,18 @@ export const calcularPalabrasRestantes = (
   );
   if (!jugador) return;
 
-  const copia = [...jugador.words];
-
-  // ✅ Esta línea elimina la palabra correctamente
-  if (wordId >= 0 && wordId < copia.length) {
-    copia.splice(wordId, 1);
+  if (
+    jugador.words.length > 0 &&
+    wordId >= 0 &&
+    wordId < jugador.words.length
+  ) {
+    jugador.words.splice(wordId, 1); // ✅ elimina solo una palabra
   }
 
-  jugador.words = copia;
   jugador.completedWords = completedWords;
 
-  if (completedWords % threshold === 0 && copia.length === 0) {
-    // ✅ Asignar nuevo bloque si se completó el anterior
+  // ✅ Solo asignar nuevo bloque si ya no quedan palabras
+  if (jugador.words.length === 0) {
     jugador.words = generarPalabras(5);
     jugador.completedWords = 0;
   }
