@@ -1,11 +1,40 @@
 <template>
-  <div class="final-screen" role="dialog" aria-labelledby="winner-title" aria-modal="true">
+  <!-- <div class="final-screen" role="dialog" aria-labelledby="winner-title" aria-modal="true">
     <div class="card">
       <h2 id="winner-title" class="title">¡GANADOR!</h2>
       <p class="winner-name" v-if="winner">{{ winner }}</p>
       <p class="winner-name placeholder" v-else>— Sin nombre —</p>
 
       <div class="controls">
+        <button class="btn" @click="goHome" aria-label="Volver al inicio">
+          Volver al inicio
+        </button>
+      </div>
+    </div>
+  </div> -->
+
+  <div class="slot-machine-container">
+    <div class="machine-frame">
+      <div class="ornate-border top-border"></div>
+      <div class="ornate-border bottom-border"></div>
+
+      <div class="slot-display">
+        <div class="slot-reel">
+          <span class="slot-symbol skull"> Aquí van las estadisticas</span>
+        </div>
+        <div class="slot-reel">
+          <span class="slot-symbol ace-spade">Aquí van las estadisticas</span>
+        </div>
+        <div class="slot-reel">
+          <span class="slot-symbol skull">Aquí van las estadisticas</span>
+        </div>
+      </div>
+
+      <div class="machine-details">
+
+        <h1>EL GANADOR ES:</h1>
+        <span v-if="winner">{{ winner }}</span>
+        <span class="winner-name placeholder" v-else>— Sin nombre —</span>
         <button class="btn" @click="goHome" aria-label="Volver al inicio">
           Volver al inicio
         </button>
@@ -35,76 +64,280 @@ function goHome() {
 </script>
 
 <style scoped>
-.final-screen {
-  position: fixed;
-  inset: 0;
+:root {
+  --gold-old: #4a3e30;
+  --gold-worn: #38312a;
+  --red-dark: #7b1e1e;
+  --red-dirty: #5a1818;
+  --black-deep: #1a1a1a;
+  --paper-old: #a0978c;
+}
+
+.slot-machine-container {
   display: flex;
+  justify-content: center;
   align-items: center;
-  justify-content: center;
-  background: rgba(6, 10, 20, 0.6);
-  backdrop-filter: blur(2px);
-  z-index: 1000;
-  padding: 1rem;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  background-color: #222;
+  font-family: 'Times New Roman', serif;
+  overflow: hidden;
 }
 
-.card {
-  background: white;
-  color: #0b1220;
-  padding: 2rem 2.5rem;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(2,6,23,0.4);
-  text-align: center;
-  min-width: 320px;
-  max-width: 90%;
-  animation: pop 240ms ease;
+
+.machine-frame {
+  width: 80vw;
+  height: 90vh;
+  background-color: var(--gold-worn);
+  border: 1.5vw solid var(--gold-old);
+  border-radius: 2vw;
+  box-shadow:
+    inset 0 0 2vw rgba(0, 0, 0, 0.9),
+    0 0 3vw rgba(0, 0, 0, 0.6);
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
-@keyframes pop {
-  from { transform: translateY(8px) scale(0.98); opacity: 0; }
-  to   { transform: translateY(0) scale(1); opacity: 1; }
+.ornate-border {
+  position: absolute;
+  left: 2%;
+  right: 2%;
+  height: 6vh;
+  background-color: var(--red-dirty);
+  border: 0.3vw solid var(--gold-old);
+  box-shadow: inset 0 0 1vh rgba(0, 0, 0, 0.9);
 }
 
-.title {
-  font-size: 1.25rem;
-  letter-spacing: 0.08em;
-  margin: 0 0 0.5rem 0;
-  color: #0f1724;
+.top-border {
+  top: 1.5vh;
+  border-radius: 0.5vw 0.5vw 0 0;
 }
 
-.winner-name {
-  font-size: 2rem;
-  font-weight: 700;
-  margin: 0.25rem 0 1.25rem 0;
-  word-break: break-word;
+.bottom-border {
+  bottom: 18vh;
+  border-radius: 0 0 0.5vw 0.5vw;
 }
 
-.winner-name.placeholder {
-  color: #9aa6b2;
-  font-weight: 600;
-  font-size: 1rem;
+.slot-display {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  position: absolute;
+  top: 10vh;
+  left: 5%;
+  right: 5%;
+  height: 45vh;
+  background-color: var(--black-deep);
+  border: 0.5vw solid var(--gold-old);
+  border-radius: 1vw;
+  box-shadow:
+    inset 0 0 2vw rgba(0, 0, 0, 1),
+    0 0 1vw rgba(255, 255, 255, 0.05);
+  padding: 1vh 0.5vw;
 }
 
-.controls {
+.slot-reel {
+  width: 30%;
+  height: 40vh;
+  background-color: var(--paper-old);
+  border: 0.2vw solid #706a62;
+  border-radius: 0.3vw;
   display: flex;
   justify-content: center;
-  gap: 0.5rem;
+  align-items: center;
+  position: relative;
+  box-shadow: inset 0 0 0.5vw rgba(0, 0, 0, 0.5);
+  overflow: hidden;
 }
 
-.btn {
-  background: #0f62fe;
-  color: white;
-  border: none;
-  padding: 0.6rem 1rem;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform .12s ease, box-shadow .12s ease;
+.slot-symbol {
+  font-size: 8vh;
+  color: #333;
+  text-shadow: 0.1vh 0.1vh 0.2vh rgba(0, 0, 0, 0.7);
 }
 
-.btn:active { transform: translateY(1px); }
-.btn:focus { 
-  outline: 3px solid rgba(15,98,254,0.18); 
-  outline-offset: 2px; 
-  box-shadow: 0 6px 18px rgba(15,98,254,0.16); 
+.machine-details {
+  position: absolute;
+  bottom: 2vh;
+  left: 5%;
+  right: 5%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2vh;
+  background-color: var(--black-deep);
+  border-radius: 1vw;
+  border: 0.3vw solid var(--gold-old);
+  box-shadow: 0 0.5vw 1vw rgba(0, 0, 0, 0.5);
+}
+
+.button {
+  padding: 2vh 4vw;
+  background-color: var(--red-dark);
+  font-size: 2.5vh;
+  border-radius: 0.5vw;
+}
+
+.lever-housing {
+  position: absolute;
+  right: -5vh;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 5vh;
+  height: 15vh;
+}
+
+.lever {
+  width: 3vh;
+  height: 12vh;
+  background-color: var(--gold-old);
+  border-radius: 1.5vh;
+}
+
+.lever::before {
+  content: '';
+  position: absolute;
+  top: -2vh;
+  left: -1vh;
+  width: 6vh;
+  height: 6vh;
+  background-color: var(--red-dark);
+}
+
+.machine-details h1 {
+  color: #fff;
+  font-size: 4vh;
+  text-transform: uppercase;
+  letter-spacing: 0.2vh;
+  margin: 0;
+  padding: 0;
+  animation: neon-flicker 1.5s infinite alternate;
+}
+
+.machine-details span {
+  color: #ffcc00;
+  font-size: 5vh;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.3vh;
+  margin-top: 1vh;
+  animation: neon-flicker-gold 2s infinite alternate;
+}
+
+
+
+@keyframes neon-flicker {
+  0% {
+    text-shadow:
+      0 0 0.5vh #fff,
+      0 0 1vh #fff,
+      0 0 2vh #00f,
+      0 0 3vh #00f,
+      0 0 4vh #00f,
+      0 0 5vh #00f;
+    opacity: 1;
+  }
+
+  20% {
+    opacity: 0.8;
+  }
+
+  40% {
+    opacity: 1;
+    text-shadow:
+      0 0 0.5vh #fff,
+      0 0 1vh #fff,
+      0 0 2vh #00f,
+      0 0 3vh #00f,
+      0 0 4vh #00f,
+      0 0 5vh #00f;
+  }
+
+  60% {
+    opacity: 0.6;
+    text-shadow: none;
+  }
+
+  80% {
+    opacity: 1;
+    text-shadow:
+      0 0 0.5vh #fff,
+      0 0 1vh #fff,
+      0 0 2vh #00f,
+      0 0 3vh #00f,
+      0 0 4vh #00f,
+      0 0 5vh #00f;
+  }
+
+  100% {
+    text-shadow:
+      0 0 0.5vh #fff,
+      0 0 1vh #fff,
+      0 0 2vh #00f,
+      0 0 3vh #00f,
+      0 0 4vh #00f,
+      0 0 5vh #00f;
+    opacity: 1;
+  }
+}
+
+@keyframes neon-flicker-gold {
+  0% {
+    text-shadow:
+      0 0 0.5vh #fff,
+      0 0 1vh #ffcc00,
+      0 0 2vh #ffaa00,
+      0 0 3vh #ffaa00,
+      0 0 4vh #ffaa00,
+      0 0 5vh #ffaa00;
+    opacity: 1;
+  }
+
+  25% {
+    opacity: 0.7;
+    text-shadow: none;
+  }
+
+  50% {
+    opacity: 1;
+    text-shadow:
+      0 0 0.5vh #fff,
+      0 0 1vh #ffcc00,
+      0 0 2vh #ffaa00,
+      0 0 3vh #ffaa00,
+      0 0 4vh #ffaa00,
+      0 0 5vh #ffaa00;
+  }
+
+  75% {
+    opacity: 0.9;
+  }
+
+  100% {
+    text-shadow:
+      0 0 0.5vh #fff,
+      0 0 1vh #ffcc00,
+      0 0 2vh #ffaa00,
+      0 0 3vh #ffaa00,
+      0 0 4vh #ffaa00,
+      0 0 5vh #ffaa00;
+    opacity: 1;
+  }
+}
+
+.machine-details {
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+
+}
+
+.lever-housing {
+  right: -8vh;
 }
 </style>
