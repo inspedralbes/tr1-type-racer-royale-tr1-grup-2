@@ -2,14 +2,14 @@
 import { ref, onMounted, onUnmounted, computed, nextTick } from "vue";
 import communicationManager from "../services/CommunicationManager.js";
 import { playerName, playerId } from "../logic/globalState.js";
-// 🚨 Importar el componente 3D renombrado
 import AnimacionJuego from "./interfazAnimacion.vue";
 
-// --- 3D / CRUPIER ESTADO (TRAÍDO DEL ANTIGUO juego.vue) ---
-const crupierState = ref("normal"); // 'normal' o 'powerup'.
-const dialogText = ref("Bienvenidos todos."); // Diálogo inicial
-const show2DUI = ref(false); // Controla la visibilidad del Crupier y Diálogo
-const animationDuration = ref(0); // Duración de la animación 3D
+// Variables para manejar 3D / crupier / ambiente
+const crupierState = ref("normal");
+const dialogText = ref("Os doy la bienvenida a todos.");
+const show2DUI = ref(false);
+const animationDuration = ref(0);
+const audioPlayer = ref(null);
 
 // 🟩 Variables para manejar la pantalla final
 const mostrarPantallaFinal = ref(false);
@@ -23,12 +23,10 @@ const errorCount = ref(0);
 const palabraActualIndex = ref(0);
 const palabrasCompletadasEnBloque = ref(0);
 const palabraInvalida = ref(false);
-const playerIdActual = playerId.value; // Cambiar dinámicamente si lo tienes desde login
-// const roomId = ref("room-abc");
-const playerNameActual = playerName.value; // Cambiar dinámicamente si lo tienes desde lobby
-
-// 🆕 ALMACENA LA INFORMACIÓN DE LOS OTROS JUGADORES
+const playerIdActual = playerId.value;
+const playerNameActual = playerName.value;
 const otrosJugadores = ref([]);
+const comenzar = ref(false);
 
 const emit = defineEmits(["juego-finalizado"]);
 
@@ -70,29 +68,29 @@ function onUpdatePlayerWords(msg) {
   }
 }
 
-// ⬇️ MODIFICACIÓN: USO DE UN BUCLE SIMPLE EN LUGAR DE MAP/FILTER
+// 
 function onUpdateProgress(msg) {
-  const { players } = msg.data; // 1. Reiniciar la lista de otros jugadores
+  const { players } = msg.data;
   otrosJugadores.value = [];
 
-  let ganadorJugador = null; // Iteramos sobre CADA jugador en la lista recibida
+  let ganadorJugador = null;
 
   for (const p of players) {
     console.log(
       `Jugador ${p.id}: ${p.completedWords} palabras completadas, estado: ${p.status}`
-    ); // Comprobamos si el jugador es el jugador local
+    );
 
     if (p.id === playerId.value) {
-      // Actualizar las stats del jugador local
-      completedWords.value = p.completedWords; // Aquí podrías actualizar errorCount si viniera del servidor
+
+      completedWords.value = p.completedWords;
     } else {
-      // Si NO es el jugador local, lo añadimos a la lista de otros jugadores
+
       otrosJugadores.value.push({
         id: p.id,
         name: p.username || `Player ${p.id.substring(0, 4)}`,
         completedWords: p.completedWords || 0,
       });
-    } // Comprobación del ganador
+    }
     if (p.status === "finished") {
       ganadorJugador = p;
     }
@@ -104,11 +102,9 @@ function onUpdateProgress(msg) {
     console.log(`🎉 La partida terminó. Ganador: ${ganadorJugador.playerId}`);
   }
 }
-// ⬆️ FIN DE LA MODIFICACIÓN
 
 // 🟩 MOUNT / UNMOUNT
 onMounted(() => {
-  // ... (resto de onMounted es idéntico) ...
   // Conectar socket
   communicationManager.connect(); // 🔹 Fetch palabras iniciales usando endpoint dinámico
 
@@ -144,7 +140,6 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  // ... (resto de onUnmounted es idéntico) ...
   // Desregistrar eventos
   communicationManager.off("update_player_words", onUpdatePlayerWords);
   communicationManager.off("update_progress", onUpdateProgress); // Desconectar socket
@@ -154,7 +149,6 @@ onUnmounted(() => {
 
 // 🧩 FUNCION QUE VALIDA SI CADA CARÁCTER ESTA BIEN ESCRITO
 function validarInput() {
-  // ... (resto de validarInput es idéntico) ...
   const palabraEscrita = palabraUser.value;
   const objetivo = palabraObjetivo.value;
   if (!objetivo) return true;
@@ -171,8 +165,12 @@ function validarInput() {
     if (!palabraInvalida.value) {
       errorCount.value++;
       palabraInvalida.value = true;
+      crupierState.value = "confundido";
     }
   } else {
+    if (palabraInvalida.value) {
+      crupierState.value = "normal";
+    }
     palabraInvalida.value = false;
   }
   return esValidaAhora;
@@ -180,7 +178,6 @@ function validarInput() {
 
 // 🧠 MANEJA LA PULSACIÓN DE LA TECLA ESPACIO
 function onInputKeyDown(event) {
-  // ... (resto de onInputKeyDown es idéntico) ...
   if (event.key === " " && palabraUser.value.length > 0) {
     event.preventDefault();
 
@@ -203,7 +200,6 @@ function onInputPaste(event) {
 // FUNCION QUE ENVIA LA PALABRA COMPLETADA AL SERVIDOR
 //
 function enviarPalabra(palabraCompletada) {
-  // ... (resto de enviarPalabra es idéntico) ...
   const payload = {
     wordId: 0,
     word: palabraCompletada,
@@ -217,15 +213,30 @@ function enviarPalabra(palabraCompletada) {
   console.log("📤 Datos enviados al servidor:", payload);
 }
 
+function empiezaJuego(){
+  comenzar.value = true;
+  console.log('El valor de mostrar es:', comenzar.value);
+  if (audioPlayer.value) {
+    audioPlayer.value.volume = 0.4; 
+    audioPlayer.value.play()
+      .then(() => {
+        console.log("Música de fondo iniciada por la interacción del usuario.");
+      })
+      .catch(error => {
+        console.error("Error al reproducir el audio después del clic:", error);
+      });
+  }
+}
+
 // 🧮 Computadas
 const palabrasEnVista = computed(() => {
-  // ... (resto de palabrasEnVista es idéntico) ...
+
   if (!Array.isArray(listaEntera.value)) return []; // 🔹 SIEMPRE muestra las primeras 5 palabras del array
   return listaEntera.value.slice(0, 5);
 });
 
 const palabraObjetivo = computed(() => {
-  // ... (resto de palabraObjetivo es idéntico) ...
+
   // 🔹 La palabra objetivo es siempre la primera del array que viene del servidor
   return palabrasEnVista.value.length > 0 ? palabrasEnVista.value[0] : "";
 });
@@ -238,7 +249,7 @@ const esValido = computed(() => validarInput());
  * Captura la duración total de la animación 3D y programa la aparición de la UI 2D.
  */
 const handleAnimationDuration = (durationInSeconds) => {
-  // ... (resto de handleAnimationDuration es idéntico) ...
+
   animationDuration.value = durationInSeconds; // UI 2D (Crupier y juego) aparece 2 segundos antes del final.
 
   const delayBeforeEnd = 2;
@@ -249,8 +260,10 @@ const handleAnimationDuration = (durationInSeconds) => {
     nextTick(() => {
       console.log("Crupier y Diálogo 2D/UI de juego mostrados con nextTick.");
     });
+
   }, delayMs);
 };
+
 
 /**
  * Se llama cuando el componente 3D emite 'animationFinished' (al final real).
@@ -260,6 +273,7 @@ const handleAnimationFinished = () => {
 };
 
 // 🧮 Computadas de Estética
+const showConfusedImage = computed(() => crupierState.value === "confundido");
 const showPowerupImage = computed(() => crupierState.value === "powerup");
 
 const reboteClass = computed(() => ({
@@ -267,24 +281,17 @@ const reboteClass = computed(() => ({
 }));
 
 const slideInUpClass = computed(() => ({
-  "slide-in-up": show2DUI.value,
+  "slide-in-up": comenzar.value,
 }));
 </script>
 
 <template>
-  <pantallaFinal
-    v-if="mostrarPantallaFinal"
-    :winner="ganador"
-    @go-home="mostrarPantallaFinal = false"
-  />
+  <pantallaFinal v-if="mostrarPantallaFinal" :winner="ganador" @go-home="mostrarPantallaFinal = false" />
+  <audio ref="audioPlayer" src="../../public/assets/sonido/musica_ambiente.mp3" loop preload="auto"></audio>
 
   <div class="player-container-exterior" v-if="show2DUI">
-    <div
-      v-for="(jugador, index) in otrosJugadores"
-      :key="jugador.id"
-      class="other-player-stat"
-      :class="`player-pos-${index}`"
-    >
+    <div v-for="(jugador, index) in otrosJugadores" :key="jugador.id" class="other-player-stat"
+      :class="`player-pos-${index}`">
       <div class="player-name-chip">{{ jugador.name }}</div>
 
       <div class="player-stats-chip">
@@ -293,13 +300,9 @@ const slideInUpClass = computed(() => ({
     </div>
   </div>
 
-  <div class="bottom-ui-container" :class="slideInUpClass">
+  <div v-if="comenzar" class="bottom-ui-container" :class="slideInUpClass">
     <ul class="lista-palabras">
-      <li
-        v-for="(palabra, index) in palabrasEnVista"
-        :key="index"
-        :class="{ 'palabra-actual': index === 0 }"
-      >
+      <li v-for="(palabra, index) in palabrasEnVista" :key="index" :class="{ 'palabra-actual': index === 0 }">
         <template v-if="index === 0">
           <span class="escrita-correcta">{{
             esValido ? palabraUser : ""
@@ -318,31 +321,24 @@ const slideInUpClass = computed(() => ({
 
     <div class="input-stats-row">
       <div class="contenedor-texto">
-        <input
-          type="text"
-          class="text-input"
-          :class="{
-            'input-error': !esValido && palabraUser.length > 0,
-            'input-ok': esValido && palabraUser.length > 0,
-          }"
-          v-model="palabraUser"
-          @keydown="onInputKeyDown"
-          @paste="onInputPaste"
-          :placeholder="
-            palabraObjetivo
+        <input type="text" class="text-input" :class="{
+          'input-error': !esValido && palabraUser.length > 0,
+          'input-ok': esValido && palabraUser.length > 0,
+        }" v-model="palabraUser" @keydown="onInputKeyDown" @paste="onInputPaste" :placeholder="palabraObjetivo
               ? `Escribe: ${palabraObjetivo}`
               : 'Cargando palabras...'
-          "
-          autofocus
-        />
+            " autofocus />
       </div>
       <div class="stats-right">
+
         <p>
-          Palabras Completadas: <span>{{ completedWords }}</span>
+          <img src="/assets/img/iconos/ficha.png" alt="">
+          <span>{{ completedWords }}</span>
         </p>
 
         <p>
-          Errores:<span :class="{ 'error-count': errorCount > 0 }">{{
+          <img src="/assets/img/iconos/calavera.jpg" alt="">
+          <span :class="{ 'error-count': errorCount > 0 }">{{
             errorCount
           }}</span>
         </p>
@@ -351,41 +347,33 @@ const slideInUpClass = computed(() => ({
   </div>
 
   <div class="game-background">
-    <AnimacionJuego
-      @animationFinished="handleAnimationFinished"
-      @animationDurationCalculated="handleAnimationDuration"
-    />
+    <AnimacionJuego @animationFinished="handleAnimationFinished"
+      @animationDurationCalculated="handleAnimationDuration" />
 
     <div id="contenedor-juego">
       <div id="crupier-entero" :class="reboteClass">
-        <div
-          id="crupier-normal"
-          :style="{ display: showPowerupImage ? 'none' : 'flex' }"
-        >
-          <img
-            src="/assets/img/crupier-normal_oficial.png"
-            alt="Crupier Normal"
-          />
+        <div id="crupier-normal" :style="{ display: crupierState === 'normal' ? 'flex' : 'none' }">
+          <img src="/assets/img/crupier-normal_oficial.png" alt="Crupier Normal" />
         </div>
 
-        <div
-          id="crupier-caarta"
-          :style="{ display: showPowerupImage ? 'flex' : 'none' }"
-        >
-          <img
-            src="/assets/img/crupier-carta_oficial.png"
-            alt="Crupier Carta"
-          />
+        <div id="crupier-confundido" :style="{ display: showConfusedImage ? 'flex' : 'none' }">
+          <img src="/assets/img/crupier-confundido_oficial.png" alt="Crupier Confundido" />
+        </div>
+
+        <div id="crupier-carta" :style="{ display: showPowerupImage ? 'flex' : 'none' }">
+          <img src="/assets/img/crupier-carta_oficial.png" alt="Crupier Carta" />
         </div>
       </div>
 
-      <div class="input-dialog-container" :class="reboteClass">
+      <div class="input-dialog-container" :class="reboteClass" v-if="!comenzar">
         <div class="input__container">
           <div class="shadow__input"></div>
 
-          <p style="font-size: 1rem; color: #e0e8f0; margin: 0; padding: 0">
+          <p style="font-size: 2.5rem; margin-top: 15px; padding: 0">
             {{ dialogText }}
           </p>
+
+          <a @click="empiezaJuego()" class="siguiente" style="pointer-events: auto;"> > </a>
         </div>
       </div>
     </div>
@@ -393,6 +381,19 @@ const slideInUpClass = computed(() => ({
 </template>
 
 <style scoped>
+/* Fuentes */
+
+@font-face {
+  font-family: Font1;
+  src: url(../../public/assets/fuente/Stranger\ back\ in\ the\ Night.ttf);
+}
+
+@font-face {
+  font-family: Font2;
+  src: url(../../public/assets/fuente/macabre/The\ Macabre.otf) format("opentype");
+}
+
+
 /* ------------------------------------------------ */
 /* --- ESTILOS DE FONDO Y ESTRUCTURA (CREEPY) --- */
 /* ------------------------------------------------ */
@@ -416,7 +417,6 @@ const slideInUpClass = computed(() => ({
   width: 100vw;
   height: 100vh;
   z-index: 2;
-  pointer-events: none;
 }
 
 /* ------------------------------------------------ */
@@ -428,7 +428,7 @@ const slideInUpClass = computed(() => ({
   bottom: 5vh;
   width: 100%;
   left: 50%;
-  transform: translateX(-50%) translateY(100%); /* Ajustado left y transform para centrar */
+  transform: translateX(-50%) translateY(100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -445,6 +445,11 @@ const slideInUpClass = computed(() => ({
   opacity: 1;
 }
 
+.bottom-ui-container img {
+  width: 30px;
+  margin-top: 5px;
+}
+
 .input-stats-row {
   display: flex;
   justify-content: space-between;
@@ -458,12 +463,10 @@ const slideInUpClass = computed(() => ({
   position: relative;
   z-index: 10;
   overflow: hidden;
-  background: linear-gradient(
-    to bottom,
-    rgba(10, 0, 0, 0.9) 0%,
-    rgba(20, 0, 0, 0.7) 70%,
-    rgba(0, 0, 0, 0) 100%
-  );
+  background: linear-gradient(to bottom,
+      rgba(10, 0, 0, 0.9) 0%,
+      rgba(20, 0, 0, 0.7) 70%,
+      rgba(0, 0, 0, 0) 100%);
 
   border: 1px solid rgba(139, 90, 43, 0.4);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7), 0 0 15px rgba(139, 90, 43, 0.3);
@@ -481,8 +484,8 @@ const slideInUpClass = computed(() => ({
 }
 
 .text-input {
-  font-family: "Georgia", serif;
-  font-size: 20px;
+  font-family: Font2;
+  font-size: 40px;
   width: 350px;
   max-width: 350px;
   min-width: 250px;
@@ -503,6 +506,7 @@ const slideInUpClass = computed(() => ({
   color: #ffd700 !important;
   box-shadow: 0 0 8px rgba(255, 69, 0, 0.8), inset 0 0 8px rgba(255, 69, 0, 0.5);
 }
+
 .input-ok {
   border: 2px solid #32cd32 !important;
   box-shadow: 0 0 8px rgba(50, 205, 50, 0.6),
@@ -510,9 +514,9 @@ const slideInUpClass = computed(() => ({
 }
 
 .stats-right {
-  font-family: "Georgia", serif;
+  font-family: Font2;
   color: #f0e68c;
-  font-size: 18px;
+  font-size: 25px;
   white-space: nowrap;
   text-align: right;
   padding-left: 30px;
@@ -535,28 +539,43 @@ const slideInUpClass = computed(() => ({
 
 .lista-palabras {
   list-style: none;
-  padding: 0;
+  padding: 30px 40px;
   margin-top: 0;
   margin-bottom: 20px;
-  font-family: "Georgia", serif;
+  font-family: monospace;
   font-size: 28px;
   display: flex;
-  gap: 15px;
-  color: #d4af37;
-  white-space: nowrap;
+  flex-direction: column;
+  gap: 10px;
+  width: 250px;
+  height: 370px;
+  color: #333333;
+  justify-content: flex-start;
+  text-shadow: none;
+  background-image: url(../../public/assets/img/carta.jpg);
+  background-size: cover;
+  border: 3px;
+  border-radius: 15px;
+  box-shadow: 6px 6px 12px rgba(0, 0, 0, 0.45);
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
   justify-content: center;
-  text-shadow: 0 0 8px rgba(212, 175, 55, 0.4);
+  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.7) sepia(0.2) hue-rotate(340deg) saturate(1.5);
 }
+
 .palabra-actual {
   color: #ffffff;
   font-weight: bold;
   text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
 }
+
 .escrita-correcta {
   color: #32cd32;
   font-weight: bold;
   text-shadow: 0 0 8px rgba(50, 205, 50, 0.5);
 }
+
 .restante {
   color: #555555;
   font-weight: normal;
@@ -581,7 +600,6 @@ const slideInUpClass = computed(() => ({
   transform: translateX(-50%) translateY(70vh);
   transition: opacity 0.5s ease-out 0.1s,
     transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.1s;
-  pointer-events: none;
 }
 
 #crupier-entero.rebote-entrada {
@@ -591,8 +609,7 @@ const slideInUpClass = computed(() => ({
 
 #crupier-entero img {
   max-height: 70vh;
-  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.5) sepia(0.5)
-    hue-rotate(340deg) saturate(1.5);
+  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.5) sepia(0.5) hue-rotate(340deg) saturate(1.5);
 }
 
 #crupier-normal,
@@ -613,7 +630,7 @@ const slideInUpClass = computed(() => ({
   transform: translateY(calc(-50% + 70vh));
   transition: opacity 0.5s ease-out 0.1s,
     transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.1s;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .input-dialog-container.rebote-entrada {
@@ -628,8 +645,8 @@ const slideInUpClass = computed(() => ({
   border: 4px solid #8b5a2b;
   max-width: 350px;
   box-shadow: 8px 8px 0 #000;
-  pointer-events: none;
-  font-family: "Georgia", serif;
+  pointer-events: auto;
+  font-family: Font2;
   color: #f0e68c;
 }
 
@@ -642,16 +659,14 @@ const slideInUpClass = computed(() => ({
   bottom: 0;
   z-index: -1;
   transform: translateZ(-50px);
-  background: linear-gradient(
-    45deg,
-    rgba(0, 0, 0, 0.6) 0%,
-    + rgba(0, 0, 0, 0.3) 100%
-  );
+  background: linear-gradient(45deg,
+      rgba(0, 0, 0, 0.6) 0%,
+      + rgba(0, 0, 0, 0.3) 100%);
   filter: blur(30px);
 }
 
 .input__container::before {
-  content: "CRUPIER";
+  content: "?XÇ#?";
   position: absolute;
   top: -15px;
   left: 20px;
@@ -659,10 +674,37 @@ const slideInUpClass = computed(() => ({
   color: #000000;
   font-weight: bold;
   padding: 5px 10px;
-  font-size: 14px;
+  font-size: 25px;
   transform: translateZ(50px);
   z-index: 4;
   border: 2px solid #000000;
+}
+
+.siguiente{
+  position: absolute;
+  z-index: 15;
+  pointer-events: auto;
+  width: 50px;
+  height: 50px;
+  font-size: 30px;
+  font-weight: bold;
+  border: 3px solid #8b5a2b;
+  border-radius: 50%;
+  background-color: #5a0000;
+  color: #f0e68c;
+  cursor: pointer;
+  
+  /* Centrar el texto dentro del botón */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  z-index: 15;
+  pointer-events: auto;
+  transition: background-color 0.2s;
+}
+.siguiente:hover{
+  background-color: #2c0000;
 }
 
 /* ------------------------------------------------ */
@@ -677,7 +719,7 @@ const slideInUpClass = computed(() => ({
   width: 80vw;
   max-width: 1200px;
   height: 60vh;
-  pointer-events: none; /* Para que no interfiera con clics */
+  /* Para que no interfiera con clics */
   z-index: 3;
 }
 
