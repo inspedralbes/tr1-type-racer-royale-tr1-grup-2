@@ -61,8 +61,14 @@ export function registerLobbyEvents(io, socket) {
       console.log("🆕 Sala creada:", room);
 
       socket.join(room.roomId);
-      
-      socket.emit("room_created", room);
+
+      socket.emit("room_created", {
+      roomId: room.roomId,
+      playerId: playerId,
+      isHost: true,
+      players: room.players, // aquí ya incluye al host
+    });
+    
       io.emit("rooms_list", getPublicRooms()); // actualizar lista global
     } catch (err) {
       console.error("❌ Error al crear sala:", err.message);

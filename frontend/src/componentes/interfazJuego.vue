@@ -24,7 +24,6 @@ const palabraActualIndex = ref(0);
 const palabrasCompletadasEnBloque = ref(0);
 const palabraInvalida = ref(false);
 const playerIdActual = playerId.value; // Cambiar dinámicamente si lo tienes desde login
-// const roomId = ref("room-abc");
 const playerNameActual = playerName.value; // Cambiar dinámicamente si lo tienes desde lobby
 
 const emit = defineEmits(["juego-finalizado"]);
@@ -128,7 +127,8 @@ onUnmounted(() => {
   communicationManager.off("update_progress", onUpdateProgress);
 
   // Desconectar socket
-  communicationManager.disconnect();
+  // communicationManager.emit("leave_room", { playerId });
+  // communicationManager.disconnect();
 });
 
 // 🧩 FUNCION QUE VALIDA SI CADA CARÁCTER ESTA BIEN ESCRITO

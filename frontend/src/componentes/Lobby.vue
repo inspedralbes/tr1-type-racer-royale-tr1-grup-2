@@ -40,6 +40,10 @@ function iniciarJuego() {
 onMounted(() => {
   players.value = [];
 
+  if (props.room && props.room.players) {
+    players.value = [...props.room.players]; // inicializa con el host
+  }
+
   communicationManager.on("joined_lobby", (data) => {
     console.log("📥 joined_lobby recibido:", data);
     if (data.roomId === props.room.roomId) {

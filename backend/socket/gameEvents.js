@@ -1,5 +1,5 @@
 import { calcularPalabrasRestantes } from "../logic/wordLogic.js";
-import { getRoom } from "../logic/roomsManager.js";
+import { getRoom, leaveRoom } from "../logic/roomsManager.js";
 
 export function registerGameEvents(io, socket) {
 
@@ -49,10 +49,21 @@ export function registerGameEvents(io, socket) {
       },
     });
 
-    // socket.broadcast.to(roomId).emit("update_progress", {
-    //   data: { roomId, players: room.players },
-    // });
-
     console.log(`✅ [Game] ${jugador.playerId} completó palabra en ${roomId}`);
+  });
+
+
+  socket.on("leave_game", ({ playerId, roomId }) => {
+  const room = getRoom(roomId);
+  if (!room) return;
+
+  leaveRoom(roomId, playerId);
+
+  // Notificar a los jugadores restantes
+  if (room.players.length > 0) {
+    io.to(roomId).emit("update_players", room.players);
+  }
+
+    console.log(`👋 Jugador ${playerId} salió de la sala ${roomId}`);
   });
 }
