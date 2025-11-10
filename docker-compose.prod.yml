@@ -24,6 +24,3 @@ networks:
   app-network:
     driver: bridge
 
-volumes:
-  mongo-data:
-  mysql-data:
