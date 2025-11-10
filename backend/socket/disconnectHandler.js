@@ -1,19 +1,26 @@
-import { getAllRooms, getRoom, deleteRoom } from "../logic/roomsManager.js";
+import { getAllRooms, leaveRoom, getPublicRooms } from "../logic/roomsManager.js";
 
-export function handleDisconnect(io, socket) {
+export function handlePlayerLeave(io, socket, playerId) {
   const allRooms = getAllRooms();
+
   for (const roomId in allRooms) {
-    const room = getRoom(roomId);
+    const room = allRooms[roomId];
     if (!room) continue;
+    console.log("🔍 Comprobando sala:", roomId, "para jugador:", playerId);
+    // Comprueba si el jugador estaba en esa sala
+    const isInRoom = room.players.some(p => p.playerId === playerId);
+    if (isInRoom) {
+      leaveRoom(roomId, playerId);
 
-    room.players = room.players.filter(p => p.id !== socket.id);
+      // Si aún existe la sala, actualiza a los jugadores
+      if (allRooms[roomId]) {
+        io.to(roomId).emit("update_players", allRooms[roomId].players);
+      }
 
-    if (room.players.length === 0) {
-      deleteRoom(roomId);
-      console.log(`🗑️ Sala eliminada: ${roomId}`);
-    } else {
-      io.to(roomId).emit("update_players", room.players);
+      io.emit("rooms_list", getPublicRooms());
+
+      console.log(`👋 Jugador ${playerId} salió de la sala ${roomId}`);
+      break;
     }
   }
-  console.log(`🔴 Jugador desconectado: ${socket.id}`);
 }

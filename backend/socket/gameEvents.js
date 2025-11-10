@@ -1,6 +1,7 @@
 import { asignarCartaJugador, startPowerupSpawner } from "../logic/powerups/powerupLogic.js";
 import { getRoom } from "../logic/roomsManager.js";
 import { calcularPalabrasRestantes } from "../logic/wordLogic.js";
+import { getRoom, leaveRoom } from "../logic/roomsManager.js";
 
 export function registerGameEvents(io, socket) {
 
@@ -50,20 +51,25 @@ export function registerGameEvents(io, socket) {
       },
     });
 
-    // socket.broadcast.to(roomId).emit("update_progress", {
-    //   data: { roomId, players: room.players },
-    // });
-
     console.log(`✅ [Game] ${jugador.playerId} completó palabra en ${roomId}`);
-    
-    // SOCKET QUE INICIA EL GENERADOR DE POWERUPS AL COMENZAR EL JUEGO 
-    startPowerupSpawner(io, roomId, room, 10000);
-    console.log(`🚀 Iniciado generador de powerups en ${roomId}`);
   });
 
 
-  // SOCKET QUE ESCUCHA CUANDO UN JUGADOR RECLAMA UN POWERUP
-socket.on("claim_powerup", (msg) => {
+  socket.on("leave_game", ({ playerId, roomId }) => {
+  const room = getRoom(roomId);
+  if (!room) return;
+
+  leaveRoom(roomId, playerId);
+
+  // Notificar a los jugadores restantes
+  if (room.players.length > 0) {
+    io.to(roomId).emit("update_players", room.players);
+  }
+
+    console.log(`👋 Jugador ${playerId} salió de la sala ${roomId}`);
+  });
+
+  socket.on("claim_powerup", (msg) => {
   const { roomId, playerId, carta } = msg.data;
   const room = getRoom(roomId);
   if (!room) return;
@@ -74,6 +80,4 @@ socket.on("claim_powerup", (msg) => {
   // Emitir al jugador su nueva carta
   io.to(playerId).emit("powerup_spawned", { carta });
 });
-
 }
-
