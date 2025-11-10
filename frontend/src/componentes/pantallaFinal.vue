@@ -16,7 +16,8 @@
 
 <script setup>
 import { defineEmits, defineProps } from 'vue'
-import communicationManager from '../services/communicationManager';
+import communicationManager from '../services/CommunicationManager.js'
+import { playerId, roomId } from '../logic/globalState.js' // tu estado global
 
 // Prop para recibir el nombre del ganador
 const props = defineProps({
@@ -30,6 +31,12 @@ const props = defineProps({
 const emit = defineEmits(['go-home'])
 
 function goHome() {
+  communicationManager.emit('leave_game', { playerId: playerId.value, roomId: roomId.value })
+
+  // 2️⃣ Desconectar el socket
+  communicationManager.disconnect()
+
+  // 3️⃣ Emitir evento local para navegación
   emit('go-home')
 }
 </script>
