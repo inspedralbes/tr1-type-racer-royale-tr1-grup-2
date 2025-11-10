@@ -8,6 +8,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/palabras": "http://localhost:3000",
+      "/user": "http://localhost:3000",
     },
   },
   resolve: {

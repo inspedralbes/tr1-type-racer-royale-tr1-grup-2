@@ -16,7 +16,8 @@
 
 <script setup>
 import { defineEmits, defineProps } from 'vue'
-
+import communicationManager from '../services/CommunicationManager.js'
+import { playerId, roomId } from '../logic/globalState.js' // tu estado global
 
 // Prop para recibir el nombre del ganador
 const props = defineProps({
@@ -26,21 +27,17 @@ const props = defineProps({
   }
 })
 
-function handleGoHome() {
-  // 1️⃣ Desconecta el socket
-  communicationManager.disconnect();
+// Evento que se emite cuando el usuario quiere volver al inicio
+const emit = defineEmits(['go-home'])
 
-  // 2️⃣ Limpia variables globales
-  playerId.value = "";
-  playerName.value = "";
-  roomId.value = "";
-  globalPlayers.value = [];
+function goHome() {
+  communicationManager.emit('leave_game', { playerId: playerId.value, roomId: roomId.value })
 
-  // 3️⃣ Oculta la pantalla final (opcional, si vas a redirigir)
-  mostrarPantallaFinal.value = false;
+  // 2️⃣ Desconectar el socket
+  communicationManager.disconnect()
 
-  // 4️⃣ Redirige al inicio
-  window.location.href = "/"; // ✅ Forzar regreso a la pantalla inicial
+  // 3️⃣ Emitir evento local para navegación
+  emit('go-home')
 }
 </script>
 

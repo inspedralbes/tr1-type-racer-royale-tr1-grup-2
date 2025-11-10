@@ -1,8 +1,18 @@
 <script setup>
+import { ref, onMounted, onUnmounted, computed, nextTick } from "vue";
+import communicationManager from "../services/CommunicationManager.js";
 import { ref, onMounted, onUnmounted, computed } from "vue";
 import communicationManager from "../services/communicationManager.js";
 import pantallaFinal from "./pantallaFinal.vue";
 import { playerName, playerId } from "../logic/globalState.js";
+// 🚨 Importar el componente 3D renombrado
+import AnimacionJuego from "./interfazAnimacion.vue";
+
+// --- 3D / CRUPIER ESTADO (TRAÍDO DEL ANTIGUO juego.vue) ---
+const crupierState = ref("normal"); // 'normal' o 'powerup'.
+const dialogText = ref("Bienvenidos todos."); // Diálogo inicial
+const show2DUI = ref(false); // Controla la visibilidad del Crupier y Diálogo
+const animationDuration = ref(0); // Duración de la animación 3D
 
 // 🟩 Variables para manejar la pantalla final
 const mostrarPantallaFinal = ref(false);
@@ -17,17 +27,31 @@ const palabraActualIndex = ref(0);
 const palabrasCompletadasEnBloque = ref(0);
 const palabraInvalida = ref(false);
 const playerIdActual = playerId.value; // Cambiar dinámicamente si lo tienes desde login
-const roomId = ref("room-abc");
 const playerNameActual = playerName.value; // Cambiar dinámicamente si lo tienes desde lobby
 
-const progresoJugadores = ref([]);
+const emit = defineEmits(["juego-finalizado"]);
+
+const props = defineProps({
+  jugador: {
+    type: Object,
+    required: true,
+  },
+  room: {
+    type: Object,
+    required: true,
+  },
+});
+
+const roomId = ref(props.room.roomId);
 
 // 🟦 FUNCIONES DE SOCKET ADAPTADAS A COMMUNICATION MANAGER
 
+// FUNCION QUE MANEJA LA ACTUALIZACION DE PALABRAS DEL JUGADOR
 function onUpdatePlayerWords(msg) {
   const { playerId: jugador, remainingWords, status } = msg.data;
 
   console.log("📤 playerId front:", playerId.value, typeof playerId.value);
+  console.log("📥 playerId backend:", jugador, typeof jugador);
   console.log("📥 playerId backend:", jugador, typeof jugador);
 
   if (jugador === playerId.value) {
@@ -37,13 +61,16 @@ function onUpdatePlayerWords(msg) {
     console.log("🔴 DESPUÉS - listaEntera:", listaEntera.value);
     console.log("🔤 Palabras status actualizadas:", status);
     if (status === "finished") {
-      ganador.value = playerName.value;
-      mostrarPantallaFinal.value = true;
-      console.log("🎉 Jugador ha terminado. Mostrando pantalla final.");
+      ganador.value = playerNameActual || playerIdActual;
+      emit("juego-finalizado", ganador.value);
+      console.log(
+        `🎉 Has terminado todas las palabras. Eres el ganador: ${ganador.value}`
+      );
     }
   }
 }
 
+// FUNCION QUE MANEJA LA ACTUALIZACION DEL PROGRESO DE TODOS LOS JUGADORES
 function onUpdateProgress(msg) {
   const { roomId: roomRecibido, players } = msg.data;
   if (roomRecibido !== roomId.value) return; // Ignora si no es la misma sala
@@ -61,9 +88,16 @@ function onUpdateProgress(msg) {
   // (Opcional) Log visual para debug
   players.forEach((p) => {
     console.log(
-      `Jugador ${p.username}: ${p.completedWords} completadas, estado: ${p.status}`
+      `Jugador ${p.id}: ${p.completedWords} palabras completadas, estado: ${p.status}`
     );
   });
+
+  const ganadorJugador = players.find((p) => p.status === "finished");
+  if (ganadorJugador) {
+    ganador.value = ganadorJugador.username;
+    emit("juego-finalizado", ganador.value);
+    console.log(`🎉 La partida terminó. Ganador: ${ganadorJugador.playerId}`);
+  }
 }
 
 // 🟩 MOUNT / UNMOUNT
@@ -72,11 +106,11 @@ onMounted(() => {
   communicationManager.connect();
 
   // 🔹 Fetch palabras iniciales usando endpoint dinámico
-  const count = 10; // o el número de palabras que quieras
+  const count = 10;
   const payload = {
     roomId: roomId.value,
     playerId: playerId.value,
-    playerName: playerName.value, // 👈 asegúrate de tener esta ref/reactive variable definida
+    playerName: playerName.value,
     count,
   };
 
@@ -110,10 +144,11 @@ onUnmounted(() => {
   communicationManager.off("update_progress", onUpdateProgress);
 
   // Desconectar socket
-  communicationManager.disconnect();
+  // communicationManager.emit("leave_room", { playerId });
+  // communicationManager.disconnect();
 });
 
-// 🧩 Validación carácter a carácter
+// 🧩 FUNCION QUE VALIDA SI CADA CARÁCTER ESTA BIEN ESCRITO
 function validarInput() {
   const palabraEscrita = palabraUser.value;
   const objetivo = palabraObjetivo.value;
@@ -138,7 +173,7 @@ function validarInput() {
   return esValidaAhora;
 }
 
-// 🧠 Maneja la pulsación de tecla (espacio)
+// 🧠 MANEJA LA PULSACIÓN DE LA TECLA ESPACIO
 function onInputKeyDown(event) {
   if (event.key === " " && palabraUser.value.length > 0) {
     event.preventDefault();
@@ -146,19 +181,6 @@ function onInputKeyDown(event) {
     if (palabraUser.value === palabraObjetivo.value) {
       completedWords.value++;
       enviarPalabra(palabraUser.value);
-
-      //     // 🔹 Primero limpiamos el input
-      //     palabraUser.value = "";
-
-      //     // 🔹 LUEGO incrementamos los contadores
-      //     completedWords.value++;
-      //     palabrasCompletadasEnBloque.value++;
-
-      // // 🔹 Si alcanzas el final del bloque de 5, avanzar el bloque
-      //     if (palabrasCompletadasEnBloque.value >= 5) {
-      //      palabraActualIndex.value += 5;
-      //       palabrasCompletadasEnBloque.value = 0;
-      //     }
     } else {
       console.warn("Palabra incorrecta. Errores:", errorCount.value);
     }
@@ -171,7 +193,9 @@ function onInputPaste(event) {
   event.preventDefault();
 }
 
-// 📤 Enviar palabra al servidor
+//
+// FUNCION QUE ENVIA LA PALABRA COMPLETADA AL SERVIDOR
+//
 function enviarPalabra(palabraCompletada) {
   const payload = {
     wordId: 0,
@@ -199,6 +223,45 @@ const palabraObjetivo = computed(() => {
 });
 
 const esValido = computed(() => validarInput());
+
+// --- MANEJADORES DE EVENTO DE ANIMACIÓN 3D (TRAÍDO DEL ANTIGUO juego.vue) ---
+
+/**
+ * Captura la duración total de la animación 3D y programa la aparición de la UI 2D.
+ */
+const handleAnimationDuration = (durationInSeconds) => {
+  animationDuration.value = durationInSeconds;
+
+  // UI 2D (Crupier y juego) aparece 2 segundos antes del final.
+  const delayBeforeEnd = 2;
+  const delayMs = Math.max(100, (durationInSeconds - delayBeforeEnd) * 1000);
+
+  setTimeout(() => {
+    show2DUI.value = true;
+    // nextTick para asegurar que la animación CSS se aplique.
+    nextTick(() => {
+      console.log("Crupier y Diálogo 2D/UI de juego mostrados con nextTick.");
+    });
+  }, delayMs);
+};
+
+/**
+ * Se llama cuando el componente 3D emite 'animationFinished' (al final real).
+ */
+const handleAnimationFinished = () => {
+  console.log("Animación 3D oficialmente terminada. El juego comienza.");
+};
+
+// 🧮 Computadas de Estética
+const showPowerupImage = computed(() => crupierState.value === "powerup");
+
+const reboteClass = computed(() => ({
+  "rebote-entrada": show2DUI.value,
+}));
+
+const slideInUpClass = computed(() => ({
+  "slide-in-up": show2DUI.value,
+}));
 </script>
 
 <template>
@@ -207,17 +270,15 @@ const esValido = computed(() => validarInput());
     :winner="ganador"
     @go-home="mostrarPantallaFinal = false"
   />
-  <div id="contenedor-juego">
+
+  <div class="bottom-ui-container" :class="slideInUpClass">
     <ul class="lista-palabras">
       <li
         v-for="(palabra, index) in palabrasEnVista"
-        :key="index + palabraActualIndex"
-        :class="{
-          'palabra-actual': index === palabrasCompletadasEnBloque,
-          'palabra-completada-bloque': index < palabrasCompletadasEnBloque,
-        }"
+        :key="index"
+        :class="{ 'palabra-actual': index === 0 }"
       >
-        <template v-if="index === palabrasCompletadasEnBloque">
+        <template v-if="index === 0">
           <span class="escrita-correcta">{{
             esValido ? palabraUser : ""
           }}</span>
@@ -225,131 +286,369 @@ const esValido = computed(() => validarInput());
             palabra.substring(palabraUser.length)
           }}</span>
         </template>
-
         <template v-else>
           <span class="restante">{{ palabra }}</span>
         </template>
       </li>
     </ul>
 
-    <div class="contenedor-texto">
-      <input
-        type="text"
-        class="text-input"
-        :class="{
-          'input-error': !esValido && palabraUser.length > 0,
-          'input-ok': esValido && palabraUser.length > 0,
-        }"
-        v-model="palabraUser"
-        @keydown="onInputKeyDown"
-        @paste="onInputPaste"
-        :placeholder="
-          palabraObjetivo
-            ? `Escribe: ${palabraObjetivo}`
-            : 'Cargando palabras...'
-        "
-        autofocus
-      />
-    </div>
+    <div class="input-stats-row">
+      <div class="contenedor-texto">
+        <input
+          type="text"
+          class="text-input"
+          :class="{
+            'input-error': !esValido && palabraUser.length > 0,
+            'input-ok': esValido && palabraUser.length > 0,
+          }"
+          v-model="palabraUser"
+          @keydown="onInputKeyDown"
+          @paste="onInputPaste"
+          :placeholder="
+            palabraObjetivo
+              ? `Escribe: ${palabraObjetivo}`
+              : 'Cargando palabras...'
+          "
+          autofocus
+        />
+      </div>
 
-    <div class="info-juego">
-      <p>
-        Palabras Completadas: <span>{{ completedWords }}</span>
-      </p>
-      <p>
-        Errores:
-        <span :class="{ 'error-count': errorCount > 0 }">{{ errorCount }}</span>
-      </p>
+      <div class="stats-right">
+        <p>
+          Palabras Completadas: <span>{{ completedWords }}</span>
+        </p>
+        <p>
+          Errores:<span :class="{ 'error-count': errorCount > 0 }">{{
+            errorCount
+          }}</span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="game-background">
+    <AnimacionJuego
+      @animationFinished="handleAnimationFinished"
+      @animationDurationCalculated="handleAnimationDuration"
+    />
+
+    <div id="contenedor-juego">
+      <div id="crupier-entero" :class="reboteClass">
+        <div
+          id="crupier-normal"
+          :style="{ display: showPowerupImage ? 'none' : 'flex' }"
+        >
+          <img
+            src="/assets/img/crupier-normal_oficial.png"
+            alt="Crupier Normal"
+          />
+        </div>
+        <div
+          id="crupier-caarta"
+          :style="{ display: showPowerupImage ? 'flex' : 'none' }"
+        >
+          <img
+            src="/assets/img/crupier-carta_oficial.png"
+            alt="Crupier Carta"
+          />
+        </div>
+      </div>
+
+      <div class="input-dialog-container" :class="reboteClass">
+        <div class="input__container">
+          <div class="shadow__input"></div>
+          <p style="font-size: 1rem; color: #e0e8f0; margin: 0; padding: 0">
+            {{ dialogText }}
+          </p>
+        </div>
+      </div>
     </div>
   </div>
 </template>
+
 <style scoped>
+/* ------------------------------------------------ */
+/* --- ESTILOS DE FONDO Y ESTRUCTURA (CREEPY) --- */
+/* ------------------------------------------------ */
+
+.game-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #050505;
+  z-index: 0;
+  font-family: "Inter", sans-serif;
+}
+
+/* Contenedor principal de la UI 2D (por encima del 3D) */
 #contenedor-juego {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* ------------------------------------------------ */
+/* --- ESTILOS DE UI DE JUEGO (SLIDE-IN-UP) --- */
+/* ------------------------------------------------ */
+
+.bottom-ui-container {
+  position: fixed;
+  bottom: 5vh;
+  width: 100%;
+  left: 5%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
-  width: 100vw;
-  height: 100vh;
-  padding: 20px;
-  box-sizing: border-box;
-  background-color: rgba(0, 0, 0, 0.5);
+  padding-bottom: 0;
+  pointer-events: auto;
+  z-index: 3;
+  transform: translateY(100%);
+  opacity: 0;
+  transition: transform 0.8s cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 0.5s ease-out;
 }
 
-#contenedor-mesa {
-  margin-top: 15%;
-  background-image: url(../../public/assets/img/Mesa-sinfondo-nopixel.png);
-  background-size: cover;
+.bottom-ui-container.slide-in-up {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.input-stats-row {
   display: flex;
-  min-width: 1000px;
-  min-height: 600px;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 900px;
+  padding: 20px 30px;
+  margin-top: 20px;
+  box-sizing: border-box;
+  border-radius: 12px;
+  position: relative;
+  z-index: 10;
+  overflow: hidden;
+  background: linear-gradient(
+    to bottom,
+    rgba(10, 0, 0, 0.9) 0%,
+    rgba(20, 0, 0, 0.7) 70%,
+    rgba(0, 0, 0, 0) 100%
+  );
+
+  border: 1px solid rgba(139, 90, 43, 0.4);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7), 0 0 15px rgba(139, 90, 43, 0.3);
 }
 
-#contenedor-mesa span {
-  color: white;
-  font-size: 24px;
-  align-self: center;
-  margin: auto;
+.input-stats-row::before {
+  content: none;
 }
 
 .contenedor-texto {
-  margin-top: 50px;
+  flex-grow: 1;
+  display: flex;
+  justify-content: flex-start;
+  margin: 0;
 }
+
 .text-input {
-  font-family: "Courier New", Courier, monospace;
+  font-family: "Georgia", serif;
   font-size: 20px;
-  min-width: 500px;
+  width: 350px;
+  max-width: 350px;
+  min-width: 250px;
   min-height: 30px;
-  border-radius: 5px;
+  border-radius: 6px;
   text-align: center;
-  border-color: rgba(137, 43, 226, 0);
-  background-color: rgba(240, 248, 255, 0);
-  color: wheat;
+  border: 2px solid #8b5a2b;
+  background-color: rgba(20, 5, 5, 0.9);
+  color: #f0e68c;
   position: relative;
   z-index: 5;
+  padding: 10px;
+  box-shadow: inset 0 0 8px rgba(139, 90, 43, 0.6), 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+.input-error {
+  border: 2px solid #ff4500 !important;
+  color: #ffd700 !important;
+  box-shadow: 0 0 8px rgba(255, 69, 0, 0.8), inset 0 0 8px rgba(255, 69, 0, 0.5);
+}
+.input-ok {
+  border: 2px solid #32cd32 !important;
+  box-shadow: 0 0 8px rgba(50, 205, 50, 0.6),
+    inset 0 0 8px rgba(50, 205, 50, 0.4);
+}
+
+.stats-right {
+  font-family: "Georgia", serif;
+  color: #f0e68c;
+  font-size: 18px;
+  white-space: nowrap;
+  text-align: right;
+  padding-left: 30px;
+  text-shadow: 0 0 5px rgba(240, 230, 140, 0.3);
+}
+
+.stats-right p {
+  margin: 5px 0;
+}
+
+.stats-right span {
+  font-weight: bold;
+}
+
+.error-count {
+  color: #ff4500;
+  font-weight: bold;
+  text-shadow: 0 0 8px rgba(255, 69, 0, 0.5);
 }
 
 .lista-palabras {
   list-style: none;
   padding: 0;
-  margin-top: 20px;
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-family: "Georgia", serif;
   font-size: 28px;
   display: flex;
   gap: 15px;
-  color: #ffffff;
+  color: #d4af37;
   white-space: nowrap;
   justify-content: center;
+  text-shadow: 0 0 8px rgba(212, 175, 55, 0.4);
 }
 .palabra-actual {
-  color: #fff;
+  color: #ffffff;
   font-weight: bold;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
 }
 .escrita-correcta {
-  color: yellowgreen;
+  color: #32cd32;
   font-weight: bold;
+  text-shadow: 0 0 8px rgba(50, 205, 50, 0.5);
 }
 .restante {
-  color: #fff;
+  color: #555555;
   font-weight: normal;
 }
 
-.input-error {
-  border: 2px solid red !important;
-  color: red !important;
-}
-.input-ok {
-  border: 2px solid yellowgreen !important;
-}
-.info-juego {
-  margin-top: 20px;
-  color: #fff;
-  font-size: 18px;
+/* ------------------------------------------------ */
+/* --- AJUSTES DEL CRUPIER Y DIÁLOGO (CASINO CREEPY) --- */
+/* ------------------------------------------------ */
+
+#crupier-entero {
+  position: fixed;
+  left: 50%;
+  top: 0;
   display: flex;
-  gap: 30px;
+  justify-content: center;
+  align-items: flex-start;
+  z-index: 4;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateX(-50%) translateY(70vh);
+  transition: opacity 0.5s ease-out 0.1s,
+    transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.1s;
+  pointer-events: none;
 }
-.error-count {
-  color: red;
+
+#crupier-entero.rebote-entrada {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+#crupier-entero img {
+  max-height: 70vh;
+  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.5) sepia(0.5)
+    hue-rotate(340deg) saturate(1.5);
+}
+
+#crupier-normal,
+#crupier-caarta {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  justify-content: center;
+}
+
+.input-dialog-container {
+  position: fixed;
+  top: 25%;
+  margin-left: 20%;
+  padding-left: 30px;
+  z-index: 3;
+  opacity: 0;
+  transform: translateY(calc(-50% + 70vh));
+  transition: opacity 0.5s ease-out 0.1s,
+    transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.1s;
+  pointer-events: none;
+}
+
+.input-dialog-container.rebote-entrada {
+  opacity: 1;
+  transform: translateY(-50%);
+}
+
+.input__container {
+  position: relative;
+  background: #330000;
+  padding: 20px;
+  border: 4px solid #8b5a2b;
+  max-width: 350px;
+  box-shadow: 8px 8px 0 #000;
+  pointer-events: none;
+  font-family: "Georgia", serif;
+  color: #f0e68c;
+}
+
+.shadow__input {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  bottom: 0;
+  z-index: -1;
+  transform: translateZ(-50px);
+  background: linear-gradient(
+    45deg,
+    rgba(0, 0, 0, 0.6) 0%,
+    rgba(0, 0, 0, 0.3) 100%
+  );
+  filter: blur(30px);
+}
+
+.input__container::before {
+  content: "CRUPIER";
+  position: absolute;
+  top: -15px;
+  left: 20px;
+  background: #8b5a2b;
+  color: #000000;
   font-weight: bold;
+  padding: 5px 10px;
+  font-size: 14px;
+  transform: translateZ(50px);
+  z-index: 4;
+  border: 2px solid #000000;
+}
+.carta-palo.spade {
+  background-image: url("../../public/assets/img/picas.png");
+}
+.carta-palo.heart {
+  background-image: url("../../public/assets/img/corazones.png");
+}
+.carta-palo.diamond {
+  background-image: url("../../public/assets/img/diamantes.png");
+}
+.carta-palo.club {
+  background-image: url("../../public/assets/img/treboles.png");
 }
 .carta-palo.spade {
   background-image: url("../../public/assets/img/picas.png");

@@ -1,124 +1,94 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted } from "vue";
+import communicationManager from "./services/communicationManager";
 import RegistroJugador from "./componentes/registroJugador.vue";
+import PantallaSalas from "./componentes/pantallaSalas.vue";
 import Lobby from "./componentes/Lobby.vue";
 import Juego from "./componentes/InterfazJuego.vue";
 import PantallaFinal from "./componentes/pantallaFinal.vue";
 import communicationManager from "./services/communicationManager";
 
-const vistaActual = ref("registroJugador"); // registroJugador | lobby | juego | final
+const vistaActual = ref("registro"); // registro | salas | lobby | juego | final
+const jugador = ref(null);
 const lobbyState = ref(null);
-const gameState = ref({
-  players: [], // lista de jugadores
-  remainingWords: [], // palabras del jugador actual
-});
-const ganador = ref("");
-const playerId = ref("");
-const roomId = ref("");
+const roomSeleccionada = ref(null);
+const ganador = ref(null);
 
-// 🔹 RegistroJugador → Lobby
-function handleRegistration(payload) {
-  lobbyState.value = payload;
-  playerId.value = payload.playerId;
-  roomId.value = payload.roomId;
+function onJugadorRegistrado(data) {
+  jugador.value = data;
+  vistaActual.value = "salas";
+}
+
+// 🔹 Evento: jugador entra a sala
+function onSalaSeleccionada(room) {
+  roomSeleccionada.value = room;
   vistaActual.value = "lobby";
 }
 
-// 🔹 Lobby → Juego
-function handleGameStarted(payload) {
-  console.log("🎮 Game started:", payload);
-  gameState.value = payload;
+// 🔹 Evento: partida iniciada
+function onJuegoIniciado(payload) {
   vistaActual.value = "juego";
 }
 
-// 🔹 Fin del juego → Pantalla final
-function handleGameFinished(payload) {
-  console.log("🏁 Game finished:", payload);
-  ganador.value = payload.winnerName || payload.winnerId;
+// 🔹 Evento: juego terminado
+function onJuegoFinalizado(winner) {
+  ganador.value = winner;
   vistaActual.value = "final";
 }
 
-// 🔹 Actualizaciones del lobby
-function handlePlayerListUpdate(payload) {
-  if (vistaActual.value === "lobby" && lobbyState.value) {
-    console.log("👥 Actualización lista jugadores:", payload);
-    lobbyState.value.players = payload.players;
+function handleGoHome() {
+  try {
+    communicationManager.reset(); // desconecta y limpia todo
+  } catch (e) {
+    console.error("Error al desconectar socket:", e);
   }
+
+  console.log("🔹 Cambiando vistaActual a 'registro'");
+  // Cambiar la vista al registro
+  vistaActual.value = "registro";
+  // Limpiar variables si quieres
+  jugador.value = null;
+  roomSeleccionada.value = null;
+  ganador.value = null;
 }
 
-// 🔹 Actualizaciones durante el juego
-function handleUpdatePlayerWords(payload) {
-  if (vistaActual.value !== "juego") return;
-
-  const { playerId: updatedPlayerId, remainingWords, status } = payload.data;
-  console.log("🔤 update_player_words recibido:", payload.data);
-
-  // Actualiza solo al jugador que corresponde
-  const existingPlayer = gameState.value.players.find(
-    (p) => p.id === updatedPlayerId
-  );
-
-  if (existingPlayer) {
-    existingPlayer.remainingWords = remainingWords;
-    existingPlayer.status = status;
-  } else {
-    // Si no estaba, lo añade
-    gameState.value.players.push({
-      id: updatedPlayerId,
-      remainingWords,
-      status,
-    });
-  }
-
-  // Si es el jugador actual, también actualiza su lista principal
-  if (updatedPlayerId === playerId.value) {
-    gameState.value.remainingWords = remainingWords;
-  }
-}
-
-onMounted(() => {
-  communicationManager.on("game_started", handleGameStarted);
-  communicationManager.on("game_finished", handleGameFinished);
-  communicationManager.on("player_list_updated", handlePlayerListUpdate);
-  communicationManager.on("update_player_words", handleUpdatePlayerWords);
-});
-
-onUnmounted(() => {
-  communicationManager.off("game_started", handleGameStarted);
-  communicationManager.off("game_finished", handleGameFinished);
-  communicationManager.off("player_list_updated", handlePlayerListUpdate);
-  communicationManager.off("update_player_words", handleUpdatePlayerWords);
-});
+// FUNCIONES QUE MANEJAN EL CAMBIO DE PANTALLA CON SOCKETS
+// function handleRoomJoined(lobbyData) {
+//   console.log("🏠 Datos recibidos para el lobby:", lobbyData);
+//   lobbyState.value = lobbyData;      // guardar info de sala
+//   vistaActual.value = "lobby";       // cambiar vista automáticamente
+// }
 </script>
 
 <template>
-  <!-- <InterfazJuego>   </InterfazJuego> -->
+  <PantallaSalas
+    v-if="vistaActual === 'registro' || vistaActual === 'salas'"
+    :jugador="jugador"
+    @sala-seleccionada="onSalaSeleccionada"
+    :escena="vistaActual"
+  />
   <RegistroJugador
-    v-if="vistaActual === 'registroJugador'"
-    @registrado="handleRegistration"
+    v-if="vistaActual === 'registro'"
+    @registrado="onJugadorRegistrado"
   />
 
   <Lobby
     v-if="vistaActual === 'lobby'"
-    :lobby-state="lobbyState"
+    :jugador="jugador"
+    :room="roomSeleccionada"
+    @juego-iniciado="onJuegoIniciado"
   />
 
   <Juego
     v-if="vistaActual === 'juego'"
-    :player-id="playerId"
-    :room-id="roomId"
-    :game-state="gameState"
+    :jugador="jugador"
+    :room="roomSeleccionada"
+    @juego-finalizado="onJuegoFinalizado"
   />
 
   <PantallaFinal
     v-if="vistaActual === 'final'"
     :winner="ganador"
-    @go-home="vistaActual = 'registroJugador'"
+    @go-home="handleGoHome"
   />
 </template>
-
-<style>
-body {
-  font-family: "Inter", sans-serif;
-}
-</style>

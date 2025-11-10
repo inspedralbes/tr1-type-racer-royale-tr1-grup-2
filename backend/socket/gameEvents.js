@@ -24,84 +24,30 @@ setInterval(() => {
 }, 30000);
 
 export function registerGameEvents(io, socket) {
-  socket.on("word_typed", ({ data }) => {
-    if (!data || typeof data.word !== "string") {
-      console.warn("⚠️ palabraEscrita inválida:", data?.word);
-      return;
-    }
 
-    const respuesta = data.word.trim().toLowerCase();
-    const { roomId, playerId } = data;
-
+  //
+  // SOCKET QUE ESCUCHA CUANDO UN JUGADOR ESCRIBE UNA PALABRA
+  //
+  socket.on("word_typed", (msg) => {
+    const { wordId, completedWords, playerId, roomId, threshold = 3 } = msg.data;
     const room = getRoom(roomId);
+    console.log("🟢 room obtenida en word_typed:", room, "para roomId:", roomId);
     if (!room) return;
 
-    const jugador = room.players.find(
-      (p) => p.playerId === playerId || p.id === playerId
-    );
+    const jugador = room.players.find(p => p.playerId === playerId);
+    console.log("🟢 jugador encontrado:", jugador, "buscando playerId:", playerId);
     if (!jugador) return;
 
-    const palabraCarta = room.cartaActiva?.palabra[0]?.toLowerCase();
+    calcularPalabrasRestantes({ [roomId]: room }, roomId, playerId, wordId, threshold, completedWords);
 
-    // 🔹 Si es respuesta a la carta común
-    if (
-      room.cartaActiva &&
-      room.estado === "esperando_respuesta" &&
-      respuesta === palabraCarta
-    ) {
-      const yaRespondio = room.respuestas.find((r) => r.playerId === playerId);
-      if (!yaRespondio) {
-        room.respuestas.push({ playerId, timestamp: Date.now() });
+    if (jugador.words.length === 0) jugador.status = "finished";
+    console.log(`📝 [Game] Palabra completada por ${jugador.playerId} en ${roomId} y el status ${jugador.status}`);
+    console.log("🟢 jugador encontradoFIEHIER:", jugador, "buscando playerId:", playerId);
+    console.log("🔹 Emitiendo update_player_words a roomId:", roomId, "socket.id:", socket.id, "playerId:", playerId);
+    console.log("🟢 Sockets en room:", io.sockets.adapter.rooms.get(roomId));
 
-        if (!jugador.powerUp) {
-          jugador.powerUp = obtenerPowerUpAleatorio();
-          io.to(roomId).emit("powerup_asignado", {
-            playerId,
-            powerUp: jugador.powerUp,
-          });
-        }
-
-        room.estado = "resolviendo";
-        room.cartaActiva.completada = true;
-
-        io.to(roomId).emit("carta_completada", {
-          playerId,
-          carta: room.cartaActiva,
-        });
-
-        console.log(`🏆 ${playerId} ganó la carta en sala ${roomId}`);
-      }
-      return; // ✅ No procesar como palabra personal
-    }
-
-    // 🔹 Si es palabra personal
-    const wordId = 0; // ✅ siempre eliminar la primera palabra
-    const threshold = 3;
-    const completedWords = (jugador.completedWords || 0) + 1;
-
-    calcularPalabrasRestantes(
-      { [roomId]: room },
-      roomId,
-      playerId,
-      wordId,
-      threshold,
-      completedWords
-    );
-
-    if (jugador.completedWords >= 34) {
-      jugador.status = "finished";
-
-      io.to(roomId).emit("jugador_ganador", {
-        playerId,
-        mensaje: `🎉 ¡${jugador.name || playerId} ha ganado la partida!`,
-      });
-
-      console.log(
-        `🏁 Jugador ${playerId} ha ganado la partida en sala ${roomId}`
-      );
-    }
-
-    io.to(roomId).emit("update_player_words", {
+    // ENVIAR LA ACTUALIZACIÓN SOLO AL JUGADOR QUE HA ESCRITO LA PALABRA
+    socket.emit("update_player_words", {
       data: {
         playerId,
         remainingWords: jugador.words,
@@ -111,8 +57,18 @@ export function registerGameEvents(io, socket) {
       },
     });
 
+    //ENVIAR LA ACTUALIZACIÓN A TODOS LOS DEMÁS JUGADORES EN LA SALA
     socket.broadcast.to(roomId).emit("update_progress", {
-      data: { roomId, players: room.players },
+      data: {
+        players: room.players.map(p => ({
+          roomId,
+          playerId: p.playerId,
+          username: p.username,
+          remainingWords: p.words,
+          status: p.status,
+          completedWords: p.completedWords,
+        })),
+      },
     });
 
     console.log(
@@ -120,5 +76,35 @@ export function registerGameEvents(io, socket) {
         jugador.playerId || jugador.id
       } completó palabra personal en ${roomId}`
     );
+  });
+
+
+  socket.on("leave_game", ({ playerId, roomId }) => {
+  const room = getRoom(roomId);
+  if (!room) return;
+
+  leaveRoom(roomId, playerId);
+
+  // Notificar a los jugadores restantes
+  if (room.players.length > 0) {
+    io.to(roomId).emit("update_players", room.players);
+  }
+
+    console.log(`👋 Jugador ${playerId} salió de la sala ${roomId}`);
+  });
+
+
+  socket.on("leave_game", ({ playerId, roomId }) => {
+  const room = getRoom(roomId);
+  if (!room) return;
+
+  leaveRoom(roomId, playerId);
+
+  // Notificar a los jugadores restantes
+  if (room.players.length > 0) {
+    io.to(roomId).emit("update_players", room.players);
+  }
+
+    console.log(`👋 Jugador ${playerId} salió de la sala ${roomId}`);
   });
 }
