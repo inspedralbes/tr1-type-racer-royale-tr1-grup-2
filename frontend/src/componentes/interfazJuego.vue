@@ -68,7 +68,7 @@ function onUpdatePlayerWords(msg) {
   }
 }
 
-// 
+//
 function onUpdateProgress(msg) {
   const { players } = msg.data;
   otrosJugadores.value = [];
@@ -81,10 +81,8 @@ function onUpdateProgress(msg) {
     );
 
     if (p.id === playerId.value) {
-
       completedWords.value = p.completedWords;
     } else {
-
       otrosJugadores.value.push({
         id: p.id,
         name: p.username || `Player ${p.id.substring(0, 4)}`,
@@ -213,16 +211,17 @@ function enviarPalabra(palabraCompletada) {
   console.log("📤 Datos enviados al servidor:", payload);
 }
 
-function empiezaJuego(){
+function empiezaJuego() {
   comenzar.value = true;
-  console.log('El valor de mostrar es:', comenzar.value);
+  console.log("El valor de mostrar es:", comenzar.value);
   if (audioPlayer.value) {
-    audioPlayer.value.volume = 0.4; 
-    audioPlayer.value.play()
+    audioPlayer.value.volume = 0.4;
+    audioPlayer.value
+      .play()
       .then(() => {
         console.log("Música de fondo iniciada por la interacción del usuario.");
       })
-      .catch(error => {
+      .catch((error) => {
         console.error("Error al reproducir el audio después del clic:", error);
       });
   }
@@ -230,13 +229,11 @@ function empiezaJuego(){
 
 // 🧮 Computadas
 const palabrasEnVista = computed(() => {
-
   if (!Array.isArray(listaEntera.value)) return []; // 🔹 SIEMPRE muestra las primeras 5 palabras del array
   return listaEntera.value.slice(0, 5);
 });
 
 const palabraObjetivo = computed(() => {
-
   // 🔹 La palabra objetivo es siempre la primera del array que viene del servidor
   return palabrasEnVista.value.length > 0 ? palabrasEnVista.value[0] : "";
 });
@@ -249,7 +246,6 @@ const esValido = computed(() => validarInput());
  * Captura la duración total de la animación 3D y programa la aparición de la UI 2D.
  */
 const handleAnimationDuration = (durationInSeconds) => {
-
   animationDuration.value = durationInSeconds; // UI 2D (Crupier y juego) aparece 2 segundos antes del final.
 
   const delayBeforeEnd = 2;
@@ -260,10 +256,8 @@ const handleAnimationDuration = (durationInSeconds) => {
     nextTick(() => {
       console.log("Crupier y Diálogo 2D/UI de juego mostrados con nextTick.");
     });
-
   }, delayMs);
 };
-
 
 /**
  * Se llama cuando el componente 3D emite 'animationFinished' (al final real).
@@ -281,17 +275,30 @@ const reboteClass = computed(() => ({
 }));
 
 const slideInUpClass = computed(() => ({
-  "slide-in-up": comenzar.value,
+  "slide-in-up": show2DUI.value,
 }));
 </script>
 
 <template>
-  <pantallaFinal v-if="mostrarPantallaFinal" :winner="ganador" @go-home="mostrarPantallaFinal = false" />
-  <audio ref="audioPlayer" src="../../public/assets/sonido/musica_ambiente.mp3" loop preload="auto"></audio>
+  <pantallaFinal
+    v-if="mostrarPantallaFinal"
+    :winner="ganador"
+    @go-home="mostrarPantallaFinal = false"
+  />
+  <audio
+    ref="audioPlayer"
+    src="../../public/assets/sonido/musica_ambiente.mp3"
+    loop
+    preload="auto"
+  ></audio>
 
   <div class="player-container-exterior" v-if="show2DUI">
-    <div v-for="(jugador, index) in otrosJugadores" :key="jugador.id" class="other-player-stat"
-      :class="`player-pos-${index}`">
+    <div
+      v-for="(jugador, index) in otrosJugadores"
+      :key="jugador.id"
+      class="other-player-stat"
+      :class="`player-pos-${index}`"
+    >
       <div class="player-name-chip">{{ jugador.name }}</div>
 
       <div class="player-stats-chip">
@@ -300,9 +307,13 @@ const slideInUpClass = computed(() => ({
     </div>
   </div>
 
-  <div v-if="comenzar" class="bottom-ui-container" :class="slideInUpClass">
+  <div class="bottom-ui-container" :class="slideInUpClass">
     <ul class="lista-palabras">
-      <li v-for="(palabra, index) in palabrasEnVista" :key="index" :class="{ 'palabra-actual': index === 0 }">
+      <li
+        v-for="(palabra, index) in palabrasEnVista"
+        :key="index"
+        :class="{ 'palabra-actual': index === 0 }"
+      >
         <template v-if="index === 0">
           <span class="escrita-correcta">{{
             esValido ? palabraUser : ""
@@ -321,23 +332,32 @@ const slideInUpClass = computed(() => ({
 
     <div class="input-stats-row">
       <div class="contenedor-texto">
-        <input type="text" class="text-input" :class="{
-          'input-error': !esValido && palabraUser.length > 0,
-          'input-ok': esValido && palabraUser.length > 0,
-        }" v-model="palabraUser" @keydown="onInputKeyDown" @paste="onInputPaste" :placeholder="palabraObjetivo
+        <input
+          type="text"
+          class="text-input"
+          :class="{
+            'input-error': !esValido && palabraUser.length > 0,
+            'input-ok': esValido && palabraUser.length > 0,
+          }"
+          v-model="palabraUser"
+          @keydown="onInputKeyDown"
+          @paste="onInputPaste"
+          :placeholder="
+            palabraObjetivo
               ? `Escribe: ${palabraObjetivo}`
               : 'Cargando palabras...'
-            " autofocus />
+          "
+          autofocus
+        />
       </div>
       <div class="stats-right">
-
         <p>
-          <img src="/assets/img/iconos/ficha.png" alt="">
+          <img src="/assets/img/iconos/ficha.png" alt="" />
           <span>{{ completedWords }}</span>
         </p>
 
         <p>
-          <img src="/assets/img/iconos/calavera.jpg" alt="">
+          <img src="/assets/img/iconos/calavera.jpg" alt="" />
           <span :class="{ 'error-count': errorCount > 0 }">{{
             errorCount
           }}</span>
@@ -347,21 +367,41 @@ const slideInUpClass = computed(() => ({
   </div>
 
   <div class="game-background">
-    <AnimacionJuego @animationFinished="handleAnimationFinished"
-      @animationDurationCalculated="handleAnimationDuration" />
+    <AnimacionJuego
+      @animationFinished="handleAnimationFinished"
+      @animationDurationCalculated="handleAnimationDuration"
+    />
 
     <div id="contenedor-juego">
       <div id="crupier-entero" :class="reboteClass">
-        <div id="crupier-normal" :style="{ display: crupierState === 'normal' ? 'flex' : 'none' }">
-          <img src="/assets/img/crupier-normal_oficial.png" alt="Crupier Normal" />
+        <div
+          id="crupier-normal"
+          :style="{ display: crupierState === 'normal' ? 'flex' : 'none' }"
+        >
+          <img
+            src="/assets/img/crupier-normal_oficial.png"
+            alt="Crupier Normal"
+          />
         </div>
 
-        <div id="crupier-confundido" :style="{ display: showConfusedImage ? 'flex' : 'none' }">
-          <img src="/assets/img/crupier-confundido_oficial.png" alt="Crupier Confundido" />
+        <div
+          id="crupier-confundido"
+          :style="{ display: showConfusedImage ? 'flex' : 'none' }"
+        >
+          <img
+            src="/assets/img/crupier-confundido_oficial.png"
+            alt="Crupier Confundido"
+          />
         </div>
 
-        <div id="crupier-carta" :style="{ display: showPowerupImage ? 'flex' : 'none' }">
-          <img src="/assets/img/crupier-carta_oficial.png" alt="Crupier Carta" />
+        <div
+          id="crupier-carta"
+          :style="{ display: showPowerupImage ? 'flex' : 'none' }"
+        >
+          <img
+            src="/assets/img/crupier-carta_oficial.png"
+            alt="Crupier Carta"
+          />
         </div>
       </div>
 
@@ -373,7 +413,13 @@ const slideInUpClass = computed(() => ({
             {{ dialogText }}
           </p>
 
-          <a @click="empiezaJuego()" class="siguiente" style="pointer-events: auto;"> > </a>
+          <a
+            @click="empiezaJuego()"
+            class="siguiente"
+            style="pointer-events: auto"
+          >
+            >
+          </a>
         </div>
       </div>
     </div>
@@ -390,9 +436,9 @@ const slideInUpClass = computed(() => ({
 
 @font-face {
   font-family: Font2;
-  src: url(../../public/assets/fuente/macabre/The\ Macabre.otf) format("opentype");
+  src: url(../../public/assets/fuente/macabre/The\ Macabre.otf)
+    format("opentype");
 }
-
 
 /* ------------------------------------------------ */
 /* --- ESTILOS DE FONDO Y ESTRUCTURA (CREEPY) --- */
@@ -463,10 +509,12 @@ const slideInUpClass = computed(() => ({
   position: relative;
   z-index: 10;
   overflow: hidden;
-  background: linear-gradient(to bottom,
-      rgba(10, 0, 0, 0.9) 0%,
-      rgba(20, 0, 0, 0.7) 70%,
-      rgba(0, 0, 0, 0) 100%);
+  background: linear-gradient(
+    to bottom,
+    rgba(10, 0, 0, 0.9) 0%,
+    rgba(20, 0, 0, 0.7) 70%,
+    rgba(0, 0, 0, 0) 100%
+  );
 
   border: 1px solid rgba(139, 90, 43, 0.4);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7), 0 0 15px rgba(139, 90, 43, 0.3);
@@ -561,7 +609,8 @@ const slideInUpClass = computed(() => ({
   margin-right: auto;
   text-align: center;
   justify-content: center;
-  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.7) sepia(0.2) hue-rotate(340deg) saturate(1.5);
+  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.7) sepia(0.2)
+    hue-rotate(340deg) saturate(1.5);
 }
 
 .palabra-actual {
@@ -609,7 +658,8 @@ const slideInUpClass = computed(() => ({
 
 #crupier-entero img {
   max-height: 70vh;
-  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.5) sepia(0.5) hue-rotate(340deg) saturate(1.5);
+  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.5) sepia(0.5)
+    hue-rotate(340deg) saturate(1.5);
 }
 
 #crupier-normal,
@@ -659,9 +709,11 @@ const slideInUpClass = computed(() => ({
   bottom: 0;
   z-index: -1;
   transform: translateZ(-50px);
-  background: linear-gradient(45deg,
-      rgba(0, 0, 0, 0.6) 0%,
-      + rgba(0, 0, 0, 0.3) 100%);
+  background: linear-gradient(
+    45deg,
+    rgba(0, 0, 0, 0.6) 0%,
+    + rgba(0, 0, 0, 0.3) 100%
+  );
   filter: blur(30px);
 }
 
@@ -680,7 +732,7 @@ const slideInUpClass = computed(() => ({
   border: 2px solid #000000;
 }
 
-.siguiente{
+.siguiente {
   position: absolute;
   z-index: 15;
   pointer-events: auto;
@@ -693,8 +745,6 @@ const slideInUpClass = computed(() => ({
   background-color: #5a0000;
   color: #f0e68c;
   cursor: pointer;
-  
-  /* Centrar el texto dentro del botón */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -703,7 +753,7 @@ const slideInUpClass = computed(() => ({
   pointer-events: auto;
   transition: background-color 0.2s;
 }
-.siguiente:hover{
+.siguiente:hover {
   background-color: #2c0000;
 }
 
@@ -719,7 +769,6 @@ const slideInUpClass = computed(() => ({
   width: 80vw;
   max-width: 1200px;
   height: 60vh;
-  /* Para que no interfiera con clics */
   z-index: 3;
 }
 
