@@ -1,7 +1,6 @@
 import { calcularPalabrasRestantes } from "../logic/wordLogic.js";
 import { getRoom } from "../logic/roomsManager.js";
 import { generarCartaPoker } from "../logic/cardsManager.js";
-import { obtenerPowerUpAleatorio } from "../logic/powerUpManager.js";
 
 // 🔄 Temporizador global para emitir cartas cada 30 segundos
 setInterval(() => {

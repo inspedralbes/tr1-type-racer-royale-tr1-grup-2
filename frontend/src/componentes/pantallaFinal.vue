@@ -16,7 +16,7 @@
 
 <script setup>
 import { defineEmits, defineProps } from 'vue'
-import communicationManager from '../services/CommunicationManager.js'
+import communicationManager from '../services/communicationManager.js'
 import { playerId, roomId } from '../logic/globalState.js' // tu estado global
 
 // Prop para recibir el nombre del ganador

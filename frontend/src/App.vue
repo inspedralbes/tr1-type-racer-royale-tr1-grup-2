@@ -6,7 +6,6 @@ import PantallaSalas from "./componentes/pantallaSalas.vue";
 import Lobby from "./componentes/Lobby.vue";
 import Juego from "./componentes/InterfazJuego.vue";
 import PantallaFinal from "./componentes/pantallaFinal.vue";
-import communicationManager from "./services/communicationManager";
 
 const vistaActual = ref("registro"); // registro | salas | lobby | juego | final
 const jugador = ref(null);
