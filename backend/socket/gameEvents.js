@@ -1,5 +1,6 @@
-import { calcularPalabrasRestantes } from "../logic/wordLogic.js";
+import { asignarCartaJugador, startPowerupSpawner } from "../logic/powerups/powerupLogic.js";
 import { getRoom } from "../logic/roomsManager.js";
+import { calcularPalabrasRestantes } from "../logic/wordLogic.js";
 
 export function registerGameEvents(io, socket) {
 
@@ -54,5 +55,25 @@ export function registerGameEvents(io, socket) {
     // });
 
     console.log(`✅ [Game] ${jugador.playerId} completó palabra en ${roomId}`);
+    
+    // SOCKET QUE INICIA EL GENERADOR DE POWERUPS AL COMENZAR EL JUEGO 
+    startPowerupSpawner(io, roomId, room, 10000);
+    console.log(`🚀 Iniciado generador de powerups en ${roomId}`);
   });
+
+
+  // SOCKET QUE ESCUCHA CUANDO UN JUGADOR RECLAMA UN POWERUP
+socket.on("claim_powerup", (msg) => {
+  const { roomId, playerId, carta } = msg.data;
+  const room = getRoom(roomId);
+  if (!room) return;
+
+  // Asignar carta al jugador que la reclama
+  asignarCartaJugador({ [roomId]: room }, roomId, playerId, carta);
+
+  // Emitir al jugador su nueva carta
+  io.to(playerId).emit("powerup_spawned", { carta });
+});
+
 }
+
