@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, computed, nextTick, watch } from "vue";
 import communicationManager from "../services/CommunicationManager.js";
 import { playerName, playerId } from "../logic/globalState.js";
 import AnimacionJuego from "./interfazAnimacion.vue";
+import musicaAmbiente from "../../public/assets/sonido/musica_ambiente.mp3";
 import sound from "../../public/assets/sonido/sonidoAccion/carddrop.mp3";
 import sound1 from "../../public/assets/sonido/sonidoAccion/mech-keyboard.mp3";
 
@@ -17,7 +18,7 @@ const mensajeInput = ref(dialogText.value[0]);
 const juegoIniciado = ref(false);
 const show2DUI = ref(false);
 const animationDuration = ref(0);
-const audioPlayer = ref(null);
+const audioPlayer = new Audio(musicaAmbiente);
 const pasarLetra = new Audio(sound);
 const teclado = new Audio(sound1);
 
@@ -52,7 +53,13 @@ const props = defineProps({
 });
 
 const roomId = ref(props.room.roomId);
-
+watch(palabraUser, (newVal, oldVal) => {
+  if (newVal.length > oldVal.length && newVal.length > 0) {
+    teclado.currentTime = 0;
+    teclado.play().catch(error => {
+    });
+  }
+});
 watch(show2DUI, (newValue) => {
   if (newValue) {
     empiezaJuego();
@@ -198,6 +205,10 @@ function onInputKeyDown(event) {
     if (palabraUser.value === palabraObjetivo.value) {
       completedWords.value++;
       enviarPalabra(palabraUser.value);
+      pasarLetra.currentTime = 0;
+      pasarLetra.play().catch(error => {
+        console.warn("No se pudo reproducir el sonido de caída de carta:", error);
+      });
     } else {
       console.warn("Palabra incorrecta. Errores:", errorCount.value);
     }
@@ -228,17 +239,18 @@ function enviarPalabra(palabraCompletada) {
 }
 
 function musica() {
-  if (audioPlayer.value) {
-    audioPlayer.value.volume = 0.4;
-    audioPlayer.value
-      .play()
+
+    audioPlayer.volume = 0.4;
+    audioPlayer.loop = true; 
+
+    audioPlayer
+      .play() 
       .then(() => {
         console.log("Música de fondo iniciada por la interacción del usuario.");
       })
       .catch((error) => {
         console.error("Error al reproducir el audio después del clic:", error);
       });
-  }
 }
 
 function empiezaJuego() {
@@ -308,34 +320,19 @@ const slideInUpClass = computed(() => ({
 </script>
 
 <template>
-  <pantallaFinal
-    v-if="mostrarPantallaFinal"
-    :winner="ganador"
-    @go-home="mostrarPantallaFinal = false"
-  />
+  <pantallaFinal v-if="mostrarPantallaFinal" :winner="ganador" @go-home="mostrarPantallaFinal = false" />
 
   <!-- Audios -->
-  <audio
-    ref="audioPlayer"
-    src="../../public/assets/sonido/musica_ambiente.mp3"
-    loop
-    preload="auto"
-  ></audio>
-  <audio
-    ref="keyPlayer"
-    src="../../public/assets/sonido/sonidoAccion/mech-keyboard.mp3"
-  ></audio>
-  <audio src="../../public/assets/sonido/sonidoAccion/carddrop.mp3"></audio>
+  <audio ref="keyPlayer" src="/assets/sonido/sonidoAccion/mech-keyboard.mp3"></audio>
+  <audio src="/assets/sonido/sonidoAccion/carddrop.mp3"></audio>
   <button v-on:click="musica()" id="btn_music">
-    <img src="../../public/assets/img/iconos/musica.jpg" alt="" />
+    <img src="/assets/img/iconos/musica.jpg" alt="" />
   </button>
+
+  <!-- Div para la estadistica de jugadores -->
   <div class="player-container-exterior" v-if="show2DUI">
-    <div
-      v-for="(jugador, index) in otrosJugadores"
-      :key="jugador.id"
-      class="other-player-stat"
-      :class="`player-pos-${index}`"
-    >
+    <div v-for="(jugador, index) in otrosJugadores" :key="jugador.id" class="other-player-stat"
+      :class="`player-pos-${index}`">
       <div class="player-name-chip">{{ jugador.name }}</div>
 
       <div class="player-stats-chip">
@@ -344,13 +341,10 @@ const slideInUpClass = computed(() => ({
     </div>
   </div>
 
+<!-- Lista de palabras / Input / Estadisticas -->
   <div v-if="comenzar" class="bottom-ui-container" :class="slideInUpClass">
     <ul class="lista-palabras">
-      <li
-        v-for="(palabra, index) in palabrasEnVista"
-        :key="index"
-        :class="{ 'palabra-actual': index === 0 }"
-      >
+      <li v-for="(palabra, index) in palabrasEnVista" :key="index" :class="{ 'palabra-actual': index === 0 }">
         <template v-if="index === 0">
           <span class="escrita-correcta">{{
             esValido ? palabraUser : ""
@@ -369,23 +363,13 @@ const slideInUpClass = computed(() => ({
 
     <div class="input-stats-row">
       <div class="contenedor-texto">
-        <input
-          type="text"
-          class="text-input"
-          :class="{
-            'input-error': !esValido && palabraUser.length > 0,
-            'input-ok': esValido && palabraUser.length > 0,
-          }"
-          v-model="palabraUser"
-          @keydown="onInputKeyDown"
-          @paste="onInputPaste"
-          :placeholder="
-            palabraObjetivo
+        <input type="text" class="text-input" :class="{
+          'input-error': !esValido && palabraUser.length > 0,
+          'input-ok': esValido && palabraUser.length > 0,
+        }" v-model="palabraUser" @keydown="onInputKeyDown" @paste="onInputPaste" :placeholder="palabraObjetivo
               ? `Escribe: ${palabraObjetivo}`
               : 'Cargando palabras...'
-          "
-          autofocus
-        />
+            " autofocus />
       </div>
       <div class="stats-right">
         <p>
@@ -403,42 +387,24 @@ const slideInUpClass = computed(() => ({
     </div>
   </div>
 
+  <!-- Animacion / Crupier / Dialogo Crupier -->
+
   <div class="game-background">
-    <AnimacionJuego
-      @animationFinished="handleAnimationFinished"
-      @animationDurationCalculated="handleAnimationDuration"
-    />
+    <AnimacionJuego @animationFinished="handleAnimationFinished"
+      @animationDurationCalculated="handleAnimationDuration" />
 
     <div id="contenedor-juego">
       <div id="crupier-entero" :class="reboteClass">
-        <div
-          id="crupier-normal"
-          :style="{ display: crupierState === 'normal' ? 'flex' : 'none' }"
-        >
-          <img
-            src="/assets/img/crupier-normal_oficial.png"
-            alt="Crupier Normal"
-          />
+        <div id="crupier-normal" :style="{ display: crupierState === 'normal' ? 'flex' : 'none' }">
+          <img src="/assets/img/crupier-normal_oficial.png" alt="Crupier Normal" />
         </div>
 
-        <div
-          id="crupier-confundido"
-          :style="{ display: showConfusedImage ? 'flex' : 'none' }"
-        >
-          <img
-            src="/assets/img/crupier-confundido_oficial.png"
-            alt="Crupier Confundido"
-          />
+        <div id="crupier-confundido" :style="{ display: showConfusedImage ? 'flex' : 'none' }">
+          <img src="/assets/img/crupier-confundido_oficial.png" alt="Crupier Confundido" />
         </div>
 
-        <div
-          id="crupier-carta"
-          :style="{ display: showPowerupImage ? 'flex' : 'none' }"
-        >
-          <img
-            src="/assets/img/crupier-carta_oficial.png"
-            alt="Crupier Carta"
-          />
+        <div id="crupier-carta" :style="{ display: showPowerupImage ? 'flex' : 'none' }">
+          <img src="/assets/img/crupier-carta_oficial.png" alt="Crupier Carta" />
         </div>
       </div>
 
@@ -463,8 +429,7 @@ const slideInUpClass = computed(() => ({
 
 @font-face {
   font-family: Font2;
-  src: url(../../public/assets/fuente/macabre/The\ Macabre.otf)
-    format("opentype");
+  src: url(../../public/assets/fuente/macabre/The\ Macabre.otf) format("opentype");
 }
 
 /* --- ESTILOS DE FONDO Y ESTRUCTURA --- */
@@ -532,12 +497,10 @@ const slideInUpClass = computed(() => ({
   position: relative;
   z-index: 10;
   overflow: hidden;
-  background: linear-gradient(
-    to bottom,
-    rgba(10, 0, 0, 0.9) 0%,
-    rgba(20, 0, 0, 0.7) 70%,
-    rgba(0, 0, 0, 0) 100%
-  );
+  background: linear-gradient(to bottom,
+      rgba(10, 0, 0, 0.9) 0%,
+      rgba(20, 0, 0, 0.7) 70%,
+      rgba(0, 0, 0, 0) 100%);
 
   border: 1px solid rgba(139, 90, 43, 0.4);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7), 0 0 15px rgba(139, 90, 43, 0.3);
@@ -629,8 +592,7 @@ const slideInUpClass = computed(() => ({
   margin-right: auto;
   text-align: center;
   justify-content: center;
-  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.7) sepia(0.2)
-    hue-rotate(340deg) saturate(1.5);
+  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.7) sepia(0.2) hue-rotate(340deg) saturate(1.5);
   z-index: 15;
   margin-top: 30%;
   margin-bottom: -125px;
@@ -680,15 +642,13 @@ const slideInUpClass = computed(() => ({
 
 #crupier-entero img {
   max-height: 70vh;
-  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.5) sepia(0.5)
-    hue-rotate(340deg) saturate(1.5);
+  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.5) sepia(0.5) hue-rotate(340deg) saturate(1.5);
 }
 
 #crupier-confundido img {
   max-height: 80vh;
   margin-top: -5vh;
-  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.5) sepia(0.5)
-    hue-rotate(340deg) saturate(1.5);
+  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.5) sepia(0.5) hue-rotate(340deg) saturate(1.5);
 }
 
 #crupier-normal,
@@ -738,11 +698,9 @@ const slideInUpClass = computed(() => ({
   bottom: 0;
   z-index: -1;
   transform: translateZ(-50px);
-  background: linear-gradient(
-    45deg,
-    rgba(0, 0, 0, 0.6) 0%,
-    + rgba(0, 0, 0, 0.3) 100%
-  );
+  background: linear-gradient(45deg,
+      rgba(0, 0, 0, 0.6) 0%,
+      + rgba(0, 0, 0, 0.3) 100%);
   filter: blur(30px);
 }
 
@@ -782,6 +740,7 @@ const slideInUpClass = computed(() => ({
   pointer-events: auto;
   transition: background-color 0.2s;
 }
+
 .siguiente:hover {
   background-color: #2c0000;
 }
@@ -863,6 +822,7 @@ const slideInUpClass = computed(() => ({
   width: 30px;
   height: 30px;
 }
+
 #btn_music {
   position: fixed;
   top: 30px;
