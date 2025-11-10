@@ -14,7 +14,7 @@ Un cop comenceu heu de canviar aquesta explicació amb la corresponent al vostre
     * Alba Sánchez
       
  * Nom del projecte
-   * 'Encara no esta pensat'
+   * 'Type Bet365'
      
  * Petita descripció
    * Un joc de mecanografia amb una temàtica de casino original i vibrant. Competeix contra altres jugadors per ser el més veloç a escriure. Aconsegueix Power-Ups exclusius per prendre l'avantatge i juga les teves cartes sabotejant els teus contrincants
