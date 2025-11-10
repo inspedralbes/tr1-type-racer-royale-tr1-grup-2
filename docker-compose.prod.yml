@@ -3,10 +3,10 @@ version: '3.9'
 services:
   backend:
     build: ./backend
-    command: npm run start:prod
+    command: npm run start
     environment:
-      - PORT=3000
-      - FRONTEND_URL=http://localhost:8080
+      PORT: 3000
+      FRONTEND_URL: http://localhost:8080
     networks:
       - app-network
     restart: unless-stopped
@@ -16,11 +16,9 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        # VITE_NODE_ENV=production
-        VITE_API_URL=http://localhost:3000
-        VITE_SOCKET_URL=http://localhost:3000
+        VITE_API_URL: http://localhost:3000
+        VITE_SOCKET_URL: http://localhost:3000
 
 networks:
   app-network:
     driver: bridge
-
