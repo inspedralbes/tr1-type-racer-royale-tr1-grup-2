@@ -29,13 +29,6 @@ const io = new Server(server, { cors: corsOptions });
 // registerGameEvents(io);
 initializeSocketIO(io);
 
-io.on("connection", (socket) => {
-  socket.on("ping_test", (data) => {
-    console.log("📥 Ping recibido:", data);
-    socket.emit("pong_test", { ok: true });
-  });
-});
-
 
 // --- Puerto de escucha ---
 const port = process.env.PORT || 3000;

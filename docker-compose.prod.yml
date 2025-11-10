@@ -3,7 +3,7 @@ services:
   backend:
     build: ./backend
     # Use the start:prod script so migrations run before launching the server
-    command: npm run start:prod
+    command: npm run start
     environment:
       - NODE_ENV=${NODE_ENV}
       - PORT=${PORT}
@@ -16,7 +16,7 @@ services:
       # - MONGO_URI=${MONGO_URI}
       # - DB_HOST=mysql
     # MEJORA: El backend esperará a que las bases de datos estén listas.
-    depends_on:
+    # depends_on:
       # mongo:
       #   condition: service_started # MongoDB no tiene un healthcheck fácil, 'service_started' es una buena aproximación.
       # mysql:
@@ -35,7 +35,7 @@ services:
       # Las variables de entorno se pasan como argumentos de construcción (build args)
       # para que estén disponibles durante 'npm run build' dentro del Dockerfile.
       args:
-        VITE_NODE_ENV: ${VITE_NODE_ENV}
+        # VITE_NODE_ENV: ${VITE_NODE_ENV}
         VITE_API_URL: ${VITE_API_URL}
         VITE_SOCKET_URL: ${VITE_SOCKET_URL}
     # Ya no necesita 'environment', 'networks' ni ejecutarse como un servicio.
