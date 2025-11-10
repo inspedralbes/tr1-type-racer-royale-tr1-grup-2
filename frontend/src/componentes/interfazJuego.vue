@@ -1,12 +1,18 @@
 <script setup>
-import { ref, onMounted, onUnmounted, computed, nextTick } from "vue";
+import { ref, onMounted, onUnmounted, computed, nextTick, watch } from "vue";
 import communicationManager from "../services/CommunicationManager.js";
 import { playerName, playerId } from "../logic/globalState.js";
 import AnimacionJuego from "./interfazAnimacion.vue";
 
 // Variables para manejar 3D / crupier / ambiente
 const crupierState = ref("normal");
-const dialogText = ref("Os doy la bienvenida a todos.");
+const dialogText = ref([
+  "Os doy la bienvenida a todos.",
+  "Si estáis aquí es porque ya sabeis lo que se viene.",
+  "Muy bien, comencemos.",
+]);
+const mensajeInput = ref(dialogText.value[0]);
+const juegoIniciado = ref(false);
 const show2DUI = ref(false);
 const animationDuration = ref(0);
 const audioPlayer = ref(null);
@@ -42,6 +48,12 @@ const props = defineProps({
 });
 
 const roomId = ref(props.room.roomId);
+
+watch(show2DUI, (newValue) => {
+  if (newValue) {
+    empiezaJuego();
+  }
+});
 
 // 🟦 FUNCIONES DE SOCKET ADAPTADAS A COMMUNICATION MANAGER
 
@@ -211,9 +223,7 @@ function enviarPalabra(palabraCompletada) {
   console.log("📤 Datos enviados al servidor:", payload);
 }
 
-function empiezaJuego() {
-  comenzar.value = true;
-  console.log("El valor de mostrar es:", comenzar.value);
+function musica() {
   if (audioPlayer.value) {
     audioPlayer.value.volume = 0.4;
     audioPlayer.value
@@ -224,6 +234,20 @@ function empiezaJuego() {
       .catch((error) => {
         console.error("Error al reproducir el audio después del clic:", error);
       });
+  }
+}
+
+function empiezaJuego() {
+  for (let i = 0; i < dialogText.value.length; i++) {
+    setTimeout(() => {
+      mensajeInput.value = dialogText.value[i];
+    }, i * 2000);
+    if (i === dialogText.value.length - 1) {
+      setTimeout(() => {
+        comenzar.value = true;
+      }, (i + 1) * 2000);
+    }
+    console.log("El valor de mostrar es:", comenzar.value);
   }
 }
 
@@ -275,7 +299,7 @@ const reboteClass = computed(() => ({
 }));
 
 const slideInUpClass = computed(() => ({
-  "slide-in-up": show2DUI.value,
+  "slide-in-up": comenzar.value,
 }));
 </script>
 
@@ -307,7 +331,7 @@ const slideInUpClass = computed(() => ({
     </div>
   </div>
 
-  <div class="bottom-ui-container" :class="slideInUpClass">
+  <div v-if="comenzar" class="bottom-ui-container" :class="slideInUpClass">
     <ul class="lista-palabras">
       <li
         v-for="(palabra, index) in palabrasEnVista"
@@ -409,17 +433,7 @@ const slideInUpClass = computed(() => ({
         <div class="input__container">
           <div class="shadow__input"></div>
 
-          <p style="font-size: 2.5rem; margin-top: 15px; padding: 0">
-            {{ dialogText }}
-          </p>
-
-          <a
-            @click="empiezaJuego()"
-            class="siguiente"
-            style="pointer-events: auto"
-          >
-            >
-          </a>
+          <p v-if="mensajeInput">{{ mensajeInput }}</p>
         </div>
       </div>
     </div>
@@ -588,17 +602,14 @@ const slideInUpClass = computed(() => ({
 .lista-palabras {
   list-style: none;
   padding: 30px 40px;
-  margin-top: 0;
-  margin-bottom: 20px;
   font-family: monospace;
-  font-size: 28px;
+  font-size: 20px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  width: 250px;
-  height: 370px;
+  min-width: 150px;
+  min-height: 240px;
   color: #333333;
-  justify-content: flex-start;
   text-shadow: none;
   background-image: url(../../public/assets/img/carta.jpg);
   background-size: cover;
@@ -611,6 +622,10 @@ const slideInUpClass = computed(() => ({
   justify-content: center;
   filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.7) sepia(0.2)
     hue-rotate(340deg) saturate(1.5);
+  z-index: 15;
+  margin-top: 30%;
+  margin-bottom: -125px;
+  margin-left: 55%;
 }
 
 .palabra-actual {
@@ -662,8 +677,16 @@ const slideInUpClass = computed(() => ({
     hue-rotate(340deg) saturate(1.5);
 }
 
+#crupier-confundido img {
+  max-height: 80vh;
+  margin-top: -5vh;
+  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.5) sepia(0.5)
+    hue-rotate(340deg) saturate(1.5);
+}
+
 #crupier-normal,
-#crupier-caarta {
+#crupier-caarta,
+#crupier-confundido {
   position: relative;
   height: 100%;
   width: 100%;
@@ -721,7 +744,7 @@ const slideInUpClass = computed(() => ({
   content: "?XÇ#?";
   position: absolute;
   top: -15px;
-  left: 20px;
+  left: 10px;
   background: #8b5a2b;
   color: #000000;
   font-weight: bold;
