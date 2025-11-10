@@ -3,6 +3,8 @@ import { ref, onMounted, onUnmounted, computed, nextTick, watch } from "vue";
 import communicationManager from "../services/CommunicationManager.js";
 import { playerName, playerId } from "../logic/globalState.js";
 import AnimacionJuego from "./interfazAnimacion.vue";
+import sound from "../../public/assets/sonido/sonidoAccion/carddrop.mp3";
+import sound1 from "../../public/assets/sonido/sonidoAccion/mech-keyboard.mp3";
 
 // Variables para manejar 3D / crupier / ambiente
 const crupierState = ref("normal");
@@ -16,6 +18,8 @@ const juegoIniciado = ref(false);
 const show2DUI = ref(false);
 const animationDuration = ref(0);
 const audioPlayer = ref(null);
+const pasarLetra = new Audio(sound);
+const teclado = new Audio(sound1);
 
 // 🟩 Variables para manejar la pantalla final
 const mostrarPantallaFinal = ref(false);
@@ -309,13 +313,22 @@ const slideInUpClass = computed(() => ({
     :winner="ganador"
     @go-home="mostrarPantallaFinal = false"
   />
+
+  <!-- Audios -->
   <audio
     ref="audioPlayer"
     src="../../public/assets/sonido/musica_ambiente.mp3"
     loop
     preload="auto"
   ></audio>
-
+  <audio
+    ref="keyPlayer"
+    src="../../public/assets/sonido/sonidoAccion/mech-keyboard.mp3"
+  ></audio>
+  <audio src="../../public/assets/sonido/sonidoAccion/carddrop.mp3"></audio>
+  <button v-on:click="musica()" id="btn_music">
+    <img src="../../public/assets/img/iconos/musica.jpg" alt="" />
+  </button>
   <div class="player-container-exterior" v-if="show2DUI">
     <div
       v-for="(jugador, index) in otrosJugadores"
@@ -454,9 +467,7 @@ const slideInUpClass = computed(() => ({
     format("opentype");
 }
 
-/* ------------------------------------------------ */
-/* --- ESTILOS DE FONDO Y ESTRUCTURA (CREEPY) --- */
-/* ------------------------------------------------ */
+/* --- ESTILOS DE FONDO Y ESTRUCTURA --- */
 
 .game-background {
   position: fixed;
@@ -479,9 +490,7 @@ const slideInUpClass = computed(() => ({
   z-index: 2;
 }
 
-/* ------------------------------------------------ */
-/* --- ESTILOS DE UI DE JUEGO (SLIDE-IN-UP) --- */
-/* ------------------------------------------------ */
+/* --- ESTILOS DE UI DE JUEGO --- */
 
 .bottom-ui-container {
   position: fixed;
@@ -645,9 +654,7 @@ const slideInUpClass = computed(() => ({
   font-weight: normal;
 }
 
-/* ------------------------------------------------ */
-/* --- AJUSTES DEL CRUPIER Y DIÁLOGO (CASINO CREEPY) --- */
-/* ------------------------------------------------ */
+/* --- AJUSTES DEL CRUPIER Y DIÁLOGO --- */
 
 #crupier-entero {
   position: fixed;
@@ -697,7 +704,6 @@ const slideInUpClass = computed(() => ({
   position: fixed;
   top: 25%;
   margin-left: 20%;
-  padding-left: 30px;
   z-index: 3;
   opacity: 0;
   transform: translateY(calc(-50% + 70vh));
@@ -780,9 +786,7 @@ const slideInUpClass = computed(() => ({
   background-color: #2c0000;
 }
 
-/* ------------------------------------------------ */
-/* --- 🆕 ESTILOS DE OTROS JUGADORES (ALREDEDOR) --- */
-/* ------------------------------------------------ */
+/* --- ESTILOS DE OTROS JUGADORES  --- */
 
 .player-container-exterior {
   position: fixed;
@@ -852,5 +856,27 @@ const slideInUpClass = computed(() => ({
   top: 60%;
   left: 90%;
   transform: translateX(-50%);
+}
+
+/* --- Musica o sonido de Juego --- */
+#btn_music img {
+  width: 30px;
+  height: 30px;
+}
+#btn_music {
+  position: fixed;
+  top: 30px;
+  right: 30px;
+  width: 10px;
+  height: 10px;
+  border: none;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 </style>

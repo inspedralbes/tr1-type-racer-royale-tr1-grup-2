@@ -1,18 +1,4 @@
 <template>
-  <!-- <div class="final-screen" role="dialog" aria-labelledby="winner-title" aria-modal="true">
-    <div class="card">
-      <h2 id="winner-title" class="title">¡GANADOR!</h2>
-      <p class="winner-name" v-if="winner">{{ winner }}</p>
-      <p class="winner-name placeholder" v-else>— Sin nombre —</p>
-
-      <div class="controls">
-        <button class="btn" @click="goHome" aria-label="Volver al inicio">
-          Volver al inicio
-        </button>
-      </div>
-    </div>
-  </div> -->
-
   <div class="slot-machine-container">
     <div class="machine-frame">
       <div class="ornate-border top-border"></div>
@@ -31,7 +17,6 @@
       </div>
 
       <div class="machine-details">
-
         <h1>EL GANADOR ES:</h1>
         <span v-if="winner">{{ winner }}</span>
         <span class="winner-name placeholder" v-else>— Sin nombre —</span>
@@ -44,35 +29,31 @@
 </template>
 
 <script setup>
-import { defineEmits, defineProps } from 'vue'
-import communicationManager from '../services/communicationManager';
+import { defineEmits, defineProps } from "vue";
+import communicationManager from "../services/communicationManager";
+import sound from "../../public/assets/sonido/sonidoAccion/playful-casino-slot-machine.mp3";
+import sound1 from "../../public/assets/sonido/sonidoAccion/slot-machine-coin-payout.mp3";
+
+const sonidoTragaperras = new Audio(sound);
+const sonidoMonedas = new Audio(sound1);
 
 // Prop para recibir el nombre del ganador
 const props = defineProps({
   winner: {
     type: String,
-    default: ''
-  }
-})
+    default: "",
+  },
+});
 
 // Evento que se emite cuando el usuario quiere volver al inicio
-const emit = defineEmits(['go-home'])
+const emit = defineEmits(["go-home"]);
 
 function goHome() {
-  emit('go-home')
+  emit("go-home");
 }
 </script>
 
-<style scoped>
-:root {
-  --gold-old: #4a3e30;
-  --gold-worn: #38312a;
-  --red-dark: #7b1e1e;
-  --red-dirty: #5a1818;
-  --black-deep: #1a1a1a;
-  --paper-old: #a0978c;
-}
-
+<style>
 .slot-machine-container {
   display: flex;
   justify-content: center;
@@ -81,10 +62,9 @@ function goHome() {
   height: 100vh;
   margin: 0;
   background-color: #222;
-  font-family: 'Times New Roman', serif;
+  font-family: "Times New Roman", serif;
   overflow: hidden;
 }
-
 
 .machine-frame {
   width: 80vw;
@@ -92,9 +72,7 @@ function goHome() {
   background-color: var(--gold-worn);
   border: 1.5vw solid var(--gold-old);
   border-radius: 2vw;
-  box-shadow:
-    inset 0 0 2vw rgba(0, 0, 0, 0.9),
-    0 0 3vw rgba(0, 0, 0, 0.6);
+  box-shadow: inset 0 0 2vw rgba(0, 0, 0, 0.9), 0 0 3vw rgba(0, 0, 0, 0.6);
   position: relative;
   overflow: hidden;
   box-sizing: border-box;
@@ -132,9 +110,7 @@ function goHome() {
   background-color: var(--black-deep);
   border: 0.5vw solid var(--gold-old);
   border-radius: 1vw;
-  box-shadow:
-    inset 0 0 2vw rgba(0, 0, 0, 1),
-    0 0 1vw rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 2vw rgba(0, 0, 0, 1), 0 0 1vw rgba(255, 255, 255, 0.05);
   padding: 1vh 0.5vw;
 }
 
@@ -197,7 +173,7 @@ function goHome() {
 }
 
 .lever::before {
-  content: '';
+  content: "";
   position: absolute;
   top: -2vh;
   left: -1vh;
@@ -226,17 +202,10 @@ function goHome() {
   animation: neon-flicker-gold 2s infinite alternate;
 }
 
-
-
 @keyframes neon-flicker {
   0% {
-    text-shadow:
-      0 0 0.5vh #fff,
-      0 0 1vh #fff,
-      0 0 2vh #00f,
-      0 0 3vh #00f,
-      0 0 4vh #00f,
-      0 0 5vh #00f;
+    text-shadow: 0 0 0.5vh #fff, 0 0 1vh #fff, 0 0 2vh #00f, 0 0 3vh #00f,
+      0 0 4vh #00f, 0 0 5vh #00f;
     opacity: 1;
   }
 
@@ -246,13 +215,8 @@ function goHome() {
 
   40% {
     opacity: 1;
-    text-shadow:
-      0 0 0.5vh #fff,
-      0 0 1vh #fff,
-      0 0 2vh #00f,
-      0 0 3vh #00f,
-      0 0 4vh #00f,
-      0 0 5vh #00f;
+    text-shadow: 0 0 0.5vh #fff, 0 0 1vh #fff, 0 0 2vh #00f, 0 0 3vh #00f,
+      0 0 4vh #00f, 0 0 5vh #00f;
   }
 
   60% {
@@ -262,36 +226,21 @@ function goHome() {
 
   80% {
     opacity: 1;
-    text-shadow:
-      0 0 0.5vh #fff,
-      0 0 1vh #fff,
-      0 0 2vh #00f,
-      0 0 3vh #00f,
-      0 0 4vh #00f,
-      0 0 5vh #00f;
+    text-shadow: 0 0 0.5vh #fff, 0 0 1vh #fff, 0 0 2vh #00f, 0 0 3vh #00f,
+      0 0 4vh #00f, 0 0 5vh #00f;
   }
 
   100% {
-    text-shadow:
-      0 0 0.5vh #fff,
-      0 0 1vh #fff,
-      0 0 2vh #00f,
-      0 0 3vh #00f,
-      0 0 4vh #00f,
-      0 0 5vh #00f;
+    text-shadow: 0 0 0.5vh #fff, 0 0 1vh #fff, 0 0 2vh #00f, 0 0 3vh #00f,
+      0 0 4vh #00f, 0 0 5vh #00f;
     opacity: 1;
   }
 }
 
 @keyframes neon-flicker-gold {
   0% {
-    text-shadow:
-      0 0 0.5vh #fff,
-      0 0 1vh #ffcc00,
-      0 0 2vh #ffaa00,
-      0 0 3vh #ffaa00,
-      0 0 4vh #ffaa00,
-      0 0 5vh #ffaa00;
+    text-shadow: 0 0 0.5vh #fff, 0 0 1vh #ffcc00, 0 0 2vh #ffaa00,
+      0 0 3vh #ffaa00, 0 0 4vh #ffaa00, 0 0 5vh #ffaa00;
     opacity: 1;
   }
 
@@ -302,13 +251,8 @@ function goHome() {
 
   50% {
     opacity: 1;
-    text-shadow:
-      0 0 0.5vh #fff,
-      0 0 1vh #ffcc00,
-      0 0 2vh #ffaa00,
-      0 0 3vh #ffaa00,
-      0 0 4vh #ffaa00,
-      0 0 5vh #ffaa00;
+    text-shadow: 0 0 0.5vh #fff, 0 0 1vh #ffcc00, 0 0 2vh #ffaa00,
+      0 0 3vh #ffaa00, 0 0 4vh #ffaa00, 0 0 5vh #ffaa00;
   }
 
   75% {
@@ -316,25 +260,18 @@ function goHome() {
   }
 
   100% {
-    text-shadow:
-      0 0 0.5vh #fff,
-      0 0 1vh #ffcc00,
-      0 0 2vh #ffaa00,
-      0 0 3vh #ffaa00,
-      0 0 4vh #ffaa00,
-      0 0 5vh #ffaa00;
+    text-shadow: 0 0 0.5vh #fff, 0 0 1vh #ffcc00, 0 0 2vh #ffaa00,
+      0 0 3vh #ffaa00, 0 0 4vh #ffaa00, 0 0 5vh #ffaa00;
     opacity: 1;
   }
 }
 
 .machine-details {
-
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   text-align: center;
-
 }
 
 .lever-housing {
