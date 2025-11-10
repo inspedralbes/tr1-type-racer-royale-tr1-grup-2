@@ -115,20 +115,25 @@ const crearPowerUpDesdeCarta = (carta) => {
   switch (carta.palo) {
     case "♠":
       return {
-        tipo: "bloqueo",
-        descripcion: "Bloquea a otro jugador por 5 segundos",
+        tipo: "bloqueo", descripcion: "Bloquea a otro jugador por 5 segundos",
       };
     case "♥":
-      return { tipo: "curar", descripcion: "Recupera una palabra fallida" };
+      return { 
+        tipo: "curar", descripcion: "Recupera una palabra fallida",
+      };
     case "♦":
       return {
         tipo: "doble",
         descripcion: "Duplica tus puntos por 10 segundos",
       };
     case "♣":
-      return { tipo: "robo", descripcion: "Roba una palabra a otro jugador" };
+      return { 
+        tipo: "robo", descripcion: "Roba una palabra a otro jugador",
+      };
     default:
-      return { tipo: "basico", descripcion: "Power-up genérico" };
+      return { 
+        tipo: "basico", descripcion: "Power-up genérico",
+      };
   }
 };
 
