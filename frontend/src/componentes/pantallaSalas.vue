@@ -1,12 +1,23 @@
-<!-- components/PantallaSalas.vue -->
 <script setup>
 import { ref, onMounted, onUnmounted, defineProps } from "vue";
 import communicationManager from "../services/communicationManager";
-import { playerName, playerId, rooms } from "../logic/globalState.js";
+import {
+  playerName,
+  playerId,
+  rooms,
+  playerAvatar,
+} from "../logic/globalState.js";
+
+//Utils
+import buttomUsuari from "./utils/utilsSalas/buttomUsuari.vue";
+import buttomLogout from "./utils/utilsSalas/buttomLogout.vue";
+import buttomCreate from "./utils/utilsSalas/buttomCreate.vue";
+import renderSalas from "./utils/utilsSalas/renderSalas.vue";
 
 const props = defineProps({ escena: String });
 
-const emit = defineEmits(["sala-seleccionada"]);
+// 🔹 AÑADIMOS 'ver-perfil' y 'logout' a los eventos que este componente puede emitir
+const emit = defineEmits(["sala-seleccionada", "ver-perfil", "logout"]);
 const nuevaSala = ref("");
 const errorMessage = ref("");
 
@@ -44,16 +55,14 @@ function actualizarSalas() {
 
 // 🔹 Crear una nueva sala
 function crearSala() {
-  if (!nuevaSala.value.trim()) {
-    errorMessage.value = "Debes introducir un nombre para la sala.";
-    return;
-  }
+  const roomName = nuevaSala.value.trim() || `Room_${playerName.value}`;
 
   communicationManager.emit("create_room", {
-    roomName: nuevaSala.value.trim(),
+    roomName: roomName,
     playerId: playerId.value,
     username: playerName.value,
   });
+
   nuevaSala.value = "";
 }
 
@@ -66,6 +75,16 @@ function unirseSala(room) {
   });
 
   emit("sala-seleccionada", room);
+}
+
+// --- 🔹 LÓGICA DE NAVEGACIÓN (CORREGIDA) ---
+
+function handleVerPerfil() {
+  emit("ver-perfil");
+}
+
+function handleLogout() {
+  emit("logout");
 }
 
 onMounted(() => {
@@ -92,30 +111,21 @@ onUnmounted(() => {
         <div class="wall-light"></div>
         <div class="door-frame">
           <div class="garage-door">
+            <!--Contenido principal-->
             <div class="salas-container">
-              <h2>Bienvenido, {{ playerName }}</h2>
-
-              <!-- Crear nueva sala -->
-              <div class="crear-sala">
-                <input
-                  v-model="nuevaSala"
-                  placeholder="Nombre de la nueva sala"
+              <div class="header-container">
+                <buttomUsuari
+                  :avatar-url="playerAvatar"
+                  @ver-perfil="handleVerPerfil"
                 />
-                <button @click="crearSala">Crear sala</button>
+                <buttomLogout @logout="handleLogout" />
               </div>
-
-              <h3>Salas disponibles</h3>
-              <div class="lista-salas">
-                <div v-for="sala in rooms" :key="sala.roomId" class="sala-card">
-                  <p>
-                    <strong>{{ sala.roomName }}</strong>
-                  </p>
-                  <p>{{ sala.numPlayers }}/{{ sala.maxPlayers }}</p>
-                  <p>Estado: {{ sala.gameState }}</p>
-                  <button @click="unirseSala(sala)">Unirse</button>
-                </div>
-              </div>
+              <!--Crear sala-->
+              <buttomCreate v-model="nuevaSala" @crear-lobby="crearSala" />
+              <!--Listar sala-->
+              <renderSalas v-model="rooms" @unirse-sala="unirseSala" />
             </div>
+            <!--FIN-->
           </div>
         </div>
       </div>
@@ -131,26 +141,6 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.salas-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 15px;
-}
-.lista-salas {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 10px;
-  width: 100%;
-  max-width: 800px;
-}
-.sala-card {
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  padding: 10px;
-  text-align: center;
-}
-
 /* La escena 3D */
 .scene {
   --room-width: 100vw;
@@ -175,7 +165,7 @@ onUnmounted(() => {
 }
 
 .scene.salas {
-  transform: translateZ(0) scale(2);
+  transform: translateY(-100px) scale(2);
 }
 
 .room-scene {
@@ -184,6 +174,8 @@ onUnmounted(() => {
   position: relative;
   /* Activa el espacio 3D */
   transform-style: preserve-3d;
+
+  pointer-events: none;
 }
 .wall {
   position: absolute;
@@ -193,45 +185,38 @@ onUnmounted(() => {
 .wall-back {
   width: var(--room-width);
   height: var(--room-height);
-
-  /*Imegen bloques hormigo*/
   background-image: url(../../public/assets/img/fondo-con-textura-de-pared-de-ladrillo-moderno.jpg);
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
-
-  /* La empuja "lejos" de nosotros en el eje Z */
   transform: translateZ(calc(var(--room-depth) * -1));
+  pointer-events: none;
 }
 
 .wall-floor {
   width: calc(var(--room-width));
   height: calc(var(--room-depth));
-
-  /*Imagen asfalto*/
   background-image: url(../../public/assets/img/Gemini_Generated_Image_88n9iy88n9iy88n9.png);
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
-
-  /* La alineamos al suelo de la pantalla */
   bottom: 0;
-  /* La giramos 90 grados "hacia arriba" desde su borde inferior */
   transform-origin: bottom;
   transform: rotateX(90deg);
+  pointer-events: none;
 }
 
 .wall-left {
-  width: var(--room-depth); /* El "ancho" de la pared es la profundidad */
+  width: var(--room-depth);
   height: var(--room-height);
   left: 0;
   transform-origin: left;
   transform: rotateY(90deg);
-
   background-image: url(../../public/assets/img/fondo-con-textura-de-pared-de-ladrillo-moderno.jpg);
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
+  pointer-events: none;
 }
 
 .wall-right {
@@ -240,28 +225,24 @@ onUnmounted(() => {
   right: 0;
   transform-origin: right;
   transform: rotateY(-90deg);
-
   background-image: url(../../public/assets/img/fondo-con-textura-de-pared-de-ladrillo-moderno.jpg);
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
+  pointer-events: none;
 }
 
 .wall-top {
   width: calc(var(--room-width));
   height: calc(var(--room-depth));
-
-  /*Imagen asfalto*/
   background-image: url(../../public/assets/img/coloridas-luces-del-horizonte-en-el-cielo.jpg);
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
-
-  /* La alineamos al suelo de la pantalla */
   top: 0;
-  /* La giramos 90 grados "hacia arriba" desde su borde inferior */
   transform-origin: top;
   transform: rotateX(-90deg);
+  pointer-events: none;
 }
 
 .door-frame {
@@ -270,50 +251,29 @@ onUnmounted(() => {
   left: 50%;
   width: 80vw;
   height: 80vh;
+  box-sizing: border-box;
   transform: translateX(-50%) translateZ(2px);
-  box-sizing: border-box; /* Importante */
-  overflow: hidden;
-  z-index: 1; /* Por debajo de la luz */
+  z-index: 1;
+  pointer-events: auto;
 }
 
 .garage-door {
   width: 100%;
   height: 100%;
-  background-color: #1a2a3a; /* Un color base azul oscuro, similar al de la imagen */
+  background-color: #383838;
   position: relative;
-  overflow: hidden;
-
-  /* --- Múltiples background-image para la textura --- */
-
-  /* 1. Las franjas principales (más grandes) y su sombra interior/superior */
-  background-image: 
-    /* Sombra superior para dar relieve (claro) */ linear-gradient(
+  background-image: linear-gradient(
       to top,
       rgba(255, 255, 255, 0.05) 0%,
       transparent 10%
     ),
-    /* Sombra inferior para dar relieve (oscuro) */
-      linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0%, transparent 10%),
-    /* Una textura de ruido sutil o perforaciones (patrón repetitivo) */
-      url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="1" height="1" fill="%23303030"/><rect x="1" y="1" width="1" height="1" fill="%23303030"/></svg>');
-  /* Puedes usar una imagen real de ruido o puntos si tienes una mejor */
-
-  /* Posicionamiento y tamaño de los backgrounds */
-  background-size: 100% 10%,
-    /* Las sombras de los relieves se repiten cada 10% */ 100% 10%, 2px 2px; /* El patrón de ruido es muy pequeño */
-
-  background-position: 0% 0%, /* Las sombras empiezan arriba */ 0% 0%,
-    /* Las sombras empiezan arriba */ 0px 0px; /* El ruido empieza en la esquina */
-
-  background-repeat: repeat-y,
-    /* Las sombras se repiten verticalmente */ repeat-y, repeat; /* El ruido se repite en todas direcciones */
-
-  /* Esto crea un sutil relieve en cada segmento */
-  /* Lo ajustamos para que complemente los backgrounds */
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0%, transparent 10%),
+    url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="1" height="1" fill="%23303030"/><rect x="1" y="1" width="1" height="1" fill="%23303030"/></svg>');
+  background-size: 100% 10%, 100% 10%, 2px 2px;
+  background-position: 0% 0%, 0% 0%, 0px 0px;
+  background-repeat: repeat-y, repeat-y, repeat;
   box-shadow: inset 0px 1px 2px rgba(255, 255, 255, 0.05),
-    /* Luz sutil superior */ inset 0px -1px 2px rgba(0, 0, 0, 0.3); /* Sombra sutil inferior */
-
-  /* Transición para la apertura */
+    inset 0px -1px 2px rgba(0, 0, 0, 0.3);
   transition: transform 1s ease-out;
   transform-origin: top center;
 }
@@ -323,16 +283,13 @@ onUnmounted(() => {
 }
 
 /*Iluminación pagina*/
-
 .illuminated-area {
-  pointer-events: none; /*¡Importante!*/
-
+  pointer-events: none;
   position: absolute;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-
   background: radial-gradient(
     ellipse at center,
     transparent 5%,
@@ -346,11 +303,11 @@ onUnmounted(() => {
   position: absolute;
   top: -0.5vh;
   left: -1%;
-  width: 102%; /* 100% de la lámpara + 2% */
+  width: 102%;
   height: 2.5vh;
-  background-color: black; /* Color */
+  background-color: black;
   border-radius: 0.8vh;
-  z-index: 3; /*Por encima de la lampara*/
+  z-index: 3;
 }
 
 .wall-light {
@@ -362,7 +319,11 @@ onUnmounted(() => {
   transform: translateX(-25vw);
   background-color: #f7f0e3;
   border-radius: 2.5vh;
-  z-index: 2; /* Por encima de la puerta */
+  z-index: 2; /* Por encima de la puerta (pero .door-frame ahora es 10) */
+
+  /* --- FIX Z-INDEX LÁMPARA (PASO 2) --- */
+  /* Por si acaso, le quitamos los clics a la lámpara también */
+  pointer-events: none;
 }
 
 .wall-light::after {
@@ -370,18 +331,39 @@ onUnmounted(() => {
   position: absolute;
   top: 3vh;
   left: -15vw;
-  width: 80vw; /*Ancho de la luz*/
-  height: 75vh; /*Altura de la luz */
-
+  width: 80vw;
+  height: 75vh;
   background: radial-gradient(
     ellipse at 50% 0%,
     rgba(255, 255, 220, 0.35) 0%,
     transparent 80%
   );
-
   filter: blur(15px);
-
   z-index: -1;
-  pointer-events: none;
+  pointer-events: none; /* Esto ya estaba bien */
+}
+
+.salas-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  z-index: 10;
+}
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 80%;
+  padding: 4vh 4vw;
+}
+.perfil-btn {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 </style>

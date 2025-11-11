@@ -1,4 +1,3 @@
-
 // backend/routes/register.js
 import express from "express";
 
@@ -18,9 +17,10 @@ router.post("/register", (req, res) => {
   }
 
   // backend/routes/register.js o tu controlador de registro
-    const player = { playerId, username };
-    globalPlayers.push(player); // ✅ ahora se hace aquí
+  const player = { playerId, username };
 
+  // !!!!!!! BASE DE DATOS INSERT
+  globalPlayers.push(player); // ✅ ahora se hace aquí
 
   console.log(`[🧍 Registro] Nuevo jugador: ${username} (${playerId})`);
   res.json(player);

@@ -6,15 +6,13 @@ import communicationManager from "../services/communicationManager";
 import { playerId } from "../logic/globalState.js";
 
 // ❌ ELIMINADO: const showGameScreen = ref(false);
-const players = ref([]);
-
-// Recibimos el estado completo del lobby desde App.vue
 const props = defineProps({
   room: {
     type: Object,
     required: true,
   },
 });
+const players = ref(props.room.players || []);
 
 // Emitir al padre cuando la partida debe comenzar
 const emit = defineEmits(["juego-iniciado"]);
@@ -38,8 +36,6 @@ function iniciarJuego() {
 
 // Montamos los listeners de socket
 onMounted(() => {
-  players.value = [];
-
   communicationManager.on("joined_lobby", (data) => {
     console.log("📥 joined_lobby recibido:", data);
     if (data.roomId === props.room.roomId) {

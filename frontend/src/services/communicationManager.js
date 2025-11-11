@@ -42,20 +42,19 @@ class CommunicationManager {
   }
 
   reset() {
-  if (!this.socket) return;
+    if (!this.socket) return;
 
-  // Elimina todos los listeners registrados en el socket
-  this.socket.off(); 
-  console.log("✅ Todos los listeners han sido eliminados.");
+    // Elimina todos los listeners registrados en el socket
+    this.socket.off();
+    console.log("✅ Todos los listeners han sido eliminados.");
 
-  // Desconecta el socket
-  this.socket.disconnect();
-  console.log("✅ Socket desconectado.");
+    // Desconecta el socket
+    this.socket.disconnect();
+    console.log("✅ Socket desconectado.");
 
-  // Limpieza interna
-  this.socket = null;
+    // Limpieza interna
+    this.socket = null;
   }
-  
 }
 
 export default new CommunicationManager();
