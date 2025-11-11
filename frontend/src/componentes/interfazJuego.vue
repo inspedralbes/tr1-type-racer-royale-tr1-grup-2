@@ -7,7 +7,7 @@ import musicaAmbiente from "../../public/assets/sonido/musica_ambiente.mp3";
 import sound from "../../public/assets/sonido/sonidoAccion/carddrop.mp3";
 import sound1 from "../../public/assets/sonido/sonidoAccion/mech-keyboard.mp3";
 
-// Variables para manejar 3D / crupier / ambiente
+// Variables para manejar 3D / crupier / ambiente / iconos(Temp)
 const crupierState = ref("normal");
 const dialogText = ref([
   "Os doy la bienvenida a todos.",
@@ -18,9 +18,18 @@ const mensajeInput = ref(dialogText.value[0]);
 const juegoIniciado = ref(false);
 const show2DUI = ref(false);
 const animationDuration = ref(0);
+const otrosJugadores = ref([]);
+const todosLosJugadores = ref([]);
 const audioPlayer = new Audio(musicaAmbiente);
 const pasarLetra = new Audio(sound);
 const teclado = new Audio(sound1);
+const iconosDisponibles = [
+  "/assets/img/userIconos/corazon.png",
+  "/assets/img/userIconos/trevol.png",
+  "/assets/img/userIconos/picas.png",
+  "/assets/img/userIconos/rombos.png",
+];
+const jugadorIcono = ref("/assets/img/iconos/corazon.png");
 
 // 🟩 Variables para manejar la pantalla final
 const mostrarPantallaFinal = ref(false);
@@ -36,7 +45,6 @@ const palabrasCompletadasEnBloque = ref(0);
 const palabraInvalida = ref(false);
 const playerIdActual = playerId.value;
 const playerNameActual = playerName.value;
-const otrosJugadores = ref([]);
 const comenzar = ref(false);
 
 const emit = defineEmits(["juego-finalizado"]);
@@ -56,7 +64,7 @@ const roomId = ref(props.room.roomId);
 watch(palabraUser, (newVal, oldVal) => {
   if (newVal.length > oldVal.length && newVal.length > 0) {
     teclado.currentTime = 0;
-    teclado.play().catch((error) => {});
+    teclado.play().catch((error) => { });
   }
 });
 watch(show2DUI, (newValue) => {
@@ -92,18 +100,61 @@ function onUpdatePlayerWords(msg) {
 
 //Controla el progreso de todos los jugadores y separa los usuarios
 function onUpdateProgress(msg) {
-  const { players } = msg.data;
-  players.forEach((p) => {
-    console.log(
-      `Jugador ${p.id}: ${p.completedWords} palabras completadas, estado: ${p.status}`
-    );
-  });
+  console.log("📦 Mensaje update_progress:", msg.data);
 
-  const ganadorJugador = players.find((p) => p.status === "finished");
+  const { players } = msg.data;
+  otrosJugadores.value = [];
+  todosLosJugadores.value = [];
+
+  let tempId = 0;
+  const idPropio = String(playerId.value);
+
+  for (let i = 0; i < players.length; i++) {
+    const p = players[i];
+    const idJugador = String(p.playerId);
+
+    // Asignar icono por posición
+    const icono = iconosDisponibles[i % iconosDisponibles.length];
+
+    // Agregar a la lista total (para mostrar todos en pantalla)
+    todosLosJugadores.value.push({
+      id: "temp_" + tempId,
+      username: p.username || "Jugador",
+      icono: icono,
+    });
+
+    // Separar el propio jugador de los rivales
+    if (idJugador === idPropio) {
+      jugadorIcono.value = icono;
+    } else {
+      otrosJugadores.value.push({
+        id: "temp_" + tempId,
+        username: p.username || "Jugador",
+        completedWords: p.completedWords || 0,
+        errorCount: p.errorCount || 0,
+        status: p.status || "playing",
+        icono: icono,
+      });
+    }
+
+    tempId++;
+  }
+
+  console.log("👥 Todos los jugadores:", todosLosJugadores.value);
+  console.log("👥 Otros jugadores detectados:", otrosJugadores.value);
+
+  let ganadorJugador = null;
+  for (let i = 0; i < players.length; i++) {
+    if (players[i].status === "finished") {
+      ganadorJugador = players[i];
+      break;
+    }
+  }
+
   if (ganadorJugador) {
     ganador.value = ganadorJugador.username;
     emit("juego-finalizado", ganador.value);
-    console.log(`🎉 La partida terminó. Ganador: ${ganadorJugador.playerId}`);
+    console.log("🎉 La partida terminó. Ganador:", ganadorJugador.username);
   }
 }
 
@@ -265,13 +316,13 @@ const palabraObjetivo = computed(() => {
 
 const esValido = computed(() => validarInput());
 
-// --- MANEJADORES DE EVENTO DE ANIMACIÓN 3D (TRAÍDO DEL ANTIGUO juego.vue) ---
+// --- MANEJADORES DE EVENTO DE ANIMACIÓN 3D  ---
 
 /**
  * Captura la duración total de la animación 3D y programa la aparición de la UI 2D.
  */
 const handleAnimationDuration = (durationInSeconds) => {
-  animationDuration.value = durationInSeconds; // UI 2D (Crupier y juego) aparece 2 segundos antes del final.
+  animationDuration.value = durationInSeconds; 
 
   const delayBeforeEnd = 2;
   const delayMs = Math.max(100, (durationInSeconds - delayBeforeEnd) * 1000);
@@ -305,17 +356,10 @@ const slideInUpClass = computed(() => ({
 </script>
 
 <template>
-  <pantallaFinal
-    v-if="mostrarPantallaFinal"
-    :winner="ganador"
-    @go-home="mostrarPantallaFinal = false"
-  />
+  <pantallaFinal v-if="mostrarPantallaFinal" :winner="ganador" @go-home="mostrarPantallaFinal = false" />
 
   <!-- Audios -->
-  <audio
-    ref="keyPlayer"
-    src="/assets/sonido/sonidoAccion/mech-keyboard.mp3"
-  ></audio>
+  <audio ref="keyPlayer" src="/assets/sonido/sonidoAccion/mech-keyboard.mp3"></audio>
   <audio src="/assets/sonido/sonidoAccion/carddrop.mp3"></audio>
   <button v-on:click="musica()" id="btn_music">
     <img src="/assets/img/iconos/musica.jpg" alt="" />
@@ -323,22 +367,34 @@ const slideInUpClass = computed(() => ({
 
   <!-- Div para la estadistica de jugadores -->
   <div class="player-container-exterior" v-if="show2DUI">
-    <div>
-      <div></div>
-      <div>
-        <span> </span>
+    <div v-for="(jugador, index) in otrosJugadores" :key="jugador.id"
+      :class="['other-player-stat', `player-pos-${index}`]">
+      <div class="player-name-chip">
+        {{ jugador.username }}
+      </div>
+      <div class="player-stats-chip">
+        {{ jugador.completedWords }}<br />
       </div>
     </div>
   </div>
 
+  <!-- Lista que muestra usuarios alrededor -->
+
+  <div class="iconos-jugadores-container" v-if="show2DUI">
+  <div
+    v-for="(jugador, index) in otrosJugadores"
+    :key="jugador.id"
+    class="icono-jugador-item"
+  >
+    <img :src="jugador.icono" alt="icono" class="icono-jugador-img" />
+    <p class="icono-jugador-nombre">{{ jugador.username }}</p>
+  </div>
+</div>
+
   <!-- Lista de palabras / Input / Estadisticas -->
   <div v-if="comenzar" class="bottom-ui-container" :class="slideInUpClass">
     <ul class="lista-palabras">
-      <li
-        v-for="(palabra, index) in palabrasEnVista"
-        :key="index"
-        :class="{ 'palabra-actual': index === 0 }"
-      >
+      <li v-for="(palabra, index) in palabrasEnVista" :key="index" :class="{ 'palabra-actual': index === 0 }">
         <template v-if="index === 0">
           <span class="escrita-correcta">{{
             esValido ? palabraUser : ""
@@ -357,25 +413,19 @@ const slideInUpClass = computed(() => ({
 
     <div class="input-stats-row">
       <div class="contenedor-texto">
-        <input
-          type="text"
-          class="text-input"
-          :class="{
-            'input-error': !esValido && palabraUser.length > 0,
-            'input-ok': esValido && palabraUser.length > 0,
-          }"
-          v-model="palabraUser"
-          @keydown="onInputKeyDown"
-          @paste="onInputPaste"
-          :placeholder="
-            palabraObjetivo
-              ? `Escribe: ${palabraObjetivo}`
-              : 'Cargando palabras...'
-          "
-          autofocus
-        />
+        <input type="text" class="text-input" :class="{
+          'input-error': !esValido && palabraUser.length > 0,
+          'input-ok': esValido && palabraUser.length > 0,
+        }" v-model="palabraUser" @keydown="onInputKeyDown" @paste="onInputPaste" :placeholder="palabraObjetivo
+          ? `Escribe: ${palabraObjetivo}`
+          : 'Cargando palabras...'
+          " autofocus />
       </div>
       <div class="stats-right">
+        <p class="icono-propio">
+          <img :src="jugadorIcono" alt="icono propio" class="icono-jugador" />
+          <span>{{ playerNameActual }}</span>
+        </p>
         <p>
           <img src="/assets/img/iconos/ficha.png" alt="" />
           <span>{{ completedWords }}</span>
@@ -394,41 +444,21 @@ const slideInUpClass = computed(() => ({
   <!-- Animacion / Crupier / Dialogo Crupier -->
 
   <div class="game-background">
-    <AnimacionJuego
-      @animationFinished="handleAnimationFinished"
-      @animationDurationCalculated="handleAnimationDuration"
-    />
+    <AnimacionJuego @animationFinished="handleAnimationFinished"
+      @animationDurationCalculated="handleAnimationDuration" />
 
     <div id="contenedor-juego">
       <div id="crupier-entero" :class="reboteClass">
-        <div
-          id="crupier-normal"
-          :style="{ display: crupierState === 'normal' ? 'flex' : 'none' }"
-        >
-          <img
-            src="/assets/img/crupier-normal_oficial.png"
-            alt="Crupier Normal"
-          />
+        <div id="crupier-normal" :style="{ display: crupierState === 'normal' ? 'flex' : 'none' }">
+          <img src="/assets/img/crupier-normal_oficial.png" alt="Crupier Normal" />
         </div>
 
-        <div
-          id="crupier-confundido"
-          :style="{ display: showConfusedImage ? 'flex' : 'none' }"
-        >
-          <img
-            src="/assets/img/crupier-confundido_oficial.png"
-            alt="Crupier Confundido"
-          />
+        <div id="crupier-confundido" :style="{ display: showConfusedImage ? 'flex' : 'none' }">
+          <img src="/assets/img/crupier-confundido_oficial.png" alt="Crupier Confundido" />
         </div>
 
-        <div
-          id="crupier-carta"
-          :style="{ display: showPowerupImage ? 'flex' : 'none' }"
-        >
-          <img
-            src="/assets/img/crupier-carta_oficial.png"
-            alt="Crupier Carta"
-          />
+        <div id="crupier-carta" :style="{ display: showPowerupImage ? 'flex' : 'none' }">
+          <img src="/assets/img/crupier-carta_oficial.png" alt="Crupier Carta" />
         </div>
       </div>
 
@@ -453,8 +483,7 @@ const slideInUpClass = computed(() => ({
 
 @font-face {
   font-family: Font2;
-  src: url(../../public/assets/fuente/macabre/The\ Macabre.otf)
-    format("opentype");
+  src: url(../../public/assets/fuente/macabre/The\ Macabre.otf) format("opentype");
 }
 
 /* --- ESTILOS DE FONDO Y ESTRUCTURA --- */
@@ -480,7 +509,7 @@ const slideInUpClass = computed(() => ({
   z-index: 2;
 }
 
-/* --- ESTILOS DE UI DE JUEGO --- */
+/* --- ESTILOS DE UI DE JUEGO (Lista de palabras / Input de el jugador / Estadisticas / Iconos ) --- */
 
 .bottom-ui-container {
   position: fixed;
@@ -522,12 +551,10 @@ const slideInUpClass = computed(() => ({
   position: relative;
   z-index: 10;
   overflow: hidden;
-  background: linear-gradient(
-    to bottom,
-    rgba(10, 0, 0, 0.9) 0%,
-    rgba(20, 0, 0, 0.7) 70%,
-    rgba(0, 0, 0, 0) 100%
-  );
+  background: linear-gradient(to bottom,
+      rgba(10, 0, 0, 0.9) 0%,
+      rgba(20, 0, 0, 0.7) 70%,
+      rgba(0, 0, 0, 0) 100%);
 
   border: 1px solid rgba(139, 90, 43, 0.4);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7), 0 0 15px rgba(139, 90, 43, 0.3);
@@ -619,8 +646,7 @@ const slideInUpClass = computed(() => ({
   margin-right: auto;
   text-align: center;
   justify-content: center;
-  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.7) sepia(0.2)
-    hue-rotate(340deg) saturate(1.5);
+  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.7) sepia(0.2) hue-rotate(340deg) saturate(1.5);
   z-index: 15;
   margin-top: 30%;
   margin-bottom: -125px;
@@ -643,6 +669,7 @@ const slideInUpClass = computed(() => ({
   color: #555555;
   font-weight: normal;
 }
+
 
 /* --- AJUSTES DEL CRUPIER Y DIÁLOGO --- */
 
@@ -670,15 +697,13 @@ const slideInUpClass = computed(() => ({
 
 #crupier-entero img {
   max-height: 70vh;
-  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.5) sepia(0.5)
-    hue-rotate(340deg) saturate(1.5);
+  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.5) sepia(0.5) hue-rotate(340deg) saturate(1.5);
 }
 
 #crupier-confundido img {
   max-height: 80vh;
   margin-top: -5vh;
-  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.5) sepia(0.5)
-    hue-rotate(340deg) saturate(1.5);
+  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.5) sepia(0.5) hue-rotate(340deg) saturate(1.5);
 }
 
 #crupier-normal,
@@ -728,11 +753,9 @@ const slideInUpClass = computed(() => ({
   bottom: 0;
   z-index: -1;
   transform: translateZ(-50px);
-  background: linear-gradient(
-    45deg,
-    rgba(0, 0, 0, 0.6) 0%,
-    + rgba(0, 0, 0, 0.3) 100%
-  );
+  background: linear-gradient(45deg,
+      rgba(0, 0, 0, 0.6) 0%,
+      + rgba(0, 0, 0, 0.3) 100%);
   filter: blur(30px);
 }
 
@@ -751,33 +774,7 @@ const slideInUpClass = computed(() => ({
   border: 2px solid #000000;
 }
 
-.siguiente {
-  position: absolute;
-  z-index: 15;
-  pointer-events: auto;
-  width: 50px;
-  height: 50px;
-  font-size: 30px;
-  font-weight: bold;
-  border: 3px solid #8b5a2b;
-  border-radius: 50%;
-  background-color: #5a0000;
-  color: #f0e68c;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  z-index: 15;
-  pointer-events: auto;
-  transition: background-color 0.2s;
-}
-
-.siguiente:hover {
-  background-color: #2c0000;
-}
-
-/* --- ESTILOS DE OTROS JUGADORES  --- */
+/* --- ESTILOS DE OTROS JUGADORES (Estadisticas / Iconos / Posiciones ) --- */
 
 .player-container-exterior {
   position: fixed;
@@ -849,6 +846,67 @@ const slideInUpClass = computed(() => ({
   transform: translateX(-50%);
 }
 
+.iconos-jugadores-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: 0;
+  z-index: 1000;
+}
+
+.icono-jugador-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transform-origin: bottom center;
+}
+
+.icono-jugador-item:nth-child(1) {
+  position: absolute;
+  transform: translate(-600px, 100px);
+}
+
+.icono-jugador-item:nth-child(2) {
+  position: absolute;
+  transform: translate(500px, 200px);
+}
+
+.icono-jugador-item:nth-child(3) {
+  position: absolute;
+  transform: translate(600px, 100px);
+}
+
+.icono-jugador-img {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  animation: borde-palpitante 2s infinite;
+}
+
+.icono-jugador-nombre {
+  margin-top: 6px;
+  font-size: 14px;
+  color: white;
+  font-family: Font2;
+}
+
+@keyframes borde-palpitante {
+  0% {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(255, 255, 255, 1);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  }
+}
+
+
 /* --- Musica o sonido de Juego --- */
 #btn_music img {
   width: 30px;
@@ -871,4 +929,6 @@ const slideInUpClass = computed(() => ({
   align-items: center;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
+
+
 </style>
