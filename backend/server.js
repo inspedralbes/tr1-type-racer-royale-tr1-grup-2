@@ -45,5 +45,5 @@ io.on("connection", (socket) => {
 const port = process.env.PORT || 3000;
 // const host = process.env.HOST || "localhost";
 server.listen(port, () => {
-  console.log(`[IO] Server listening on http://${host}:${port}`);
+  console.log(`[IO] Server listening on http://localhost:${port}`);
 });
