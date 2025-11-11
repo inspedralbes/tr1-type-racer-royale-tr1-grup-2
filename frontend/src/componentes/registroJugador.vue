@@ -190,7 +190,7 @@ async function registrarJugador() {
   z-index: 10;
 
   /*Tamaño card de Registro */
-  transform: translate(-50%, -50%) scale(3);
+  transform: translate(-50%, -50%) scale(2.7);
 }
 
 .flip-card.desapareciendo {

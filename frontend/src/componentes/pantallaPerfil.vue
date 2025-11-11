@@ -1,13 +1,16 @@
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { playerName, playerId, playerAvatar } from "../logic/globalState.js";
+
+// Importar los hijos de Perfil (utilsPerfil)
+import PerfilCampoNombre from "./utils/utilsPerfil/PerfilCampoNombre.vue";
+import PerfilAvatarSelector from "./utils/utilsPerfil/PerfilAvatarSelector.vue";
 
 const emit = defineEmits(["go-home", "guardar-perfil"]);
 
-const nuevoNombre = ref(playerName.value);
 const guardado = ref(false);
 
-// --- Lógica de Avatares ---
+// --- Lógica de Avatares  ---
 const avataresDisponibles = ref([
   "../../public/assets/img/imgAvatares/avatar1.png",
   "../../public/assets/img/imgAvatares/avatar2.png",
@@ -15,23 +18,56 @@ const avataresDisponibles = ref([
   "../../public/assets/img/imgAvatares/avatar4.png",
 ]);
 
-const avatarSeleccionado = ref(
-  playerAvatar.value || avataresDisponibles.value[0]
-);
+const formData = ref({
+  nombre: playerName.value,
+  email: "",
+  avatar: playerAvatar.value || avataresDisponibles.value[0],
+  tema: "sistema",
+  notificaciones: false,
+});
 
-function seleccionarAvatar(avatar) {
-  avatarSeleccionado.value = avatar;
+const editando = ref({
+  nombre: false,
+  email: false,
+});
+
+function toggleEdit(campo) {
+  if (campo in editando.value) {
+    editando.value[campo] = !editando.value[campo];
+  }
 }
 
-// --- Acciones ---
-function guardarCambios() {
-  playerName.value = nuevoNombre.value;
-  playerAvatar.value = avatarSeleccionado.value;
+function seleccionarAvatar(avatar) {
+  formData.value.avatar = avatar;
+}
 
-  // Emitir  guardar-perfil a App.vue
+// SUBIR IMAGEN
+
+const avatarEsPersonalizado = computed(() => {
+  if (!formData.value.avatar) return false;
+  return !avataresDisponibles.value.includes(formData.value.avatar);
+});
+
+function onFileChange(event) {
+  const file = event.target.files[0];
+  if (file && file.type.startsWith("image/")) {
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      formData.value.avatar = e.target.result;
+    };
+
+    reader.readAsDataURL(file);
+  }
+}
+
+function guardarCambios() {
+  playerName.value = formData.value.nombre;
+  playerAvatar.value = formData.value.avatar;
+
   emit("guardar-perfil", {
-    newName: nuevoNombre.value,
-    newAvatar: avatarSeleccionado.value,
+    newName: formData.value.nombre,
+    newAvatar: formData.value.avatar,
   });
 
   guardado.value = true;
@@ -50,32 +86,22 @@ function handleGoHome() {
     <h2>Configuración de Perfil</h2>
 
     <div class="perfil-card">
-      <div v-if="guardado" class="feedback-guardado">¡Cambios guardados!</div>
-
-      <div class="campo">
-        <label for="nombre">Nombre de Jugador:</label>
-        <input
-          type="text"
-          id="nombre"
-          v-model="nuevoNombre"
-          placeholder="Escribe tu nombre"
-        />
+      <div v-if="guardado" class="feedback-guardado">
+        ¡Cambios guardados con éxito!
       </div>
 
-      <div class="campo">
-        <label>Elige tu Avatar:</label>
-        <div class="avatares">
-          <img
-            v-for="avatarSrc in avataresDisponibles"
-            :key="avatarSrc"
-            :src="avatarSrc"
-            alt="Opción de avatar"
-            class="avatar-option"
-            :class="{ selected: avatarSrc === avatarSeleccionado }"
-            @click="seleccionarAvatar(avatarSrc)"
-          />
-        </div>
-      </div>
+      <PerfilCampoNombre
+        v-model="formData.nombre"
+        :editando="editando.nombre"
+        @toggle-edit="toggleEdit('nombre')"
+      />
+
+      <PerfilAvatarSelector
+        v-model="formData.avatar"
+        :avatares-disponibles="avataresDisponibles"
+        :avatar-es-personalizado="avatarEsPersonalizado"
+        @file-change="onFileChange"
+      />
 
       <div class="acciones">
         <button @click="handleGoHome" class="btn-secundario">Volver</button>
@@ -88,152 +114,101 @@ function handleGoHome() {
 </template>
 
 <style scoped>
-:root {
-  --color-primario: #007bff;
-  --color-secundario: #6c757d;
-  --color-fondo-card: #ffffff;
-  --color-fondo-main: #f4f7f6;
-  --color-texto: #333;
-  --color-borde: #dee2e6;
-  --color-verde-exito: #28a745;
-  --sombra-card: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --radio-borde: 8px;
-}
-
+/* --- Estilos del contenedor principal y acciones --- */
 .perfil-container {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   padding: 20px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
-  background-color: var(--color-fondo-main);
+  font-family: "Courier New", Courier, monospace;
+  font-weight: bold;
+  background-color: #333;
+  color: #f1e8e8;
   min-height: 100vh;
   box-sizing: border-box;
 }
 
 h2 {
-  color: var(--color-texto);
+  border: 1ex solid none;
+  color: #f1e8e8;
+  height: 30px;
+  font-size: 20px;
+  text-align: center;
+  transition: all 1s;
+  font-weight: bold;
+  font-family: "Courier New", Courier, monospace;
+  box-sizing: border-box;
+  padding: 0 10px;
   margin-bottom: 24px;
 }
 
 .perfil-card {
-  background: var(--color-fondo-card);
-  border-radius: var(--radio-borde);
-  box-shadow: var(--sombra-card);
+  background: #383838;
+  outline: 7px solid #383838;
+  border: 1ex solid none;
+  box-sizing: border-box;
   padding: 24px;
   width: 100%;
-  max-width: 500px;
+  max-width: 600px;
+  color: #f1e8e8;
+}
+
+/* Estilo base para los botones de acciones */
+button {
+  background-color: #f1e8e8;
+  color: #383838;
+  border: none;
+  font-family: inherit;
+  font-weight: bold;
+  font-size: 17px;
+  text-align: center;
+  transition: all 1s;
   box-sizing: border-box;
-}
-
-.campo {
-  margin-bottom: 20px;
-}
-
-.campo label {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: var(--color-texto);
-}
-
-.campo input[type="text"] {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--color-borde);
-  border-radius: var(--radio-borde);
-  font-size: 1rem;
-  box-sizing: border-box; /* Asegura que el padding no afecte el ancho */
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.campo input[type="text"]:focus {
-  outline: none;
-  border-color: var(--color-primario);
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
-}
-
-/* --- Estilos de Avatares --- */
-.avatares {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 10px;
-}
-
-.avatar-option {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  border: 3px solid transparent;
+  padding: 10px 16px;
   cursor: pointer;
-  transition: transform 0.2s ease, border-color 0.2s ease;
-  object-fit: cover; /* Asegura que la imagen llene el círculo */
+  white-space: nowrap;
+}
+button:hover {
+  background-color: #ffffff;
+  transform: scale(1.03);
+}
+button:active {
+  transform: scale(0.98);
 }
 
-.avatar-option:hover {
-  transform: scale(1.05);
-  border-color: var(--color-borde);
-}
-
-.avatar-option.selected {
-  border-color: var(--color-primario);
-  transform: scale(1.1);
-  box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
-}
-
-/* --- Estilos de Acciones --- */
 .acciones {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
   margin-top: 24px;
-  border-top: 1px solid var(--color-borde);
+  border-top: 1px solid #555;
   padding-top: 20px;
 }
 
-button {
-  padding: 10px 16px;
-  font-size: 1rem;
-  font-weight: 600;
-  border: none;
-  border-radius: var(--radio-borde);
-  cursor: pointer;
-  transition: background-color 0.2s, transform 0.1s;
-}
-
-button:active {
-  transform: scale(0.98);
-}
-
+/* Clases específicas para los botones de acción */
 .btn-primario {
-  background-color: var(--color-primario);
-  color: white;
+  /* Ya usa el estilo base de 'button' */
 }
-
-.btn-primario:hover {
-  background-color: #0056b3;
-}
-
 .btn-secundario {
-  background-color: var(--color-secundario);
-  color: white;
+  background-color: #555;
+  color: #f1e8e8;
 }
-
 .btn-secundario:hover {
-  background-color: #5a6268;
+  background-color: #666;
+  transform: scale(1.03);
 }
 
-/* --- Feedback --- */
 .feedback-guardado {
-  background-color: #e9f7ef; /* Fondo verde claro */
-  color: var(--color-verde-exito);
-  padding: 12px;
-  border-radius: var(--radio-borde);
+  grid-column: 1 / -1;
+  background-color: #aee0ae;
+  color: #383838;
+  outline: 7px solid #aee0ae;
+  border: 1ex solid none;
+  box-sizing: border-box;
+  padding: 20px;
   text-align: center;
+  font-size: 17px;
   margin-bottom: 20px;
-  font-weight: 600;
-  border: 1px solid var(--color-verde-exito);
 }
 </style>

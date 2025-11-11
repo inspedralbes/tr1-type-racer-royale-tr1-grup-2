@@ -8,7 +8,7 @@ import {
   playerAvatar,
 } from "../logic/globalState.js";
 
-//Utils
+// Importar los hijos de Salas (utilsSalas)
 import buttomUsuari from "./utils/utilsSalas/buttomUsuari.vue";
 import buttomLogout from "./utils/utilsSalas/buttomLogout.vue";
 import buttomCreate from "./utils/utilsSalas/buttomCreate.vue";
