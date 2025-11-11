@@ -49,6 +49,7 @@ export const createRoom = (
           words: [...initialWords],
           completedWords: 0,
           status: "waiting", // esto hay que verlo de quitarlo o no 
+          
         },
       ],
       initialWords: [...initialWords],

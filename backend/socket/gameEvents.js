@@ -1,3 +1,5 @@
+import { asignarCartaJugador, startPowerupSpawner } from "../logic/powerups/powerupLogic.js";
+import { getRoom } from "../logic/roomsManager.js";
 import { calcularPalabrasRestantes } from "../logic/wordLogic.js";
 import { getRoom } from "../logic/roomsManager.js";
 import { generarCartaPoker } from "../logic/cardsManager.js";
@@ -106,4 +108,16 @@ export function registerGameEvents(io, socket) {
 
     console.log(`👋 Jugador ${playerId} salió de la sala ${roomId}`);
   });
+
+  socket.on("claim_powerup", (msg) => {
+  const { roomId, playerId, carta } = msg.data;
+  const room = getRoom(roomId);
+  if (!room) return;
+
+  // Asignar carta al jugador que la reclama
+  asignarCartaJugador({ [roomId]: room }, roomId, playerId, carta);
+
+  // Emitir al jugador su nueva carta
+  io.to(playerId).emit("powerup_spawned", { carta });
+});
 }

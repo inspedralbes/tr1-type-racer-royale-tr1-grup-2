@@ -27,6 +27,13 @@ const palabraInvalida = ref(false);
 const playerIdActual = playerId.value; // Cambiar dinámicamente si lo tienes desde login
 const playerNameActual = playerName.value; // Cambiar dinámicamente si lo tienes desde lobby
 
+
+// powerups 
+// 🟩 Power-Ups
+const powerupsDisponibles = ref([]); // cartas que aparecen en pantalla para reclamar
+const misPowerups = ref([]); // cartas que ya tengo asignadas
+
+
 const emit = defineEmits(["juego-finalizado"]);
 
 const props = defineProps({
@@ -43,6 +50,20 @@ const props = defineProps({
 const roomId = ref(props.room.roomId);
 
 // 🟦 FUNCIONES DE SOCKET ADAPTADAS A COMMUNICATION MANAGER
+
+
+// FUNCION QUE RECLAMA UNA CARTA POWER-UP
+function reclamarCarta(carta) {
+  console.log("Intentando reclamar carta:", carta);
+  communicationManager.emit("claim_powerup", {
+    data: {
+      roomId: roomId.value,
+      playerId: playerId.value,
+      carta,
+    }
+  });
+}
+
 
 // FUNCION QUE MANEJA LA ACTUALIZACION DE PALABRAS DEL JUGADOR
 function onUpdatePlayerWords(msg) {
@@ -134,7 +155,23 @@ onMounted(() => {
   // Escuchar eventos del servidor
   communicationManager.on("update_player_words", onUpdatePlayerWords);
   communicationManager.on("update_progress", onUpdateProgress);
+
+  communicationManager.on("powerup_available", (msg) => {
+    const { carta } = msg.data;
+    console.log("✨ Carta disponible:", carta);
+    powerupsDisponibles.value.push(carta);
+  });
+
+  communicationManager.on("powerup_spawned", (msg) => {
+    const { carta } = msg.data;
+    console.log("🎯 Carta asignada a mi jugador:", carta);
+    misPowerups.value.push(carta);
+
+    // Eliminarla de las disponibles si estaba ahí
+    powerupsDisponibles.value = powerupsDisponibles.value.filter(c => c.id !== carta.id);
+  });
 });
+
 
 onUnmounted(() => {
   // Desregistrar eventos
@@ -289,6 +326,60 @@ const slideInUpClass = computed(() => ({
         </template>
       </li>
     </ul>
+
+      <!-- 🃏 Power-Ups disponibles para reclamar -->
+  <div class="powerups-disponibles">
+    <h3>Cartas disponibles</h3>
+    <div class="cartas">
+      <div 
+        v-for="carta in powerupsDisponibles" 
+        :key="carta.id" 
+        class="carta"
+        @click="reclamarCarta(carta)"
+      >
+        <strong>{{ carta.nombre }}</strong>
+        <p>{{ carta.descripcion }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🧰 Mis Power-Ups -->
+  <div class="mis-powerups">
+    <h3>Mis cartas</h3>
+    <div class="cartas">
+      <div v-for="carta in misPowerups" :key="carta.id" class="carta">
+        <strong>{{ carta.nombre }}</strong>
+      </div>
+    </div>
+  </div>
+
+
+      <!-- 🃏 Power-Ups disponibles para reclamar -->
+  <div class="powerups-disponibles">
+    <h3>Cartas disponibles</h3>
+    <div class="cartas">
+      <div 
+        v-for="carta in powerupsDisponibles" 
+        :key="carta.id" 
+        class="carta"
+        @click="reclamarCarta(carta)"
+      >
+        <strong>{{ carta.nombre }}</strong>
+        <p>{{ carta.descripcion }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🧰 Mis Power-Ups -->
+  <div class="mis-powerups">
+    <h3>Mis cartas</h3>
+    <div class="cartas">
+      <div v-for="carta in misPowerups" :key="carta.id" class="carta">
+        <strong>{{ carta.nombre }}</strong>
+      </div>
+    </div>
+  </div>
+
 
     <div class="input-stats-row">
       <div class="contenedor-texto">
@@ -659,5 +750,67 @@ const slideInUpClass = computed(() => ({
 }
 .carta-palo.club {
   background-image: url("../../public/assets/img/treboles.png");
+}
+
+
+
+/* ESTILO POWERUPS CARTAS */
+.powerups-disponibles, .mis-powerups {
+  margin: 20px 0;
+  text-align: center;
+}
+
+.powerups-disponibles .cartas,
+.mis-powerups .cartas {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.carta {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 2px solid #fff;
+  border-radius: 5px;
+  padding: 10px;
+  min-width: 120px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.carta:hover {
+  transform: scale(1.1);
+  border-color: yellowgreen;
+}
+
+
+
+/* ESTILO POWERUPS CARTAS */
+.powerups-disponibles, .mis-powerups {
+  margin: 20px 0;
+  text-align: center;
+}
+
+.powerups-disponibles .cartas,
+.mis-powerups .cartas {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.carta {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 2px solid #fff;
+  border-radius: 5px;
+  padding: 10px;
+  min-width: 120px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.carta:hover {
+  transform: scale(1.1);
+  border-color: yellowgreen;
 }
 </style>
