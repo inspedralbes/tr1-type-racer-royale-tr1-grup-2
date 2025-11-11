@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed, nextTick } from "vue";
-import communicationManager from "../services/CommunicationManager.js";
+import communicationManager from "../services/communicationManager.js";
 import { playerName, playerId } from "../logic/globalState.js";
 // 🚨 Importar el componente 3D renombrado
 import AnimacionJuego from "./interfazAnimacion.vue";
