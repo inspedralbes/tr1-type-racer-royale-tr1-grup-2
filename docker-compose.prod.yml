@@ -4,6 +4,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: tr1-backend
+    env_file:
+      - ./backend/.env
     ports:
       - "3000:3000"
     environment:
