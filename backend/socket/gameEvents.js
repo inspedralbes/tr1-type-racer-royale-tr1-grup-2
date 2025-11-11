@@ -1,7 +1,6 @@
 import { asignarCartaJugador, startPowerupSpawner } from "../logic/powerups/powerupLogic.js";
 import { getRoom } from "../logic/roomsManager.js";
 import { calcularPalabrasRestantes } from "../logic/wordLogic.js";
-import { getRoom } from "../logic/roomsManager.js";
 import { generarCartaPoker } from "../logic/cardsManager.js";
 
 // 🔄 Temporizador global para emitir cartas cada 30 segundos
