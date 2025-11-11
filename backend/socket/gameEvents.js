@@ -1,7 +1,8 @@
 import { asignarCartaJugador, startPowerupSpawner } from "../logic/powerups/powerupLogic.js";
-import { getRoom } from "../logic/roomsManager.js";
 import { calcularPalabrasRestantes } from "../logic/wordLogic.js";
 import { getRoom, leaveRoom } from "../logic/roomsManager.js";
+
+
 
 export function registerGameEvents(io, socket) {
 
@@ -52,7 +53,10 @@ export function registerGameEvents(io, socket) {
     });
 
     console.log(`✅ [Game] ${jugador.playerId} completó palabra en ${roomId}`);
+
+    startPowerupSpawner(io, roomId, room, 10000);
   });
+  
 
 
   socket.on("leave_game", ({ playerId, roomId }) => {
