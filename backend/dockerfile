@@ -1,16 +1,20 @@
+# Usa una imagen oficial de Node.js como base
 FROM node:18
 
+# Establece el directorio de trabajo dentro del contenedor
 WORKDIR /usr/src/app
 
-
-# Copia los package.json y package-lock.json
+# Copia los archivos de dependencias
 COPY package*.json ./
 
-# Instala todas las dependencias, incluidas las de desarrollo (como nodemon)
+# Instala las dependencias (usa legacy-peer-deps si es necesario)
 RUN npm install --legacy-peer-deps
 
-
-# Copia el resto de la aplicación
+# Copia el resto del código fuente
 COPY . .
 
+# Expone el puerto del servidor
 EXPOSE 3000
+
+# Comando para iniciar el servidor
+CMD ["node", "server.js"]

@@ -34,3 +34,8 @@ coverage
 
 # Vitest
 __screenshots__/
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml

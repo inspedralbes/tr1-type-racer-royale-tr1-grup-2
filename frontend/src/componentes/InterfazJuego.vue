@@ -353,149 +353,135 @@ const slideInUpClass = computed(() => ({
     @go-home="mostrarPantallaFinal = false"
   />
 
-  <div class="bottom-ui-container" :class="slideInUpClass">
-    <ul class="lista-palabras">
-      <li
-        v-for="(palabra, index) in palabrasEnVista"
-        :key="index"
-        :class="{ 'palabra-actual': index === 0 }"
-      >
-        <template v-if="index === 0">
-          <span class="escrita-correcta">{{
-            esValido ? palabraUser : ""
-          }}</span>
-          <span class="restante">{{
-            palabra.substring(palabraUser.length)
-          }}</span>
-        </template>
-        <template v-else>
-          <span class="restante">{{ palabra }}</span>
-        </template>
-      </li>
-    </ul>
+  <div class="juego-container">
+    <!-- 🧠 Columna izquierda con palabras -->
+    <aside class="columna-palabras">
+      <h3>✅ Palabras respondidas</h3>
+      <ul>
+        <li v-for="(palabra, index) in completedWords" :key="'correcta-' + index">
+          {{ palabra }}
+        </li>
+      </ul>
 
-      <!-- 🃏 Power-Ups disponibles para reclamar -->
-  <div class="powerups-disponibles">
-    <h3>Cartas disponibles</h3>
-    <div class="cartas">
-      <div 
-        v-for="carta in powerupsDisponibles" 
-        :key="carta.id" 
-        class="carta"
-        @click="reclamarCarta(carta)"
-      >
-        <strong>{{ carta.nombre }}</strong>
-        <p>{{ carta.descripcion }}</p>
-      </div>
-    </div>
-  </div>
+      <h3>❌ Palabras falladas</h3>
+      <ul>
+        <li v-for="(palabra, index) in palabrasFalladas" :key="'fallada-' + index" class="fallo">
+          {{ palabra }}
+        </li>
+      </ul>
+    </aside>
 
-  <!-- 🧰 Mis Power-Ups -->
-  <div class="mis-powerups">
-    <h3>Mis cartas</h3>
-    <div class="cartas">
-      <div v-for="carta in misPowerups" :key="carta.id" class="carta">
-        <strong>{{ carta.nombre }}</strong>
-      </div>
-    </div>
-  </div>
-
-
-      <!-- 🃏 Power-Ups disponibles para reclamar -->
-  <div class="powerups-disponibles">
-    <h3>Cartas disponibles</h3>
-    <div class="cartas">
-      <div 
-        v-for="carta in powerupsDisponibles" 
-        :key="carta.id" 
-        class="carta"
-        @click="reclamarCarta(carta)"
-      >
-        <strong>{{ carta.nombre }}</strong>
-        <p>{{ carta.descripcion }}</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- 🧰 Mis Power-Ups -->
-  <div class="mis-powerups">
-    <h3>Mis cartas</h3>
-    <div class="cartas">
-      <div v-for="carta in misPowerups" :key="carta.id" class="carta">
-        <strong>{{ carta.nombre }}</strong>
-      </div>
-    </div>
-  </div>
-
-
-    <div class="input-stats-row">
-      <div class="contenedor-texto">
-        <input
-          type="text"
-          class="text-input"
-          :class="{
-            'input-error': !esValido && palabraUser.length > 0,
-            'input-ok': esValido && palabraUser.length > 0,
-          }"
-          v-model="palabraUser"
-          @keydown="onInputKeyDown"
-          @paste="onInputPaste"
-          :placeholder="
-            palabraObjetivo
-              ? `Escribe: ${palabraObjetivo}`
-              : 'Cargando palabras...'
-          "
-          autofocus
-        />
-      </div>
-
-      <div class="stats-right">
-        <p>
-          Palabras Completadas: <span>{{ completedWords }}</span>
-        </p>
-        <p>
-          Errores:<span :class="{ 'error-count': errorCount > 0 }">{{
-            errorCount
-          }}</span>
-        </p>
-      </div>
-    </div>
-  </div>
-
-  <div class="game-background">
-    <AnimacionJuego
-      @animationFinished="handleAnimationFinished"
-      @animationDurationCalculated="handleAnimationDuration"
-    />
-
-    <div id="contenedor-juego">
-      <div id="crupier-entero" :class="reboteClass">
-        <div
-          id="crupier-normal"
-          :style="{ display: showPowerupImage ? 'none' : 'flex' }"
+    <!-- 🎮 Zona principal del juego -->
+    <div class="bottom-ui-container" :class="slideInUpClass">
+      <ul class="lista-palabras">
+        <li
+          v-for="(palabra, index) in palabrasEnVista"
+          :key="index"
+          :class="{ 'palabra-actual': index === 0 }"
         >
-          <img
-            src="/assets/img/crupier-normal_oficial.png"
-            alt="Crupier Normal"
-          />
-        </div>
-        <div
-          id="crupier-caarta"
-          :style="{ display: showPowerupImage ? 'flex' : 'none' }"
-        >
-          <img
-            src="/assets/img/crupier-carta_oficial.png"
-            alt="Crupier Carta"
-          />
+          <template v-if="index === 0">
+            <span class="escrita-correcta">{{ esValido ? palabraUser : "" }}</span>
+            <span class="restante">{{ palabra.substring(palabraUser.length) }}</span>
+          </template>
+          <template v-else>
+            <span class="restante">{{ palabra }}</span>
+          </template>
+        </li>
+      </ul>
+
+      <!-- Power-Ups disponibles -->
+      <div class="powerups-disponibles">
+        <h3>Cartas disponibles</h3>
+        <div class="cartas">
+          <div 
+            v-for="carta in powerupsDisponibles" 
+            :key="carta.id" 
+            class="carta"
+            @click="reclamarCarta(carta)"
+          >
+            <strong>{{ carta.nombre }}</strong>
+            <p>{{ carta.descripcion }}</p>
+          </div>
         </div>
       </div>
 
-      <div class="input-dialog-container" :class="reboteClass">
-        <div class="input__container">
-          <div class="shadow__input"></div>
-          <p style="font-size: 1rem; color: #e0e8f0; margin: 0; padding: 0">
-            {{ dialogText }}
+      <!-- Mis Power-Ups -->
+      <div class="mis-powerups">
+        <h3>Mis cartas</h3>
+        <div class="cartas">
+          <div v-for="carta in misPowerups" :key="carta.id" class="carta">
+            <strong>{{ carta.nombre }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-stats-row">
+        <div class="contenedor-texto">
+          <input
+            type="text"
+            class="text-input"
+            :class="{
+              'input-error': !esValido && palabraUser.length > 0,
+              'input-ok': esValido && palabraUser.length > 0,
+            }"
+            v-model="palabraUser"
+            @keydown="onInputKeyDown"
+            @paste="onInputPaste"
+            :placeholder="
+              palabraObjetivo
+                ? `Escribe: ${palabraObjetivo}`
+                : 'Cargando palabras...'
+            "
+            autofocus
+          />
+        </div>
+
+        <div class="stats-right">
+          <p>
+            Palabras Completadas: <span>{{ completedWords.length }}</span>
           </p>
+          <p>
+            Errores:<span :class="{ 'error-count': errorCount > 0 }">{{ errorCount }}</span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="game-background">
+      <AnimacionJuego
+        @animationFinished="handleAnimationFinished"
+        @animationDurationCalculated="handleAnimationDuration"
+      />
+
+      <div id="contenedor-juego">
+        <div id="crupier-entero" :class="reboteClass">
+          <div
+            id="crupier-normal"
+            :style="{ display: showPowerupImage ? 'none' : 'flex' }"
+          >
+            <img
+              src="/assets/img/crupier-normal_oficial.png"
+              alt="Crupier Normal"
+            />
+          </div>
+          <div
+            id="crupier-caarta"
+            :style="{ display: showPowerupImage ? 'flex' : 'none' }"
+          >
+            <img
+              src="/assets/img/crupier-carta_oficial.png"
+              alt="Crupier Carta"
+            />
+          </div>
+        </div>
+
+        <div class="input-dialog-container" :class="reboteClass">
+          <div class="input__container">
+            <div class="shadow__input"></div>
+            <p style="font-size: 1rem; color: #e0e8f0; margin: 0; padding: 0">
+              {{ dialogText }}
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -859,5 +845,42 @@ const slideInUpClass = computed(() => ({
 .carta:hover {
   transform: scale(1.1);
   border-color: yellowgreen;
+}
+
+.juego-container {
+  display: flex;
+  flex-direction: row;
+}
+
+.columna-palabras {
+  width: 250px;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-right: 1px solid #ccc;
+}
+
+.columna-palabras h3 {
+  margin-top: 1rem;
+  font-size: 1.1rem;
+}
+
+.columna-palabras ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.columna-palabras li {
+  padding: 0.3rem 0;
+  font-size: 1rem;
+}
+
+.fallo {
+  color: red;
+  font-weight: bold;
+}
+
+.zona-juego {
+  flex: 1;
+  padding: 1rem;
 }
 </style>

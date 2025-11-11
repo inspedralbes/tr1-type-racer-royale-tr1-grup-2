@@ -1,17 +1,24 @@
 // DEPENDENCIAS
 import cors from "cors";
-import { Server } from "socket.io";
 import express from "express";
 import http from "http";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+dotenv.config();
+
+// SOCKET.IO
+import { Server } from "socket.io";
+import { initializeSocketIO } from "./socket/socketInit.js";
 
 // RUTAS DE LA API
 import wordsRouter from "./routes/wordRoutes.js";
 import registerRouter from "./routes/registerRoutes.js";
+import statsRouter from "./routes/statsRoutes.js";
 
-// SOCKET.IO
-import { initializeSocketIO } from "./socket/socketInit.js";
-import { register } from "module";
+// MODELOS
+import Palabra from "./models/Word.js";
 
+// EXPRESS Y SERVIDOR
 const app = express();
 const server = http.createServer(app);
 
@@ -19,17 +26,30 @@ const server = http.createServer(app);
 const corsOptions = { origin: "*", methods: ["GET", "POST"] };
 app.use(cors(corsOptions));
 app.use(express.json());
+
+// RUTAS
 app.use("/palabras", wordsRouter);
-app.use("/user", registerRouter);   
+app.use("/user", registerRouter);
+app.use("/stats", statsRouter);
 
-// --- Crear **una sola instancia** de Socket.IO ---
+// SOCKET.IO
 const io = new Server(server, { cors: corsOptions });
-
-// Registrar eventos
-// registerGameEvents(io);
 initializeSocketIO(io);
 
+// CONEXIÓN A MONGODB
+const uri = process.env.MONGODB_URI;
 
-// --- Puerto de escucha ---
+mongoose.connect(uri, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log('✅ Conectado a MongoDB'))
+.catch((err) => console.error('❌ Error al conectar MongoDB:', err));
+
+
+// PUERTO DE ESCUCHA
 const port = process.env.PORT || 3000;
 server.listen(port, () => console.log(`[IO] http://localhost:${port}`));
+
+
+
