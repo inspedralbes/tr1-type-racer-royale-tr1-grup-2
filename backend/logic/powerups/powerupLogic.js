@@ -47,7 +47,7 @@ export function startPowerupSpawner(io, roomId, room, intervalo = 10000) {
   powerupTimers[roomId] = setInterval(() => {
     const carta = generarPowerup();
     // Emitir carta disponible a todos los jugadores
-    io.to(roomId).emit("powerup_available", { carta });
+    io.to(roomId).emit("powerup_available", { data: { carta } });
   }, intervalo);
 }
 
