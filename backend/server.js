@@ -43,7 +43,7 @@ io.on("connection", (socket) => {
 
 // --- Puerto de escucha ---
 const port = process.env.PORT || 3000;
-const host = process.env.HOST || "localhost";
-server.listen(port, host, () => {
+// const host = process.env.HOST || "localhost";
+server.listen(port, () => {
   console.log(`[IO] Server listening on http://${host}:${port}`);
 });
