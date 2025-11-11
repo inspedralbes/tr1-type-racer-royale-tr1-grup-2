@@ -36,6 +36,14 @@ function onJuegoFinalizado(winner) {
   vistaActual.value = "final";
 }
 
+// ✅ 1. AÑADE ESTA NUEVA FUNCIÓN
+// 🔹 Evento: Salir del Lobby (de Lobby.vue)
+function handleLobbyLeave() {
+  console.log("APP: Recibido 'leave-lobby'. Volviendo a pantalla de salas.");
+  vistaActual.value = "salas";
+  roomSeleccionada.value = null; // Limpiamos la sala seleccionada
+}
+
 // Evento: ver-perfil (PantallaSalas-PantallaPerfil)
 
 function irAPerfil() {
@@ -108,6 +116,7 @@ function handleGoHome() {
     :jugador="jugador"
     :room="roomSeleccionada"
     @juego-iniciado="onJuegoIniciado"
+    @leave-lobby="handleLobbyLeave"
   />
 
   <Juego

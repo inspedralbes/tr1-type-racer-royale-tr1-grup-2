@@ -187,9 +187,6 @@ button:active {
 }
 
 /* Clases específicas para los botones de acción */
-.btn-primario {
-  /* Ya usa el estilo base de 'button' */
-}
 .btn-secundario {
   background-color: #555;
   color: #f1e8e8;
