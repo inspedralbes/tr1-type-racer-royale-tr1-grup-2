@@ -18,8 +18,25 @@ export function registerGameEvents(io, socket) {
     const jugador = room.players.find(p => p.playerId === playerId);
     console.log("🟢 jugador encontrado:", jugador, "buscando playerId:", playerId);
     if (!jugador) return;
+    
+  if (jugador.currentPowerupWord && jugador.currentPowerupWord === msg.data.word) {
+    // Reclamar el powerup
+    const carta = jugador.pendingPowerup; // carta asociada a esa palabra
+    jugador.powerups = jugador.powerups || [];
+    jugador.powerups.push(carta);
 
-    calcularPalabrasRestantes({ [roomId]: room }, roomId, playerId, wordId, threshold, completedWords);
+    // Limpiar palabra de powerup
+    jugador.currentPowerupWord = null;
+    jugador.pendingPowerup = null;
+
+    // Emitir actualización de powerup al jugador
+    io.to(playerId).emit("powerup_claimed", { data: { carta } });
+    return; // No procesar palabra normal
+  }
+
+  // 🔹 2️⃣ Calcular palabras normales
+  calcularPalabrasRestantes({ [roomId]: room }, roomId, playerId, wordId, threshold, completedWords);
+
 
     if (jugador.words.length === 0) jugador.status = "finished";
     console.log(`📝 [Game] Palabra completada por ${jugador.playerId} en ${roomId} y el status ${jugador.status}`);
