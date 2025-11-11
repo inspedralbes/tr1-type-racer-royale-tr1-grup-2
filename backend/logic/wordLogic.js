@@ -214,62 +214,24 @@ export const añadirPalabraCompletada = (
   });
 };
 
-export const procesarRespuesta = (rooms, roomId, playerId, palabraEscrita) => {
-  const room = rooms[roomId];
-  if (!room || !room.cartaActiva || room.estado === "resolviendo") return;
 
-  const jugador = room.players.find(
-    (p) => p.playerId === playerId || p.id === playerId
-  );
-  if (!jugador) return;
 
-  if (!room.respuestas) room.respuestas = [];
+// 🔹 Array de palabras especiales para powerups
+export const palabrasPowerup = [
+  "desafortunadamente",
+  "incomprensible",
+  "extraordinario",
+  "electrodoméstico",
+  "contemporáneo",
+  "trascendental",
+  "ininteligible",
+  "paralelepípedo",
+  "hipopótamo",
+  "otorrinolaringólogo"
+];
 
-  const yaRespondio = room.respuestas.find((r) => r.playerId === playerId);
-  if (yaRespondio) return;
 
-  const palabraCorrecta = room.cartaActiva.palabra[0].toLowerCase();
-  const respuesta = palabraEscrita.trim().toLowerCase();
-
-  if (respuesta === palabraCorrecta) {
-    room.respuestas.push({ playerId, timestamp: Date.now() });
-
-    if (room.respuestas.length === 1) {
-      asignarCartaComoPowerUp(room, playerId);
-      return {
-        mensaje: "¡Correcto! Has ganado la carta.",
-        powerUp: jugador.powerUp,
-      };
-    } else {
-      return { mensaje: "¡Correcto! Pero otro jugador fue más rápido." };
-    }
-  } else {
-    return { mensaje: "❌ Palabra incorrecta." };
-  }
-};
-
-const asignarCartaComoPowerUp = (room, playerId) => {
-  const carta = room.cartaActiva;
-  const jugador = room.players.find(
-    (p) => p.playerId === playerId || p.id === playerId
-  );
-  if (!jugador) return;
-
-  const powerUp = crearPowerUpDesdeCarta(carta);
-
-  if (!jugador.powerUp) {
-    jugador.powerUp = powerUp;
-    jugador.cartasGanadas = [...(jugador.cartasGanadas || []), carta];
-  } else {
-    const siguiente = room.players.find(
-      (p) => !p.powerUp && (p.playerId || p.id) !== playerId
-    );
-    if (siguiente) {
-      siguiente.powerUp = powerUp;
-      siguiente.cartasGanadas = [...(siguiente.cartasGanadas || []), carta];
-    }
-  }
-
-  room.estado = "resolviendo";
-  room.cartaActiva.completada = true;
+export const generarPalabraPowerup = () => {
+  const index = Math.floor(Math.random() * palabrasPowerup.length);
+  return palabrasPowerup[index];
 };

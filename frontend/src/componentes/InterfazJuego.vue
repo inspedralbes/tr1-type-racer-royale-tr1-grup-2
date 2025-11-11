@@ -32,7 +32,8 @@ const playerNameActual = playerName.value; // Cambiar dinámicamente si lo tiene
 // 🟩 Power-Ups
 const powerupsDisponibles = ref([]); // cartas que aparecen en pantalla para reclamar
 const misPowerups = ref([]); // cartas que ya tengo asignadas
-
+const currentPowerupWord = ref(null); // palabra activa de powerup
+const cartaActual = ref(null); 
 
 const emit = defineEmits(["juego-finalizado"]);
 
@@ -124,53 +125,69 @@ onMounted(() => {
   // Conectar socket
   communicationManager.connect();
 
-  // 🔹 Fetch palabras iniciales usando endpoint dinámico
-  const count = 10;
+  // 🔹 Fetch palabras iniciales
   const payload = {
     roomId: roomId.value,
     playerId: playerId.value,
     playerName: playerName.value,
-    count,
+    count: 10,
   };
 
   fetch("/palabras/words", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   })
-    .then((response) => {
-      if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-      return response.json();
-    })
-    .then((data) => {
-      console.log("✅ Palabras recibidas:", data);
+    .then(res => res.ok ? res.json() : Promise.reject(`Error HTTP: ${res.status}`))
+    .then(data => {
       listaEntera.value = data.data.initialWords;
     })
-    .catch((error) => {
-      console.error("❌ Hubo un error al obtener las palabras:", error);
-    });
+    .catch(err => console.error("❌ Error al obtener palabras:", err));
 
-  // Escuchar eventos del servidor
+  // Escuchar eventos
   communicationManager.on("update_player_words", onUpdatePlayerWords);
   communicationManager.on("update_progress", onUpdateProgress);
 
+  // 🔹 Powerup disponible en la sala
   communicationManager.on("powerup_available", (msg) => {
-    const { carta } = msg.data;
-    console.log("✨ Carta disponible:", carta);
-    powerupsDisponibles.value.push(carta);
+    const { carta, palabra } = msg.data;
+
+    // Mostrar la palabra del powerup en UI y guardarla
+    currentPowerupWord.value = palabra;
+    cartaActual.value = carta;
+
+    console.log("💥 Powerup disponible:", carta, "Palabra:", palabra);
   });
 
+  // 🔹 Powerup reclamado por el jugador
   communicationManager.on("powerup_spawned", (msg) => {
     const { carta } = msg.data;
-    console.log("🎯 Carta asignada a mi jugador:", carta);
+
+    // Guardar en los powerups del jugador
     misPowerups.value.push(carta);
 
-    // Eliminarla de las disponibles si estaba ahí
-    powerupsDisponibles.value = powerupsDisponibles.value.filter(c => c.id !== carta.id);
+    // Limpiar palabra activa si coincidía
+    if (cartaActual.value && cartaActual.value.id === carta.id) {
+      currentPowerupWord.value = null;
+      cartaActual.value = null;
+    }
+
+    console.log("🎯 Carta asignada a mi jugador:", carta);
+  });
+
+  // 🔹 Powerup reclamado por otros jugadores (solo para UI si quieres mostrarlo)
+  communicationManager.on("powerup_claimed", (msg) => {
+    const { carta, playerId: claimant } = msg.data;
+    console.log(`🎁 Powerup reclamado por ${claimant}:`, carta);
+
+    // Eliminarlo de las palabras disponibles si coincidía
+    if (cartaActual.value && cartaActual.value.id === carta.id) {
+      currentPowerupWord.value = null;
+      cartaActual.value = null;
+    }
   });
 });
+
 
 
 onUnmounted(() => {
@@ -213,12 +230,40 @@ function onInputKeyDown(event) {
   if (event.key === " " && palabraUser.value.length > 0) {
     event.preventDefault();
 
-    if (palabraUser.value === palabraObjetivo.value) {
+    // 🔹 Si hay una palabra de powerup activa
+    if (currentPowerupWord.value) {
+      if (palabraUser.value === currentPowerupWord.value) {
+        // ✅ Reclama el powerup
+        completedWords.value++; // opcional: contar como completada también
+        currentPowerupWord.value = null;
+
+        // Emitir al backend que el jugador ha reclamado la carta
+        communicationManager.emit("claim_powerup", {
+          data: {
+            roomId: roomId.value,
+            playerId: playerId.value,
+            carta: cartaActual.value, // la carta enviada con la palabra de powerup
+          },
+        });
+
+        console.log("🎉 Powerup reclamado:", cartaActual.value);
+      } else {
+        // palabra de powerup incorrecta
+        errorCount.value++;
+        console.warn("❌ Palabra de powerup incorrecta. Errores:", errorCount.value);
+      }
+    } 
+    // 🔹 Si no hay powerup, se procesa palabra normal
+    else if (palabraUser.value === palabraObjetivo.value) {
       completedWords.value++;
       enviarPalabra(palabraUser.value);
-    } else {
+    } 
+    else {
+      errorCount.value++;
       console.warn("Palabra incorrecta. Errores:", errorCount.value);
     }
+
+    // Limpiar input
     palabraUser.value = "";
   }
 }
@@ -247,16 +292,18 @@ function enviarPalabra(palabraCompletada) {
 
 // 🧮 Computadas
 const palabrasEnVista = computed(() => {
+  if (currentPowerupWord.value) {
+    return [currentPowerupWord.value]; // mostrar solo la palabra de powerup
+  }
   if (!Array.isArray(listaEntera.value)) return [];
-  // 🔹 SIEMPRE muestra las primeras 5 palabras del array
-  return listaEntera.value.slice(0, 5);
+  return listaEntera.value.slice(0, 5); // palabras normales
 });
 
 const palabraObjetivo = computed(() => {
-  // 🔹 La palabra objetivo es siempre la primera del array que viene del servidor
+  const jugador = props.jugador; // o el jugador actual
+  if (jugador.currentPowerupWord) return jugador.currentPowerupWord; // PRIORIDAD
   return palabrasEnVista.value.length > 0 ? palabrasEnVista.value[0] : "";
 });
-
 const esValido = computed(() => validarInput());
 
 // --- MANEJADORES DE EVENTO DE ANIMACIÓN 3D (TRAÍDO DEL ANTIGUO juego.vue) ---

@@ -1,5 +1,5 @@
 // backend/game/powerups/powerupLogic.js
-import { generarPalabras, calcularPalabrasRestantes } from "../wordLogic.js";
+import { generarPalabras, generarPalabraPowerup  } from "../wordLogic.js";
 import { generarPowerup } from "../powerups/powerupGenerator.js";
 
 const powerupTimers = {}; // timers por sala
@@ -45,9 +45,18 @@ export function startPowerupSpawner(io, roomId, room, intervalo = 10000) {
   if (powerupTimers[roomId]) return; // ya iniciado
 
   powerupTimers[roomId] = setInterval(() => {
+    console.log("10 segundos despues");
     const carta = generarPowerup();
+     const palabraExtra = generarPalabraPowerup();
+    carta.palabra = palabraExtra;
+
+    room.players.forEach(p => {
+      p.currentPowerupWord = palabraExtra; // NUEVO ATRIBUTO
+    });
     // Emitir carta disponible a todos los jugadores
-    io.to(roomId).emit("powerup_available", { data: { carta } });
+    io.to(roomId).emit("powerup_available", { data: { carta, palabra: palabraExtra } });
+
+    console.log("💥 Powerup enviado:", carta, "Palabra:", palabraExtra);
   }, intervalo);
 }
 
