@@ -1,6 +1,8 @@
 // backend/game/powerups/powerupLogic.js
 import { generarPalabras, calcularPalabrasRestantes } from "../wordLogic.js";
+import { generarPowerup } from "../powerups/powerupGenerator.js";
 
+const powerupTimers = {}; // timers por sala
 
 export function resetGame(cantidadPalabras = 10) {
   return generarPalabras(cantidadPalabras);
@@ -45,7 +47,7 @@ export function startPowerupSpawner(io, roomId, room, intervalo = 10000) {
   powerupTimers[roomId] = setInterval(() => {
     const carta = generarPowerup();
     // Emitir carta disponible a todos los jugadores
-    io.to(roomId).emit("powerup_available", { carta });
+    io.to(roomId).emit("powerup_available", { data: { carta } });
   }, intervalo);
 }
 

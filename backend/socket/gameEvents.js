@@ -1,27 +1,8 @@
 import { asignarCartaJugador, startPowerupSpawner } from "../logic/powerups/powerupLogic.js";
-import { getRoom } from "../logic/roomsManager.js";
 import { calcularPalabrasRestantes } from "../logic/wordLogic.js";
-import { generarCartaPoker } from "../logic/cardsManager.js";
+import { getRoom, leaveRoom } from "../logic/roomsManager.js";
 
-// 🔄 Temporizador global para emitir cartas cada 30 segundos
-setInterval(() => {
-  const rooms = global.rooms || {};
-  Object.entries(rooms).forEach(([roomId, room]) => {
-    if (!room || room.estado === "resolviendo") return;
 
-    room.cartaActiva = generarCartaPoker(); // contiene una palabra
-    room.estado = "esperando_respuesta";
-    room.respuestas = [];
-
-    io.to(roomId).emit("nueva_carta", {
-      carta: room.cartaActiva,
-    });
-
-    console.log(
-      `🃏 Carta enviada a sala ${roomId}: ${room.cartaActiva.palabra[0]}`
-    );
-  });
-}, 30000);
 
 export function registerGameEvents(io, socket) {
 
@@ -71,27 +52,11 @@ export function registerGameEvents(io, socket) {
       },
     });
 
-    console.log(
-      `✅ [Game] ${
-        jugador.playerId || jugador.id
-      } completó palabra personal en ${roomId}`
-    );
+    console.log(`✅ [Game] ${jugador.playerId} completó palabra en ${roomId}`);
+
+    startPowerupSpawner(io, roomId, room, 10000);
   });
-
-
-  socket.on("leave_game", ({ playerId, roomId }) => {
-  const room = getRoom(roomId);
-  if (!room) return;
-
-  leaveRoom(roomId, playerId);
-
-  // Notificar a los jugadores restantes
-  if (room.players.length > 0) {
-    io.to(roomId).emit("update_players", room.players);
-  }
-
-    console.log(`👋 Jugador ${playerId} salió de la sala ${roomId}`);
-  });
+  
 
 
   socket.on("leave_game", ({ playerId, roomId }) => {
