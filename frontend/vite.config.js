@@ -7,8 +7,8 @@ export default defineConfig({
   plugins: [vue()],
   server: {
     proxy: {
-      "/palabras": "http://localhost:3000",
-      "/user": "http://localhost:3000",
+      "/palabras": "http://typebet.daw.inspedralbes.cat:3000",
+      "/user": "http://typebet.daw.inspedralbes.cat:3000",
     },
   },
   resolve: {
