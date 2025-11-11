@@ -1,10 +1,10 @@
 import mongoose from "mongoose";
 
 const intentoSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "Usuario" },
   word: String,
   correct: Boolean,
-  timestamp: { type: Date, default: Date.now }
+  timestamp: { type: Date, default: Date.now },
 });
 
-export default mongoose.model("Try", intentoSchema);
+export default mongoose.model("Intento", intentoSchema);

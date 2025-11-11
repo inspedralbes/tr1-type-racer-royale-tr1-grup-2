@@ -4,7 +4,11 @@ import express from "express";
 import http from "http";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-dotenv.config();
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 // SOCKET.IO
 import { Server } from "socket.io";
@@ -38,18 +42,14 @@ initializeSocketIO(io);
 
 // CONEXIÓN A MONGODB
 const uri = process.env.MONGODB_URI;
-
-mongoose.connect(uri, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('✅ Conectado a MongoDB'))
-.catch((err) => console.error('❌ Error al conectar MongoDB:', err));
-
+mongoose
+  .connect(uri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("✅ Conectado a MongoDB"))
+  .catch((err) => console.error("❌ Error al conectar MongoDB:", err));
 
 // PUERTO DE ESCUCHA
 const port = process.env.PORT || 3000;
 server.listen(port, () => console.log(`[IO] http://localhost:${port}`));
-
-
-

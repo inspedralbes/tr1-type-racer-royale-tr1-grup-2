@@ -26,14 +26,15 @@ const palabrasCompletadasEnBloque = ref(0);
 const palabraInvalida = ref(false);
 const playerIdActual = playerId.value; // Cambiar dinámicamente si lo tienes desde login
 const playerNameActual = playerName.value; // Cambiar dinámicamente si lo tienes desde lobby
+const palabrasAcertadas = ref([]);
+const palabrasFallidas = ref([]);
 
-
-// powerups 
+// powerups
 // 🟩 Power-Ups
 const powerupsDisponibles = ref([]); // cartas que aparecen en pantalla para reclamar
 const misPowerups = ref([]); // cartas que ya tengo asignadas
 const currentPowerupWord = ref(null); // palabra activa de powerup
-const cartaActual = ref(null); 
+const cartaActual = ref(null);
 
 const emit = defineEmits(["juego-finalizado"]);
 
@@ -52,7 +53,6 @@ const roomId = ref(props.room.roomId);
 
 // 🟦 FUNCIONES DE SOCKET ADAPTADAS A COMMUNICATION MANAGER
 
-
 // FUNCION QUE RECLAMA UNA CARTA POWER-UP
 function reclamarCarta(carta) {
   console.log("Intentando reclamar carta:", carta);
@@ -61,10 +61,9 @@ function reclamarCarta(carta) {
       roomId: roomId.value,
       playerId: playerId.value,
       carta,
-    }
+    },
   });
 }
-
 
 // FUNCION QUE MANEJA LA ACTUALIZACION DE PALABRAS DEL JUGADOR
 function onUpdatePlayerWords(msg) {
@@ -138,11 +137,25 @@ onMounted(() => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   })
-    .then(res => res.ok ? res.json() : Promise.reject(`Error HTTP: ${res.status}`))
-    .then(data => {
+    .then((res) =>
+      res.ok ? res.json() : Promise.reject(`Error HTTP: ${res.status}`)
+    )
+    .then((data) => {
       listaEntera.value = data.data.initialWords;
     })
-    .catch(err => console.error("❌ Error al obtener palabras:", err));
+    .catch((err) => console.error("❌ Error al obtener palabras:", err));
+
+  // Peticion de estadisticas
+
+  fetch(`/api/user/${playerId.value}/palabras`)
+    .then((res) =>
+      res.ok ? res.json() : Promise.reject(`Error HTTP: ${res.status}`)
+    )
+    .then((data) => {
+      palabrasAcertadas.value = data.palabrasAcertadas;
+      palabrasFallidas.value = data.palabrasFallidas;
+    })
+    .catch((err) => console.error("❌ Error al obtener estadísticas:", err));
 
   // Escuchar eventos
   communicationManager.on("update_player_words", onUpdatePlayerWords);
@@ -187,8 +200,6 @@ onMounted(() => {
     }
   });
 });
-
-
 
 onUnmounted(() => {
   // Desregistrar eventos
@@ -250,15 +261,17 @@ function onInputKeyDown(event) {
       } else {
         // palabra de powerup incorrecta
         errorCount.value++;
-        console.warn("❌ Palabra de powerup incorrecta. Errores:", errorCount.value);
+        console.warn(
+          "❌ Palabra de powerup incorrecta. Errores:",
+          errorCount.value
+        );
       }
-    } 
+    }
     // 🔹 Si no hay powerup, se procesa palabra normal
     else if (palabraUser.value === palabraObjetivo.value) {
       completedWords.value++;
       enviarPalabra(palabraUser.value);
-    } 
-    else {
+    } else {
       errorCount.value++;
       console.warn("Palabra incorrecta. Errores:", errorCount.value);
     }
@@ -358,14 +371,21 @@ const slideInUpClass = computed(() => ({
     <aside class="columna-palabras">
       <h3>✅ Palabras respondidas</h3>
       <ul>
-        <li v-for="(palabra, index) in completedWords" :key="'correcta-' + index">
+        <li
+          v-for="(palabra, index) in completedWords"
+          :key="'correcta-' + index"
+        >
           {{ palabra }}
         </li>
       </ul>
 
       <h3>❌ Palabras falladas</h3>
       <ul>
-        <li v-for="(palabra, index) in palabrasFalladas" :key="'fallada-' + index" class="fallo">
+        <li
+          v-for="(palabra, index) in palabrasFalladas"
+          :key="'fallada-' + index"
+          class="fallo"
+        >
           {{ palabra }}
         </li>
       </ul>
@@ -380,8 +400,12 @@ const slideInUpClass = computed(() => ({
           :class="{ 'palabra-actual': index === 0 }"
         >
           <template v-if="index === 0">
-            <span class="escrita-correcta">{{ esValido ? palabraUser : "" }}</span>
-            <span class="restante">{{ palabra.substring(palabraUser.length) }}</span>
+            <span class="escrita-correcta">{{
+              esValido ? palabraUser : ""
+            }}</span>
+            <span class="restante">{{
+              palabra.substring(palabraUser.length)
+            }}</span>
           </template>
           <template v-else>
             <span class="restante">{{ palabra }}</span>
@@ -393,9 +417,9 @@ const slideInUpClass = computed(() => ({
       <div class="powerups-disponibles">
         <h3>Cartas disponibles</h3>
         <div class="cartas">
-          <div 
-            v-for="carta in powerupsDisponibles" 
-            :key="carta.id" 
+          <div
+            v-for="carta in powerupsDisponibles"
+            :key="carta.id"
             class="carta"
             @click="reclamarCarta(carta)"
           >
@@ -441,7 +465,9 @@ const slideInUpClass = computed(() => ({
             Palabras Completadas: <span>{{ completedWords.length }}</span>
           </p>
           <p>
-            Errores:<span :class="{ 'error-count': errorCount > 0 }">{{ errorCount }}</span>
+            Errores:<span :class="{ 'error-count': errorCount > 0 }">{{
+              errorCount
+            }}</span>
           </p>
         </div>
       </div>
@@ -785,10 +811,9 @@ const slideInUpClass = computed(() => ({
   background-image: url("../../public/assets/img/treboles.png");
 }
 
-
-
 /* ESTILO POWERUPS CARTAS */
-.powerups-disponibles, .mis-powerups {
+.powerups-disponibles,
+.mis-powerups {
   margin: 20px 0;
   text-align: center;
 }
@@ -816,10 +841,9 @@ const slideInUpClass = computed(() => ({
   border-color: yellowgreen;
 }
 
-
-
 /* ESTILO POWERUPS CARTAS */
-.powerups-disponibles, .mis-powerups {
+.powerups-disponibles,
+.mis-powerups {
   margin: 20px 0;
   text-align: center;
 }

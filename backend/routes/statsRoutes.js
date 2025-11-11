@@ -16,9 +16,31 @@ router.get("/global", async (req, res) => {
     { $match: { correct: false } },
     { $group: { _id: "$word", fallos: { $sum: 1 } } },
     { $sort: { fallos: -1 } },
-    { $limit: 10 }
+    { $limit: 10 },
   ]);
   res.json(topFallos);
+});
+
+// Palabras acertadas y fallidas por usuario
+router.get("/user/:userId/palabras", async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const intentos = await Intento.find({ userId });
+
+    const palabrasAcertadas = intentos
+      .filter((i) => i.correct)
+      .map((i) => i.word);
+
+    const palabrasFallidas = intentos
+      .filter((i) => !i.correct)
+      .map((i) => i.word);
+
+    res.json({ palabrasAcertadas, palabrasFallidas });
+  } catch (err) {
+    console.error("❌ Error al obtener palabras:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
 });
 
 export default router;
