@@ -118,17 +118,7 @@ function onUpdatePlayerWords(msg) {
   }
 }
 
-// FUNCIÓN CENTRAL PARA MOSTRAR LA UI DEL JUEGO
-function mostrarUIJuego(origen = "manual") {
-  if (!show2DUI.value) {
-    console.log(`🎮 Mostrando UI del juego (origen: ${origen})`);
-    show2DUI.value = true;
 
-    if (!comenzar.value) {
-      empiezaJuego();
-    }
-  }
-}
 
 //Controla el progreso de todos los jugadores y separa los usuarios
 function onUpdateProgress(msg) {
@@ -188,7 +178,6 @@ function onUpdateProgress(msg) {
     emit("juego-finalizado", ganador.value);
     console.log("🎉 La partida terminó. Ganador:", ganadorJugador.username);
   }
-  mostrarUIJuego("update_progress");
 }
 
 // 🟩 MOUNT / UNMOUNT
@@ -374,7 +363,6 @@ const handleAnimationDuration = (durationInSeconds) => {
  */
 const handleAnimationFinished = () => {
   console.log("Animación 3D oficialmente terminada. El juego comienza.");
-  mostrarUIJuego("animacion-finalizada");
 };
 
 // 🧮 Computadas de Estética
