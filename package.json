@@ -1,51 +1,26 @@
-version: '3.8' # Es buena práctica especificar una versión
-
-services:
-
-  # --- Servicio del Backend (con Hot-Reload y acceso a DB host) ---
-  backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: backend-builder # Apuntamos a la etapa 'builder'
-    image: tr1-backend-dev # Le cambio el nombre para no confundir con prod
-    working_dir: /app/backend # Establecemos el directorio de trabajo
-    command: "npx nodemon server.js" # Comando para hot-reload
-    ports:
-      - "${BACKEND_HOST_IP:-127.0.0.1}:${BACKEND_HOST_PORT:-3000}:3000"
-    environment:
-      - NODE_ENV=development # Forzamos development
-      # Pasa el resto de tus variables de .env
-      - DB_HOST=host.docker.internal # Variable clave para la BD
-      - DB_USER=${DB_USER}
-      - DB_PASS=${DB_PASS}
-      - DB_NAME=${DB_NAME}
-    volumes:
-      # Sincroniza tu carpeta local con la del contenedor
-      - ./backend:/app/backend
-      # Evita que node_modules local sobrescriba el del contenedor
-      - /app/backend/node_modules
-    # Esta es la "magia" para conectar a la BD de tu host
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-
-  # --- Servicio del Frontend (con Hot-Reload) ---
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: frontend-builder # Apuntamos a la etapa 'builder'
-    image: tr1-frontend-dev
-    working_dir: /app/frontend
-    # Asumo que tu script de desarrollo es 'npm run start' o 'npm run dev'
-    # ¡AJUSTA ESTO Y EL PUERTO DE ABAJO!
-    command: "npm run start"
-    ports:
-      # (Host:Contenedor)
-      # Cambia el '5173' al puerto que use tu servidor de desarrollo (ej: 3001, 8080, 5173 para Vite)
-      - "${FRONTEND_HOST_IP:-127.0.0.1}:${FRONTEND_HOST_PORT:-4000}:5173"
-    volumes:
-      - ./frontend:/app/frontend
-      - /app/frontend/node_modules
-    depends_on:
-      - backend
+{
+  "name": "tr1-type-racer-royale-tr1-grup-2",
+  "version": "1.0.0",
+  "description": "Esquema mínim de carpetes pels projectes transversals",
+  "main": "index.js",
+  "directories": {
+    "doc": "doc"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inspedralbes/tr1-type-racer-royale-tr1-grup-2.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/inspedralbes/tr1-type-racer-royale-tr1-grup-2/issues"
+  },
+  "homepage": "https://github.com/inspedralbes/tr1-type-racer-royale-tr1-grup-2#readme",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
