@@ -8,9 +8,10 @@ const router = express.Router();
 router.get("/user/:userId", async (req, res) => {
   try{
     const userStats = await Usuario.findById(req.params.userId);
-    if (!userStats) return res.status(404).json({ error: "Usuario no encontrado" });
-
-  res.json(userStats);
+    if (!userStats) 
+      return 
+    res.status(404).json({ error: "Usuario no encontrado" });
+    res.json(userStats);
 } catch (err) {
   res.status(500).json({ error: "Error al obtener estadísticas" });
 }
