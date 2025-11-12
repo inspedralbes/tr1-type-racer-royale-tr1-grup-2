@@ -118,67 +118,21 @@ function onUpdatePlayerWords(msg) {
   }
 }
 
-
-
 //Controla el progreso de todos los jugadores y separa los usuarios
 function onUpdateProgress(msg) {
-  console.log("📦 Mensaje update_progress:", msg.data);
-
   const { players } = msg.data;
-  otrosJugadores.value = [];
-  todosLosJugadores.value = [];
-
-  let tempId = 0;
-  const idPropio = String(playerId.value);
-
-  for (let i = 0; i < players.length; i++) {
-    const p = players[i];
-    const idJugador = String(p.playerId);
-
-    // Asignar icono por posición
-    const icono = iconosDisponibles[i % iconosDisponibles.length];
-
-    // Agregar a la lista total (para mostrar todos en pantalla)
-    todosLosJugadores.value.push({
-      id: "temp_" + tempId,
-      username: p.username || "Jugador",
-      icono: icono,
-    });
-
-    // Separar el propio jugador de los rivales
-    if (idJugador === idPropio) {
-      jugadorIcono.value = icono;
-    } else {
-      otrosJugadores.value.push({
-        id: "temp_" + tempId,
-        username: p.username || "Jugador",
-        completedWords: p.completedWords || 0,
-        errorCount: p.errorCount || 0,
-        status: p.status || "playing",
-        icono: icono,
-      });
-    }
-
-    tempId++;
-  }
-
-  console.log("👥 Todos los jugadores:", todosLosJugadores.value);
-  console.log("👥 Otros jugadores detectados:", otrosJugadores.value);
-
-  let ganadorJugador = null;
-  for (let i = 0; i < players.length; i++) {
-    if (players[i].status === "finished") {
-      ganadorJugador = players[i];
-      break;
-    }
-  }
-
+  players.forEach((p) => {
+    console.log(`Jugador ${p.id}: ${p.completedWords} palabras completadas, estado: ${p.status}`);
+  });
+  actualizarJugadores(players);
+  const ganadorJugador = players.find(p => p.status === "finished");
   if (ganadorJugador) {
     ganador.value = ganadorJugador.username;
-    emit("juego-finalizado", ganador.value);
-    console.log("🎉 La partida terminó. Ganador:", ganadorJugador.username);
+    emit('juego-finalizado', ganador.value);
+    console.log(`🎉 La partida terminó. Ganador: ${ganadorJugador.playerId}`);
   }
 }
+
 
 // 🟩 MOUNT / UNMOUNT
 onMounted(() => {
@@ -223,7 +177,46 @@ onUnmounted(() => {
   communicationManager.off("update_progress", onUpdateProgress); // Desconectar socket
 
   communicationManager.disconnect();
+
 });
+
+// Funcion para actualizar la lista de jugadors
+function actualizarJugadores(players) {
+  if (!Array.isArray(players)) return;
+
+  otrosJugadores.value = [];
+  todosLosJugadores.value = [];
+
+  let tempId = 0;
+  const idPropio = String(playerId.value);
+
+  for (const p of players) {
+    const idJugador = String(p.playerId);
+    const icono = iconosDisponibles[tempId % iconosDisponibles.length];
+
+    todosLosJugadores.value.push({
+      id: "temp_" + tempId,
+      username: p.username || "Jugador",
+      icono: icono,
+    });
+
+    if (idJugador === idPropio) {
+      jugadorIcono.value = icono;
+    } else {
+      otrosJugadores.value.push({
+        id: "temp_" + tempId,
+        username: p.username || "Jugador",
+        completedWords: p.completedWords || 0,
+        status: p.status || "playing",
+        icono: icono,
+      });
+    }
+
+    tempId++;
+  }
+
+  console.log("👥 Jugadores actualizados:", todosLosJugadores.value);
+}
 
 // 🧩 FUNCION QUE VALIDA SI CADA CARÁCTER ESTA BIEN ESCRITO
 function validarInput() {
@@ -321,7 +314,6 @@ function empiezaJuego() {
     if (i === dialogText.value.length - 1) {
       setTimeout(() => {
         comenzar.value = true;
-        show2DUI.value = true;
       }, (i + 1) * 2000);
     }
     console.log("El valor de mostrar es:", comenzar.value);
@@ -389,21 +381,23 @@ const slideInUpClass = computed(() => ({
   </button>
 
   <!-- Div para la estadistica de jugadores -->
-  <div v-if="show2DUI" class="player-container-exterior" >
+   <div v-if="comenzar" class="linea-diagonal"></div>
+   <div v-if="comenzar" class="linea-diagonal2"></div>
+  <div v-if="comenzar" class="player-container-exterior">
     <div v-for="(jugador, index) in otrosJugadores" :key="jugador.id"
       :class="['other-player-stat', `player-pos-${index}`]">
       <div class="player-name-chip">
         {{ jugador.username }}
       </div>
       <div class="player-stats-chip">
-        {{ jugador.completedWords }}<br />
+        <span>{{ jugador.completedWords }}</span>
       </div>
     </div>
   </div>
 
   <!-- Lista que muestra usuarios alrededor -->
 
-  <div v-if="show2DUI" class="iconos-jugadores-container">
+  <div v-if="comenzar" class="iconos-jugadores-container">
     <div v-for="(jugador, index) in otrosJugadores" :key="jugador.id" class="icono-jugador-item">
       <img :src="jugador.icono" alt="icono" class="icono-jugador-img" />
       <p class="icono-jugador-nombre">{{ jugador.username }}</p>
@@ -813,10 +807,6 @@ const slideInUpClass = computed(() => ({
   align-items: center;
   padding: 8px 15px;
   border-radius: 15px;
-  background-color: rgba(0, 0, 0, 0.75);
-  border: 2px solid #5a0000;
-  box-shadow: 0 0 10px rgba(255, 0, 0, 0.3),
-    inset 0 0 5px rgba(255, 255, 255, 0.1);
   font-family: "Inter", sans-serif;
   color: #fff;
   transition: all 0.5s ease;
@@ -842,27 +832,34 @@ const slideInUpClass = computed(() => ({
 }
 
 .player-pos-0 {
-  top: 0%;
-  left: 90%;
-  transform: translateX(-50%);
+  top: 10%;
+  left: 80%;
+  transform: translate(-50%, -50%);
 }
 
 .player-pos-1 {
-  top: 20%;
-  left: 90%;
-  transform: translateX(-50%);
+  top: 10%;
+  left: 100%;
+  transform: translate(-50%, -50%);
 }
 
 .player-pos-2 {
-  top: 40%;
+  top: 0%;
   left: 90%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
 }
 
 .player-pos-3 {
-  top: 60%;
+  top: 90%;
   left: 90%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
+}
+
+.other-player-stat {
+  width: 140px;
+  padding: 10px;
+  font-size: 14px;
+  text-align: center;
 }
 
 .iconos-jugadores-container {
@@ -911,6 +908,26 @@ const slideInUpClass = computed(() => ({
   font-size: 14px;
   color: white;
   font-family: Font2;
+}
+
+.linea-diagonal, 
+.linea-diagonal2 {
+  position: absolute;
+  top: 31%;
+  left: 78%;
+  width: 150px;
+  height: 2px;
+  background-color: rgba(255, 255, 255, 0.548);
+  z-index: 7;
+  transform-origin: center;
+}
+
+.linea-diagonal {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.linea-diagonal2 {
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 @keyframes borde-palpitante {
