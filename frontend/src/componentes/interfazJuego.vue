@@ -5,6 +5,15 @@ import { playerName, playerId } from "../logic/globalState.js";
 // 🚨 Importar el componente 3D renombrado
 import AnimacionJuego from "./interfazAnimacion.vue";
 
+import {
+  aplicarUpsideDown,
+  activarEscudo,
+  escudoActivo,
+  aplicarSlowEnemy,
+  efectoUpsideDownActivo,
+  slowEnemyActivo
+} from "../logic/cardEffects.js";
+
 // --- 3D / CRUPIER ESTADO (TRAÍDO DEL ANTIGUO juego.vue) ---
 const crupierState = ref("normal"); // 'normal' o 'powerup'.
 const dialogText = ref("Bienvenidos todos."); // Diálogo inicial
@@ -52,16 +61,39 @@ const roomId = ref(props.room.roomId);
 // 🟦 FUNCIONES DE SOCKET ADAPTADAS A COMMUNICATION MANAGER
 
 
-// FUNCION QUE RECLAMA UNA CARTA POWER-UP
-function reclamarCarta(carta) {
-  console.log("Intentando reclamar carta:", carta);
-  communicationManager.emit("claim_powerup", {
+// // FUNCION QUE RECLAMA UNA CARTA POWER-UP
+// function reclamarCarta(carta) {
+//   console.log("Intentando reclamar carta:", carta);
+//   communicationManager.emit("claim_powerup", {
+//     data: {
+//       roomId: roomId.value,
+//       playerId: playerId.value,
+//       carta,
+//     }
+//   });
+// }
+
+
+// FUNCION QUE MANEJA EL USO DEL POWERUP 
+function usarPowerup(indice) {
+  const carta = misPowerups.value[indice];
+  if (!carta) return;
+
+  // Emitir al backend para que aplique el efecto a los demás
+  communicationManager.emit("use_powerup", {
     data: {
-      roomId: roomId.value,
       playerId: playerId.value,
-      carta,
+      roomId: roomId.value,
+      cartaId: carta.id,
+      efecto: carta.efecto
     }
   });
+
+  // Aplicar efecto local solo si te afecta a ti
+  if (carta.efecto === "shield") activarEscudo();
+
+  misPowerups.value.splice(indice, 1);
+  console.log("Powerup usado:", carta.nombre);
 }
 
 
@@ -141,24 +173,56 @@ onMounted(() => {
     currentPowerupWord.value = palabra;
     cartaActual.value = carta;
 
+    powerupsDisponibles.value = [carta];
+
     console.log("💥 Powerup disponible:", carta, "Palabra:", palabra);
   });
 
+  communicationManager.on("powerup_applied", (msg) => {
+  const { efecto, from } = msg.data;
+    console.log(`los valores son de efecto: ${efecto}, from: ${from}, y escudo ${escudoActivo.value}`);
+  if (escudoActivo.value) {
+    console.log(`🛡️ Escudo activo, ignorando efecto ${efecto} de ${from}`);
+    return;
+  }
+
+  switch (efecto) {
+    case "word_upside_down":
+      aplicarUpsideDown(); // afecta solo a los demás
+      break;
+    case "slow_enemy":
+      aplicarSlowEnemy();
+      break;
+    case "shield":
+      // No hace nada a otros, es protección
+      break;
+  }
+
+  console.log(`💫 Powerup ${efecto} activado por ${from}`);
+});
+
+
   // 🔹 Powerup reclamado por el jugador
   communicationManager.on("powerup_spawned", (msg) => {
-    const { carta } = msg.data;
+  const { carta, playerId: ganadorId } = msg.data;
 
-    // Guardar en los powerups del jugador
+  // Si es mi carta, la agrego a misPowerups
+  if (ganadorId === playerId.value) {
     misPowerups.value.push(carta);
-
-    // Limpiar palabra activa si coincidía
+  }
+    // Limpiar palabra activa si coincide
     if (cartaActual.value && cartaActual.value.id === carta.id) {
       currentPowerupWord.value = null;
       cartaActual.value = null;
     }
+  
+    powerupsDisponibles.value = powerupsDisponibles.value.filter(
+    (c) => c.id !== carta.id
+  );
 
-    console.log("🎯 Carta asignada a mi jugador:", carta);
-  });
+  // Mostrar visualmente que se ha ganado una carta (para todos)
+  console.log(`🃏 Jugador ${playerId} ha ganado la carta`, carta);
+});
 
   // 🔹 Powerup reclamado por otros jugadores (solo para UI si quieres mostrarlo)
   communicationManager.on("powerup_claimed", (msg) => {
@@ -179,6 +243,9 @@ onUnmounted(() => {
   // Desregistrar eventos
   communicationManager.off("update_player_words", onUpdatePlayerWords);
   communicationManager.off("update_progress", onUpdateProgress);
+  communicationManager.off("powerup_claimed");
+  communicationManager.off("powerup_available");
+  communicationManager.off("powerup_spawned");                                                                                                                                                                                        
 
   // Desconectar socket
   // communicationManager.emit("leave_room", { playerId });
@@ -212,6 +279,25 @@ function validarInput() {
 
 // 🧠 MANEJA LA PULSACIÓN DE LA TECLA ESPACIO
 function onInputKeyDown(event) {
+  if (slowEnemyActivo.value) {
+    event.preventDefault();
+    console.warn("⏳ Teclado bloqueado por efecto slowEnemy");
+    return;
+  }
+  // FLECHA DE LA IZQUIERDA PARA USAR EL POWERUP 1
+  if (event.key === "ArrowLeft") {
+    usarPowerup(0); // usar carta 1
+    event.preventDefault();
+    return;
+  }
+
+  // FLECHA DE LA DERECHA PARA USAR EL POWERUP2
+  if (event.key === "ArrowRight") {
+    usarPowerup(1); // usar carta 2
+    event.preventDefault();
+    return;
+  }
+
   if (event.key === " " && palabraUser.value.length > 0) {
     event.preventDefault();
 
@@ -339,11 +425,11 @@ const slideInUpClass = computed(() => ({
   />
 
   <div class="bottom-ui-container" :class="slideInUpClass">
-    <ul class="lista-palabras">
+    <ul class="lista-palabras" :class="{ 'upside-down': efectoUpsideDownActivo }">
       <li
         v-for="(palabra, index) in palabrasEnVista"
         :key="index"
-        :class="{ 'palabra-actual': index === 0 }"
+        :class="{ 'palabra-actual': index === 0}"
       >
         <template v-if="index === 0">
           <span class="escrita-correcta">{{
@@ -367,7 +453,6 @@ const slideInUpClass = computed(() => ({
         v-for="carta in powerupsDisponibles" 
         :key="carta.id" 
         class="carta"
-        @click="reclamarCarta(carta)"
       >
         <strong>{{ carta.nombre }}</strong>
         <p>{{ carta.descripcion }}</p>
@@ -384,34 +469,6 @@ const slideInUpClass = computed(() => ({
       </div>
     </div>
   </div>
-
-
-      <!-- 🃏 Power-Ups disponibles para reclamar -->
-  <div class="powerups-disponibles">
-    <h3>Cartas disponibles</h3>
-    <div class="cartas">
-      <div 
-        v-for="carta in powerupsDisponibles" 
-        :key="carta.id" 
-        class="carta"
-        @click="reclamarCarta(carta)"
-      >
-        <strong>{{ carta.nombre }}</strong>
-        <p>{{ carta.descripcion }}</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- 🧰 Mis Power-Ups -->
-  <div class="mis-powerups">
-    <h3>Mis cartas</h3>
-    <div class="cartas">
-      <div v-for="carta in misPowerups" :key="carta.id" class="carta">
-        <strong>{{ carta.nombre }}</strong>
-      </div>
-    </div>
-  </div>
-
 
     <div class="input-stats-row">
       <div class="contenedor-texto">
@@ -491,6 +548,12 @@ const slideInUpClass = computed(() => ({
 /* ------------------------------------------------ */
 /* --- ESTILOS DE FONDO Y ESTRUCTURA (CREEPY) --- */
 /* ------------------------------------------------ */
+
+.upside-down {
+  transform: rotate(180deg);
+  display: inline-block;
+}
+
 
 .game-background {
   position: fixed;

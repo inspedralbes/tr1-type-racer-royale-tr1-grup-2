@@ -1,4 +1,4 @@
-import { asignarCartaJugador, startPowerupSpawner } from "../logic/powerups/powerupLogic.js";
+import { asignarCartaJugador, startPowerupSpawner, eliminarCartaJugador } from "../logic/powerups/powerupLogic.js";
 import { calcularPalabrasRestantes } from "../logic/wordLogic.js";
 import { getRoom, leaveRoom } from "../logic/roomsManager.js";
 
@@ -99,6 +99,42 @@ export function registerGameEvents(io, socket) {
   asignarCartaJugador({ [roomId]: room }, roomId, playerId, carta);
 
   // Emitir al jugador su nueva carta
-  io.to(playerId).emit("powerup_spawned", { carta });
+  io.to(roomId).emit("powerup_spawned", { data: {carta, playerId } });
+
+  // Emitir al resto de jugadores que la carta ha sido obtenida por un jugador 
+  io.to(roomId).emit("powerup_claimed_global", { data: { carta } });
 });
+
+
+socket.on("use_powerup", (msg) => {
+  const { roomId, playerId, cartaId } = msg.data;
+  const room = getRoom(roomId);
+  if (!room) return;
+
+  const jugador = room.players.find(p => p.playerId === playerId);
+  if (!jugador) return;
+
+  const carta = jugador.powerups.find(c => c.id === cartaId);
+  if (!carta) return;
+
+  // 🔥 Eliminar carta del jugador
+  eliminarCartaJugador({ [roomId]: room }, roomId, playerId, cartaId);
+
+  // 🔔 Notificar a todos los jugadores que la carta fue usada
+  // io.to(roomId).emit("powerup_spawned", { data: { carta, playerId} });
+});
+
+
+socket.on("use_powerup", (msg) => {
+  const { roomId, playerId, efecto } = msg.data;
+  const room = getRoom(roomId);
+  if (!room) return;
+
+  // Emitir a todos menos al que lo usó
+  socket.broadcast.to(roomId).emit("powerup_applied", { data: { efecto, from: playerId } });
+
+  console.log(`💥 Powerup ${efecto} usado por ${playerId} en room ${roomId}`);
+});
+
+
 }
