@@ -1,19 +1,15 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed, nextTick, watch } from "vue";
-import communicationManager from "../services/CommunicationManager.js";
+import communicationManager from "../services/communicationManager.js";
 import { playerName, playerId } from "../logic/globalState.js";
 import AnimacionJuego from "./interfazAnimacion.vue";
+//Import sonidos y musica
 import musicaAmbiente from "../../public/assets/sonido/musica_ambiente.mp3";
 import sound from "../../public/assets/sonido/sonidoAccion/carddrop.mp3";
 import sound1 from "../../public/assets/sonido/sonidoAccion/mech-keyboard.mp3";
 
 // Variables para manejar 3D / crupier / ambiente
 const crupierState = ref("normal");
-const dialogText = ref([
-  "Os doy la bienvenida a todos.",
-  "Si estáis aquí es porque ya sabeis lo que se viene.",
-  "Muy bien, comencemos.",
-]);
 const mensajeInput = ref(dialogText.value[0]);
 const juegoIniciado = ref(false);
 const show2DUI = ref(false);
@@ -21,6 +17,29 @@ const animationDuration = ref(0);
 const audioPlayer = new Audio(musicaAmbiente);
 const pasarLetra = new Audio(sound);
 const teclado = new Audio(sound1);
+
+//Variables para manejar el dialogo del crupier
+const dialogText = ref([
+  "Os doy la bienvenida a todos.",
+  "Si estáis aquí es porque ya sabeis lo que se viene.",
+  "Muy bien, comencemos.",
+]);
+const audioDialogo = [
+  //Voz de bienvenida
+  "/assets/sonido/vozCrupier/mns1_b.mp3",
+  "/assets/sonido/vozCrupier/mns2_b.mp3",
+  "/assets/sonido/vozCrupier/mns3_b.mp3",
+  //Voz de error
+  "/assets/sonido/vozCrupier/mns1_e.mp3",
+  "/assets/sonido/vozCrupier/mns2_e.mp3",
+  //Voz de acierto
+  "/assets/sonido/vozCrupier/mns1_w.mp3",
+  "/assets/sonido/vozCrupier/mns2_w.mp3",
+  //Voz de power up
+  "/assets/sonido/vozCrupier/mns1_pu.mp3",
+  "/assets/sonido/vozCrupier/mns2_pu.mp3",
+  "/assets/sonido/vozCrupier/mns3_pu.mp3",
+];
 
 // 🟩 Variables para manejar la pantalla final
 const mostrarPantallaFinal = ref(false);
@@ -110,7 +129,7 @@ function onUpdateProgress(msg) {
 // 🟩 MOUNT / UNMOUNT
 onMounted(() => {
   // Conectar socket
-  communicationManager.connect(); // 🔹 Fetch palabras iniciales usando endpoint dinámico
+  communicationManager.connect();
 
   const count = 10;
   const payload = {
@@ -119,6 +138,8 @@ onMounted(() => {
     playerName: playerName.value,
     count,
   };
+
+  // 🔹 Fetch palabras iniciales usando endpoint dinámico
 
   fetch("/palabras/words", {
     method: "POST",
@@ -185,6 +206,7 @@ function onInputKeyDown(event) {
   if (event.key === " " && palabraUser.value.length > 0) {
     event.preventDefault();
 
+    //Para validar la palabra, que envie y que suene el sonido cuando pasa a la siguiente palabra.
     if (palabraUser.value === palabraObjetivo.value) {
       completedWords.value++;
       enviarPalabra(palabraUser.value);
@@ -207,9 +229,7 @@ function onInputPaste(event) {
   event.preventDefault();
 }
 
-//
 // FUNCION QUE ENVIA LA PALABRA COMPLETADA AL SERVIDOR
-//
 function enviarPalabra(palabraCompletada) {
   const payload = {
     wordId: 0,
@@ -224,6 +244,7 @@ function enviarPalabra(palabraCompletada) {
   console.log("📤 Datos enviados al servidor:", payload);
 }
 
+// FUNCION QUE INICIA LA MUSICA DE FONDO
 function musica() {
   audioPlayer.volume = 0.4;
   audioPlayer.loop = true;
@@ -238,6 +259,7 @@ function musica() {
     });
 }
 
+// FUNCION QUE INICIA EL JUEGO DESPUES DEL DIALOGO DEL CRUPIER
 function empiezaJuego() {
   for (let i = 0; i < dialogText.value.length; i++) {
     setTimeout(() => {
@@ -267,9 +289,7 @@ const esValido = computed(() => validarInput());
 
 // --- MANEJADORES DE EVENTO DE ANIMACIÓN 3D (TRAÍDO DEL ANTIGUO juego.vue) ---
 
-/**
- * Captura la duración total de la animación 3D y programa la aparición de la UI 2D.
- */
+//Captura la duración total de la animación 3D y programa la aparición de la UI 2D.
 const handleAnimationDuration = (durationInSeconds) => {
   animationDuration.value = durationInSeconds; // UI 2D (Crupier y juego) aparece 2 segundos antes del final.
 
@@ -331,7 +351,7 @@ const slideInUpClass = computed(() => ({
     </div>
   </div>
 
-  <!-- Lista de palabras / Input / Estadisticas -->
+  <!-- Lista de palabras / Input / Estadisticas del usuario que esta jugando -->
   <div v-if="comenzar" class="bottom-ui-container" :class="slideInUpClass">
     <ul class="lista-palabras">
       <li
