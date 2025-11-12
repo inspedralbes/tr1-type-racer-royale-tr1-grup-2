@@ -97,7 +97,7 @@ onMounted(() => {
     count,
   };
 
-  fetch("http://typebet.daw.inspedralbes.cat:3000/palabras/register", {
+  fetch("http://typebet.daw.inspedralbes.cat:3000/palabras/words", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
