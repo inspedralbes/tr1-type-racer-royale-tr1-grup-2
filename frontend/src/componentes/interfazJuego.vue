@@ -76,9 +76,6 @@ const palabraInvalida = ref(false);
 const playerIdActual = playerId.value;
 const playerNameActual = playerName.value;
 const comenzar = ref(false);
-const playerIdActual = playerId.value; // Cambiar dinámicamente si lo tienes desde login
-const playerNameActual = playerName.value; // Cambiar dinámicamente si lo tienes desde lobby
-
 
 // powerups 
 // 🟩 Power-Ups
