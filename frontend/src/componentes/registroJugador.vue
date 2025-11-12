@@ -15,7 +15,8 @@ async function registrarJugador() {
 
   if (nomJugador.value && nomJugador.value.trim() !== "") {
     try {
-const res = await fetch("http://typebet.daw.inspedralbes.cat:3000/user/register", {        method: "POST",
+const res = await fetch("http://typebet.daw.inspedralbes.cat:3000/user/register", {        
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: nomJugador.value }),
       });
