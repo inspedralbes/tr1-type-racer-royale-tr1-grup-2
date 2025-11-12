@@ -28,25 +28,28 @@ router.post("/words", (req, res) => {
       selected = [...palabrasIniciales];
       createRoom(roomId, jugadorInicial.id, jugadorInicial.name, selected);
     } else {
-      // 🔄 Sala ya existe: buscar jugador o agregarlo
-      const jugador = room.players.find((p) => p.id === playerId);
+      const jugador = room.players.find(p => p.playerId === playerId);
+      console.log("🟡 room.players actuales:", room.players.map(p => p.playerId));
+      console.log("🔍 Buscando playerId:", playerId);
 
       if (jugador) {
-        selected = [...jugador.words];
-      } else {
-        const palabrasIniciales = generarPalabras(count);
-        const nuevoJugador = {
-          id: playerId,
-          name: playerName || `Jugador ${room.players.length + 1}`,
-          words: palabrasIniciales,
-          completedWords: 0,
-          status: "playing",
-        };
-
-        room.players.push(nuevoJugador);
-        selected = [...palabrasIniciales];
-      }
+        if (!jugador.words || jugador.words.length === 0) {
+        selected = generarPalabras(600);
+        const selected_ = seleccionarRandom(selected, count)
+        jugador.words = [...selected_];
+        } else {
+          console.log(`🆕 Nuevo jugador ${playerId}, añadiendo a la sala.`);
+          selected = generarPalabras(count);
+          room.players.push({
+            playerId,
+            username: playerName || `Jugador ${room.players.length + 1}`,
+            words: [...selected],
+            completedWords: 0,
+            status: "playing",
+        });
+        }
     }
+  }
 
     res.json({
       data: {

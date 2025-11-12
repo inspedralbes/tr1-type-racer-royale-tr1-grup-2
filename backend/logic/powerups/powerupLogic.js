@@ -14,6 +14,7 @@ export function asignarCartaJugador(rooms, roomId, playerId, carta) {
   if (!room) return;
 
   const jugador = room.players.find((p) => p.playerId === playerId);
+  console.log(jugador);
   if (!jugador) return;
 
   if (!jugador.powerups) jugador.powerups = [];
@@ -24,7 +25,9 @@ export function asignarCartaJugador(rooms, roomId, playerId, carta) {
     jugador.powerups.shift();
   }
 
+  console.log("el jugador ", playerId, "ha ganado la carta y se la ha asignado")
   jugador.powerups.push(carta);
+  console.log(jugador);
 }
 
 // FUNCION QUE ELIMINA UNA CARTA DE UN JUGADOR

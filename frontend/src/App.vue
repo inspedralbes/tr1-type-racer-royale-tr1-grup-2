@@ -6,6 +6,7 @@ import PantallaSalas from "./componentes/pantallaSalas.vue";
 import Lobby from "./componentes/Lobby.vue";
 import Juego from "./componentes/InterfazJuego.vue";
 import PantallaFinal from "./componentes/pantallaFinal.vue";
+import PantallaPerfil from "./componentes/pantallaPerfil.vue";
 
 const vistaActual = ref("registro"); // registro | salas | lobby | juego | final
 const jugador = ref(null);
@@ -35,6 +36,40 @@ function onJuegoFinalizado(winner) {
   vistaActual.value = "final";
 }
 
+// ✅ 1. AÑADE ESTA NUEVA FUNCIÓN
+// 🔹 Evento: Salir del Lobby (de Lobby.vue)
+function handleLobbyLeave() {
+  console.log("APP: Recibido 'leave-lobby'. Volviendo a pantalla de salas.");
+  vistaActual.value = "salas";
+  roomSeleccionada.value = null; // Limpiamos la sala seleccionada
+}
+
+// Evento: ver-perfil (PantallaSalas-PantallaPerfil)
+
+function irAPerfil() {
+  vistaActual.value = "perfil";
+}
+
+function handlePerfilVolver() {
+  if (jugador.value) {
+    vistaActual.value = "salas";
+  } else {
+    vistaActual.value = "registro";
+  }
+}
+
+function guardarPerfil(payload) {
+  console.log("Guardando perfil:", payload);
+
+  if (jugador.value) {
+    jugador.value.username = payload.newName;
+    jugador.value.avatar = payload.newAvatar;
+  }
+
+  // Volver a la pantalla anterior (registro o salas)
+  handlePerfilVolver();
+}
+
 function handleGoHome() {
   try {
     communicationManager.reset(); // desconecta y limpia todo
@@ -42,21 +77,17 @@ function handleGoHome() {
     console.error("Error al desconectar socket:", e);
   }
 
+  localStorage.clear();
+  sessionStorage.clear();
+
   console.log("🔹 Cambiando vistaActual a 'registro'");
-  // Cambiar la vista al registro
+
   vistaActual.value = "registro";
-  // Limpiar variables si quieres
+
   jugador.value = null;
   roomSeleccionada.value = null;
   ganador.value = null;
 }
-
-// FUNCIONES QUE MANEJAN EL CAMBIO DE PANTALLA CON SOCKETS
-// function handleRoomJoined(lobbyData) {
-//   console.log("🏠 Datos recibidos para el lobby:", lobbyData);
-//   lobbyState.value = lobbyData;      // guardar info de sala
-//   vistaActual.value = "lobby";       // cambiar vista automáticamente
-// }
 </script>
 
 <template>
@@ -64,11 +95,20 @@ function handleGoHome() {
     v-if="vistaActual === 'registro' || vistaActual === 'salas'"
     :jugador="jugador"
     @sala-seleccionada="onSalaSeleccionada"
+    @ver-perfil="irAPerfil"
+    @logout="handleGoHome"
     :escena="vistaActual"
   />
+
   <RegistroJugador
     v-if="vistaActual === 'registro'"
     @registrado="onJugadorRegistrado"
+  />
+
+  <PantallaPerfil
+    v-if="vistaActual === 'perfil'"
+    @go-home="handlePerfilVolver"
+    @guardar-perfil="guardarPerfil"
   />
 
   <Lobby
@@ -76,6 +116,7 @@ function handleGoHome() {
     :jugador="jugador"
     :room="roomSeleccionada"
     @juego-iniciado="onJuegoIniciado"
+    @leave-lobby="handleLobbyLeave"
   />
 
   <Juego

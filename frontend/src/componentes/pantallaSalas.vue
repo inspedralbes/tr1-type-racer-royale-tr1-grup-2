@@ -1,12 +1,23 @@
-<!-- components/PantallaSalas.vue -->
 <script setup>
 import { ref, onMounted, onUnmounted, defineProps } from "vue";
 import communicationManager from "../services/communicationManager";
-import { playerName, playerId, rooms } from "../logic/globalState.js";
+import {
+  playerName,
+  playerId,
+  rooms,
+  playerAvatar,
+} from "../logic/globalState.js";
+
+// Importar los hijos de Salas (utilsSalas)
+import buttomUsuari from "./utils/utilsSalas/buttomUsuari.vue";
+import buttomLogout from "./utils/utilsSalas/buttomLogout.vue";
+import buttomCreate from "./utils/utilsSalas/buttomCreate.vue";
+import renderSalas from "./utils/utilsSalas/renderSalas.vue";
 
 const props = defineProps({ escena: String });
 
-const emit = defineEmits(["sala-seleccionada"]);
+// 🔹 AÑADIMOS 'ver-perfil' y 'logout' a los eventos que este componente puede emitir
+const emit = defineEmits(["sala-seleccionada", "ver-perfil", "logout"]);
 const nuevaSala = ref("");
 const errorMessage = ref("");
 
@@ -44,16 +55,14 @@ function actualizarSalas() {
 
 // 🔹 Crear una nueva sala
 function crearSala() {
-  if (!nuevaSala.value.trim()) {
-    errorMessage.value = "Debes introducir un nombre para la sala.";
-    return;
-  }
+  const roomName = nuevaSala.value.trim() || `Room_${playerName.value}`;
 
   communicationManager.emit("create_room", {
-    roomName: nuevaSala.value.trim(),
+    roomName: roomName,
     playerId: playerId.value,
     username: playerName.value,
   });
+
   nuevaSala.value = "";
 }
 
@@ -66,6 +75,16 @@ function unirseSala(room) {
   });
 
   emit("sala-seleccionada", room);
+}
+
+// --- 🔹 LÓGICA DE NAVEGACIÓN (CORREGIDA) ---
+
+function handleVerPerfil() {
+  emit("ver-perfil");
+}
+
+function handleLogout() {
+  emit("logout");
 }
 
 onMounted(() => {
@@ -92,30 +111,21 @@ onUnmounted(() => {
         <div class="wall-light"></div>
         <div class="door-frame">
           <div class="garage-door">
+            <!--Contenido principal-->
             <div class="salas-container">
-              <h2>Bienvenido, {{ playerName }}</h2>
-
-              <!-- Crear nueva sala -->
-              <div class="crear-sala">
-                <input
-                  v-model="nuevaSala"
-                  placeholder="Nombre de la nueva sala"
+              <div class="header-container">
+                <buttomUsuari
+                  :avatar-url="playerAvatar"
+                  @ver-perfil="handleVerPerfil"
                 />
-                <button @click="crearSala">Crear sala</button>
+                <buttomLogout @logout="handleLogout" />
               </div>
-
-              <h3>Salas disponibles</h3>
-              <div class="lista-salas">
-                <div v-for="sala in rooms" :key="sala.roomId" class="sala-card">
-                  <p>
-                    <strong>{{ sala.roomName }}</strong>
-                  </p>
-                  <p>{{ sala.numPlayers }}/{{ sala.maxPlayers }}</p>
-                  <p>Estado: {{ sala.gameState }}</p>
-                  <button @click="unirseSala(sala)">Unirse</button>
-                </div>
-              </div>
+              <!--Crear sala-->
+              <buttomCreate v-model="nuevaSala" @crear-lobby="crearSala" />
+              <!--Listar sala-->
+              <renderSalas v-model="rooms" @unirse-sala="unirseSala" />
             </div>
+            <!--FIN-->
           </div>
         </div>
       </div>
@@ -155,7 +165,7 @@ onUnmounted(() => {
 }
 
 .scene.salas {
-  transform: translateZ(0) scale(2);
+  transform: translateY(-100px) scale(2);
 }
 
 .room-scene {
@@ -262,7 +272,7 @@ onUnmounted(() => {
 .garage-door {
   width: 100%;
   height: 100%;
-  background-color: #1a2a3a;
+  background-color: #383838;
   position: relative;
   background-image: linear-gradient(
       to top,
@@ -306,10 +316,11 @@ onUnmounted(() => {
   top: -0.5vh;
   left: -1%;
   width: 102%;
+  width: 102%;
   height: 2.5vh;
   background-color: black;
   border-radius: 0.8vh;
-  z-index: 3; /*Por encima de la lampara*/
+  z-index: 3;
 }
 
 .wall-light {
@@ -333,6 +344,8 @@ onUnmounted(() => {
   position: absolute;
   top: 3vh;
   left: -15vw;
+  width: 80vw;
+  height: 75vh;
   width: 80vw;
   height: 75vh;
   background: radial-gradient(

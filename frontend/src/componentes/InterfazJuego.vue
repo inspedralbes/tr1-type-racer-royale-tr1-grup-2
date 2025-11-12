@@ -1,10 +1,19 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed, nextTick } from "vue";
 import communicationManager from "../services/communicationManager.js";
-import pantallaFinal from "./pantallaFinal.vue";
 import { playerName, playerId } from "../logic/globalState.js";
 // 🚨 Importar el componente 3D renombrado
 import AnimacionJuego from "./interfazAnimacion.vue";
+
+import {
+  aplicarUpsideDown,
+  activarEscudo,
+  escudoActivo,
+  aplicarSlowEnemy,
+  efectoUpsideDownActivo,
+  slowEnemyActivo,
+  // reiniciarPartida
+} from "../logic/cardEffects.js";
 
 // --- 3D / CRUPIER ESTADO (TRAÍDO DEL ANTIGUO juego.vue) ---
 const crupierState = ref("normal"); // 'normal' o 'powerup'.
@@ -54,17 +63,36 @@ const roomId = ref(props.room.roomId);
 
 // 🟦 FUNCIONES DE SOCKET ADAPTADAS A COMMUNICATION MANAGER
 
-// FUNCION QUE RECLAMA UNA CARTA POWER-UP
-function reclamarCarta(carta) {
-  console.log("Intentando reclamar carta:", carta);
-  communicationManager.emit("claim_powerup", {
+
+// // FUNCION QUE RECLAMA UNA CARTA POWER-UP
+// function reclamarCarta(carta) {
+//   console.log("Intentando reclamar carta:", carta);
+//   communicationManager.emit("claim_powerup", {
+//     data: {
+//       roomId: roomId.value,
+//       playerId: playerId.value,
+//       carta,
+//     }
+//   });
+// }
+
+
+// FUNCION QUE MANEJA EL USO DEL POWERUP 
+function usarPowerup(indice) {
+  const carta = misPowerups.value[indice];
+  if (!carta) return;
+
+  // Emitir al backend para que aplique el efecto a los demás
+  communicationManager.emit("use_powerup", {
     data: {
-      roomId: roomId.value,
       playerId: playerId.value,
-      carta,
-    },
+      roomId: roomId.value,
+      cartaId: carta.id,
+      efecto: carta.efecto
+    }
   });
 }
+
 
 // FUNCION QUE MANEJA LA ACTUALIZACION DE PALABRAS DEL JUGADOR
 function onUpdatePlayerWords(msg) {
@@ -177,20 +205,96 @@ onMounted(() => {
     const { carta, palabra } = msg.data;
     currentPowerupWord.value = palabra;
     cartaActual.value = carta;
+
+    powerupsDisponibles.value = [carta];
+
     console.log("💥 Powerup disponible:", carta, "Palabra:", palabra);
   });
 
+  communicationManager.on("powerup_applied", (msg) => {
+  const { efecto, from } = msg.data;
+  console.log(`los valores son de efecto: ${efecto}, from: ${from}, y escudo ${escudoActivo.value}`);
+  
+  if (escudoActivo.value && from !== playerId.value) {
+    console.log(`🛡️ Escudo activo, ignorando efecto ${efecto} de ${from}`);
+    return;
+  }
+
+  if (from === playerId.value && efecto !== "shield") {
+    console.log(`🙈 Ignorando mi propio efecto ${efecto}`);
+    return;
+  }
+
+  switch (efecto) {
+    case "word_upside_down":
+      aplicarUpsideDown(); // afecta solo a los demás
+      break;
+    case "slow_enemy":
+      aplicarSlowEnemy();
+      break;
+    case "shield":
+      // No hace nada a otros, es protección
+      break;
+    // case "reset_game":
+    //   reiniciarPartida(); // Este efecto local solo puede resetear algo visual o contadores si quieres
+    //   break;
+  }
+
+  console.log(`💫 Powerup ${efecto} activado por ${from}`);
+});
+
+communicationManager.on("powerup_reset_words", (msg) => {
+  const { from } = msg.data;
+  console.log(`🔄 Powerup reset recibido de ${from}`);
+
+  // Limpiar input y palabras actuales
+  palabraUser.value = "";
+  listaEntera.value = []; // vaciar palabras actuales
+  completedWords.value = 0;
+  palabraInvalida.value = false;
+  errorCount.value = 0;
+
+  // Pedir nuevas palabras al servidor
+  fetch("/palabras/words", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      roomId: roomId.value,
+      playerId: playerId.value,
+      playerName: playerName.value,
+      count: 10,
+    }),
+  })
+    .then(res => res.ok ? res.json() : Promise.reject(`Error HTTP: ${res.status}`))
+    .then(data => {
+      listaEntera.value = data.data.initialWords;
+      console.log("✅ Palabras reiniciadas:", listaEntera.value);
+    })
+    .catch(err => console.error("❌ Error al reiniciar palabras:", err));
+});
+
+
   // 🔹 Powerup reclamado por el jugador
   communicationManager.on("powerup_spawned", (msg) => {
-    const { carta } = msg.data;
-    misPowerups.value.push(carta);
+  const { carta, playerId: ganadorId } = msg.data;
 
+  // Si es mi carta, la agrego a misPowerups
+  if (ganadorId === playerId.value) {
+    misPowerups.value.push(carta);
+  }
+    // Limpiar palabra activa si coincide
     if (cartaActual.value && cartaActual.value.id === carta.id) {
       currentPowerupWord.value = null;
       cartaActual.value = null;
     }
-    console.log("🎯 Carta asignada a mi jugador:", carta);
-  });
+  
+    powerupsDisponibles.value = powerupsDisponibles.value.filter(
+    (c) => c.id !== carta.id
+  );
+
+  // Mostrar visualmente que se ha ganado una carta (para todos)
+  console.log(`🃏 Jugador ${playerId} ha ganado la carta`, carta);
+});
 
   // 🔹 Powerup reclamado por otros jugadores
   communicationManager.on("powerup_claimed", (msg) => {
@@ -208,6 +312,9 @@ onUnmounted(() => {
   // Desregistrar eventos
   communicationManager.off("update_player_words", onUpdatePlayerWords);
   communicationManager.off("update_progress", onUpdateProgress);
+  communicationManager.off("powerup_claimed");
+  communicationManager.off("powerup_available");
+  communicationManager.off("powerup_spawned");                                                                                                                                                                                        
 
   // Desconectar socket
   // communicationManager.emit("leave_room", { playerId });
@@ -241,6 +348,25 @@ function validarInput() {
 
 // 🧠 MANEJA LA PULSACIÓN DE LA TECLA ESPACIO
 function onInputKeyDown(event) {
+  if (slowEnemyActivo.value) {
+    event.preventDefault();
+    console.warn("⏳ Teclado bloqueado por efecto slowEnemy");
+    return;
+  }
+  // FLECHA DE LA IZQUIERDA PARA USAR EL POWERUP 1
+  if (event.key === "ArrowLeft") {
+    usarPowerup(0); // usar carta 1
+    event.preventDefault();
+    return;
+  }
+
+  // FLECHA DE LA DERECHA PARA USAR EL POWERUP2
+  if (event.key === "ArrowRight") {
+    usarPowerup(1); // usar carta 2
+    event.preventDefault();
+    return;
+  }
+
   if (event.key === " " && palabraUser.value.length > 0) {
     event.preventDefault();
 
@@ -410,6 +536,20 @@ const slideInUpClass = computed(() => ({
         </li>
       </ul>
 
+      <!-- 🃏 Power-Ups disponibles para reclamar -->
+  <div class="powerups-disponibles">
+    <h3>Cartas disponibles</h3>
+    <div class="cartas">
+      <div 
+        v-for="carta in powerupsDisponibles" 
+        :key="carta.id" 
+        class="carta"
+      >
+        <strong>{{ carta.nombre }}</strong>
+        <p>{{ carta.descripcion }}</p>
+      </div>
+    </div>
+  </div>
       <!-- Power-Ups disponibles -->
       <div class="powerups-disponibles">
         <h3>Cartas disponibles</h3>
@@ -426,15 +566,15 @@ const slideInUpClass = computed(() => ({
         </div>
       </div>
 
-      <!-- Mis Power-Ups -->
-      <div class="mis-powerups">
-        <h3>Mis cartas</h3>
-        <div class="cartas">
-          <div v-for="carta in misPowerups" :key="carta.id" class="carta">
-            <strong>{{ carta.nombre }}</strong>
-          </div>
-        </div>
+  <!-- 🧰 Mis Power-Ups -->
+  <div class="mis-powerups">
+    <h3>Mis cartas</h3>
+    <div class="cartas">
+      <div v-for="carta in misPowerups" :key="carta.id" class="carta">
+        <strong>{{ carta.nombre }}</strong>
       </div>
+    </div>
+  </div>
 
       <div class="input-stats-row">
         <div class="contenedor-texto">
@@ -515,6 +655,12 @@ const slideInUpClass = computed(() => ({
 /* ------------------------------------------------ */
 /* --- ESTILOS DE FONDO Y ESTRUCTURA (CREEPY) --- */
 /* ------------------------------------------------ */
+
+.upside-down {
+  transform: rotate(180deg);
+  display: inline-block;
+}
+
 
 .game-background {
   position: fixed;
