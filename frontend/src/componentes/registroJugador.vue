@@ -1,50 +1,44 @@
 <script setup>
 import { ref } from "vue";
-import { playerName, playerId } from "../logic/globalState.js";
+
+// Utils
+import Login from "./utils/utilsRegistro/Login.vue";
+import Registro from "./utils/utilsRegistro/Registro.vue";
 
 // Emit
 const emit = defineEmits(["registrado"]);
 
 // Refs
-const nomJugador = ref("");
 const errorMessage = ref("");
 const estaDesapareciendo = ref(false);
+const showRegister = ref(false);
 
-async function registrarJugador() {
-  errorMessage.value = "";
+// ---- FUNCIONES AÑADIDAS ----
+function onAuthSuccess(data) {
+  estaDesapareciendo.value = true;
+  setTimeout(() => {
+    emit("registrado", data);
+  }, 500);
+}
 
-  if (nomJugador.value && nomJugador.value.trim() !== "") {
-    try {
-      const res = await fetch("/user/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: nomJugador.value }),
-      });
+function onRegisterSuccess() {
+  showRegister.value = false;
+}
 
-      if (!res.ok) throw new Error("Error al registrar jugador");
+/**
+ * Maneja el evento de error emitido por los componentes hijos.
+ */
+function onAuthError(message) {
+  errorMessage.value = message;
 
-      const data = await res.json();
-
-      // Guardar solo los datos del jugador actual en globalState
-      playerId.value = data.playerId;
-      playerName.value = data.username;
-
-      estaDesapareciendo.value = true;
-      setTimeout(() => {
-        emit("registrado", data); // pasa al componente de salas
-      }, 600);
-    } catch (err) {
-      console.error(err);
-      errorMessage.value = "No se pudo registrar el jugador";
-    }
-  } else {
-    errorMessage.value = "Has d'introduir un nom.";
-  }
+  // Opcional: limpiar el error después de unos segundos
+  setTimeout(() => {
+    errorMessage.value = "";
+  }, 3000);
 }
 </script>
 
 <template>
-  <!-- From Uiverse.io by Praashoo7 -->
   <div class="flip-card" :class="{ desapareciendo: estaDesapareciendo }">
     <div class="flip-card-front">
       <p class="heading_8264">TYPE BET</p>
@@ -161,15 +155,26 @@ async function registrarJugador() {
       <p class="number">9759 2484 5269 6576</p>
       <p class="valid_thru">VALID THRU</p>
       <p class="date_8264">12 / 26</p>
-      <input
-        type="text"
-        class="name"
-        v-model="nomJugador"
-        placeholder="Escriu el teu nom"
-        @keydown.enter.prevent="registrarJugador"
+
+      <Login
+        v-if="!showRegister"
+        @success="onAuthSuccess"
+        @error="onAuthError"
       />
 
-      <button class="confirmar-btn" @click="registrarJugador">OK</button>
+      <Registro v-else @success="onRegisterSuccess" @error="onAuthError" />
+
+      <button
+        @click="showRegister = !showRegister"
+        type="button"
+        class="btn-toggle"
+      >
+        {{
+          showRegister
+            ? "¿Ya tienes cuenta? Inicia sesión"
+            : "¿No tienes cuenta? Regístrate"
+        }}
+      </button>
       <p v-if="errorMessage" class="error-frontal">{{ errorMessage }}</p>
     </div>
   </div>

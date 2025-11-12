@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted } from "vue";
+
 import communicationManager from "./services/communicationManager";
 import RegistroJugador from "./componentes/registroJugador.vue";
 import PantallaSalas from "./componentes/pantallaSalas.vue";
