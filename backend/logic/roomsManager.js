@@ -1,8 +1,8 @@
 // logic/roomsManager.js
+import Usuario from "../models/User.js"; // 👈 Importa el modelo de usuario
 
 // 🧩 Estructura global de salas
 const rooms = {}; // roomId -> { host, maxPlayers, roomName, settings, numPlayers, gameState, players[], initialWords }
-
 
 export const generateRoomId = (length = 6) => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -19,7 +19,7 @@ export const generateRoomId = (length = 6) => {
 /**
  * 🏗️ Crear una sala o unir un jugador si ya existe
  */
-export const createRoom = (
+export const createRoom = async (
   playerId,
   playerName,
   roomName,
@@ -49,7 +49,6 @@ export const createRoom = (
           words: [...initialWords],
           completedWords: 0,
           status: "waiting", // esto hay que verlo de quitarlo o no 
-          
         },
       ],
       initialWords: [...initialWords],
@@ -73,6 +72,26 @@ export const createRoom = (
       });
       room.numPlayers++;
     }
+  }
+
+  // 🔄 Registrar al jugador en MongoDB si no existe
+  try {
+    await Usuario.findOneAndUpdate(
+      { playerId },
+      {
+        playerId,
+        username: playerName,
+        totalIntentos: 0,
+        aciertos: 0,
+        errores: 0,
+        palabrasFrecuentes: [],
+        palabrasFalladas: []
+      },
+      { upsert: true, new: true }
+    );
+    console.log(`✅ Usuario ${playerName} registrado/actualizado en MongoDB`);
+  } catch (err) {
+    console.error("❌ Error al registrar usuario en MongoDB:", err);
   }
 
   return rooms[roomId];
@@ -103,7 +122,6 @@ export const getPublicRooms = () => {
       gameState: r.gameState,
     }));
 };
-
 
 /**
  * 🚪 Un jugador abandona una sala
@@ -161,8 +179,7 @@ export const finishGame = (roomId) => {
   room.players.forEach((p) => (p.status = "finished"));
 };
 
-
-export const joinRoom = (roomId, playerId, username) => {
+export const joinRoom = async (roomId, playerId, username) => {
   const room = rooms[roomId];
   if (!room) throw new Error("Sala no encontrada.");
 
@@ -182,5 +199,26 @@ export const joinRoom = (roomId, playerId, username) => {
     room.numPlayers++;
   }
 
+  // 🔄 Registrar al jugador en MongoDB si no existe
+  try {
+    await Usuario.findOneAndUpdate(
+      { playerId },
+      {
+        playerId,
+        username,
+        totalIntentos: 0,
+        aciertos: 0,
+        errores: 0,
+        palabrasFrecuentes: [],
+        palabrasFalladas: []
+      },
+      { upsert: true, new: true }
+    );
+    console.log(`✅ Usuario ${username} registrado/actualizado en MongoDB`);
+  } catch (err) {
+    console.error("❌ Error al registrar usuario en MongoDB:", err);
+  }
+
   return room;
 };
+

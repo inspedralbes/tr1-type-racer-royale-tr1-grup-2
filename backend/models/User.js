@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 
 const usuarioSchema = new mongoose.Schema({
-  username: { type: String, required: true },
-  email: String,
+  playerId: { type: String, required: true, unique: true },
+  username: String,
   totalIntentos: { type: Number, default: 0 },
   aciertos: { type: Number, default: 0 },
   errores: { type: Number, default: 0 },
@@ -11,3 +11,4 @@ const usuarioSchema = new mongoose.Schema({
 });
 
 export default mongoose.model("Usuario", usuarioSchema);
+

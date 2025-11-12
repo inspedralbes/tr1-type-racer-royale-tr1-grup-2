@@ -28,6 +28,7 @@ const playerIdActual = playerId.value; // Cambiar dinámicamente si lo tienes de
 const playerNameActual = playerName.value; // Cambiar dinámicamente si lo tienes desde lobby
 const palabrasAcertadas = ref([]);
 const palabrasFallidas = ref([]);
+const userStats = ref(null);
 
 // powerups
 // 🟩 Power-Ups
@@ -145,55 +146,57 @@ onMounted(() => {
     })
     .catch((err) => console.error("❌ Error al obtener palabras:", err));
 
-  // Peticion de estadisticas
-
+  // 🔹 Petición de estadísticas iniciales desde la API
   fetch(`/api/user/${playerId.value}/palabras`)
     .then((res) =>
       res.ok ? res.json() : Promise.reject(`Error HTTP: ${res.status}`)
     )
     .then((data) => {
-      palabrasAcertadas.value = data.palabrasAcertadas;
-      palabrasFallidas.value = data.palabrasFallidas;
+      palabrasAcertadas.value = data.palabrasAcertadas || [];
+      palabrasFallidas.value = data.palabrasFallidas || [];
     })
     .catch((err) => console.error("❌ Error al obtener estadísticas:", err));
 
-  // Escuchar eventos
-  communicationManager.on("update_player_words", onUpdatePlayerWords);
+  // 🔹 Escuchar eventos de juego
+  communicationManager.on("update_player_words", ({ data }) => {
+    // Actualizar palabras acertadas en tiempo real
+    palabrasAcertadas.value = data.completedWords || [];
+  });
+
+  communicationManager.on("word_failed", ({ data }) => {
+    // Añadir palabra fallida en tiempo real
+    if (!palabrasFallidas.value.includes(data.word)) {
+      palabrasFallidas.value.push(data.word);
+    }
+  });
+
   communicationManager.on("update_progress", onUpdateProgress);
 
   // 🔹 Powerup disponible en la sala
   communicationManager.on("powerup_available", (msg) => {
     const { carta, palabra } = msg.data;
-
-    // Mostrar la palabra del powerup en UI y guardarla
     currentPowerupWord.value = palabra;
     cartaActual.value = carta;
-
     console.log("💥 Powerup disponible:", carta, "Palabra:", palabra);
   });
 
   // 🔹 Powerup reclamado por el jugador
   communicationManager.on("powerup_spawned", (msg) => {
     const { carta } = msg.data;
-
-    // Guardar en los powerups del jugador
     misPowerups.value.push(carta);
 
-    // Limpiar palabra activa si coincidía
     if (cartaActual.value && cartaActual.value.id === carta.id) {
       currentPowerupWord.value = null;
       cartaActual.value = null;
     }
-
     console.log("🎯 Carta asignada a mi jugador:", carta);
   });
 
-  // 🔹 Powerup reclamado por otros jugadores (solo para UI si quieres mostrarlo)
+  // 🔹 Powerup reclamado por otros jugadores
   communicationManager.on("powerup_claimed", (msg) => {
     const { carta, playerId: claimant } = msg.data;
     console.log(`🎁 Powerup reclamado por ${claimant}:`, carta);
 
-    // Eliminarlo de las palabras disponibles si coincidía
     if (cartaActual.value && cartaActual.value.id === carta.id) {
       currentPowerupWord.value = null;
       cartaActual.value = null;
@@ -368,28 +371,22 @@ const slideInUpClass = computed(() => ({
 
   <div class="juego-container">
     <!-- 🧠 Columna izquierda con palabras -->
-    <aside class="columna-palabras">
-      <h3>✅ Palabras respondidas</h3>
-      <ul>
-        <li
-          v-for="(palabra, index) in completedWords"
-          :key="'correcta-' + index"
-        >
-          {{ palabra }}
-        </li>
-      </ul>
+    <div class="estadisticas">
+  <h3>📊 Estadísticas de {{ userStats?.username }}</h3>
+  <p>Total intentos: {{ userStats?.totalIntentos }}</p>
+  <p>Aciertos: {{ userStats?.aciertos }}</p>
+  <p>Errores: {{ userStats?.errores }}</p>
 
-      <h3>❌ Palabras falladas</h3>
-      <ul>
-        <li
-          v-for="(palabra, index) in palabrasFalladas"
-          :key="'fallada-' + index"
-          class="fallo"
-        >
-          {{ palabra }}
-        </li>
-      </ul>
-    </aside>
+  <h4>✅ Palabras frecuentes</h4>
+  <ul>
+    <li v-for="w in userStats?.palabrasFrecuentes" :key="w">{{ w }}</li>
+  </ul>
+
+  <h4>❌ Palabras falladas</h4>
+  <ul>
+    <li v-for="w in userStats?.palabrasFalladas" :key="w">{{ w }}</li>
+  </ul>
+</div>
 
     <!-- 🎮 Zona principal del juego -->
     <div class="bottom-ui-container" :class="slideInUpClass">

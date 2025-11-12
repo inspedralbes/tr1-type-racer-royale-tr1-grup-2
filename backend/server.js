@@ -43,10 +43,7 @@ initializeSocketIO(io);
 // CONEXIÓN A MONGODB
 const uri = process.env.MONGODB_URI;
 mongoose
-  .connect(uri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(uri)
   .then(() => console.log("✅ Conectado a MongoDB"))
   .catch((err) => console.error("❌ Error al conectar MongoDB:", err));
 
