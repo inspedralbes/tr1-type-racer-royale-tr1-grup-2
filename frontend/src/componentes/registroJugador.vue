@@ -47,7 +47,7 @@ async function registrarJugador() {
   <!-- From Uiverse.io by Praashoo7 -->
   <div class="flip-card" :class="{ desapareciendo: estaDesapareciendo }">
     <div class="flip-card-front">
-      <p class="heading_8264">NOMBRE</p>
+      <p class="heading_8264">TYPE BET</p>
       <svg
         class="logo"
         xmlns="http://www.w3.org/2000/svg"
@@ -183,12 +183,14 @@ async function registrarJugador() {
   perspective: 1000px;
   color: white;
   transform: scale(2);
-  transition: transform 0.6s ease-in, opacity 0.6s ease-in;
+  transition: transform 0.6s ease-in, opacity 1.2s ease-in;
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%) scale(2);
   z-index: 10;
+
+  /*Tamaño card de Registro */
+  transform: translate(-50%, -50%) scale(2.7);
 }
 
 .flip-card.desapareciendo {
