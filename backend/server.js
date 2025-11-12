@@ -2,6 +2,7 @@
 import cors from "cors";
 import express from "express";
 import http from "http";
+import "dotenv/config";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import path from "path";
@@ -17,35 +18,42 @@ import { initializeSocketIO } from "./socket/socketInit.js";
 // RUTAS DE LA API
 import wordsRouter from "./routes/wordRoutes.js";
 import registerRouter from "./routes/registerRoutes.js";
-import statsRouter from "./routes/statsRoutes.js";
+import { initializeSocketIO } from "./socket/socketInit.js";
 
-// MODELOS
-import Palabra from "./models/Word.js";
-
-// EXPRESS Y SERVIDOR
+// --- Express ---
 const app = express();
 const server = http.createServer(app);
 
-// CORS
-const corsOptions = { origin: "*", methods: ["GET", "POST"] };
+// --- CORS ---
+const corsOptions = {
+  origin: "*",
+  methods: ["GET", "POST"],
+};
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// RUTAS
+// --- Routers ---
 app.use("/palabras", wordsRouter);
+app.use("/api", registerRouter);
 app.use("/user", registerRouter);
 app.use("/stats", statsRouter);
 
-// SOCKET.IO
+// --- Socket.IO ---
 const io = new Server(server, { cors: corsOptions });
 initializeSocketIO(io);
-
 // CONEXIÓN A MONGODB
 const uri = process.env.MONGODB_URI;
 mongoose
   .connect(uri)
   .then(() => console.log("✅ Conectado a MongoDB"))
   .catch((err) => console.error("❌ Error al conectar MongoDB:", err));
+
+io.on("connection", (socket) => {
+  socket.on("ping_test", (data) => {
+    console.log("📥 Ping recibido:", data);
+    socket.emit("pong_test", { ok: true });
+  });
+});
 
 // PUERTO DE ESCUCHA
 const port = process.env.PORT || 3000;
