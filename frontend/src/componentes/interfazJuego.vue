@@ -8,25 +8,6 @@ import musicaAmbiente from "../../public/assets/sonido/musica_ambiente.mp3";
 import sound from "../../public/assets/sonido/sonidoAccion/carddrop.mp3";
 import sound1 from "../../public/assets/sonido/sonidoAccion/mech-keyboard.mp3";
 
-// Variables para manejar 3D / crupier / ambiente / iconos(Temp)
-const crupierState = ref("normal");
-const mensajeInput = ref(dialogText.value[0]);
-const juegoIniciado = ref(false);
-const show2DUI = ref(false);
-const animationDuration = ref(0);
-const otrosJugadores = ref([]);
-const todosLosJugadores = ref([]);
-const audioPlayer = new Audio(musicaAmbiente);
-const pasarLetra = new Audio(sound);
-const teclado = new Audio(sound1);
-const iconosDisponibles = [
-  "/assets/img/userIconos/corazon.png",
-  "/assets/img/userIconos/trevol.png",
-  "/assets/img/userIconos/picas.png",
-  "/assets/img/userIconos/rombos.png",
-];
-const jugadorIcono = ref("/assets/img/iconos/corazon.png");
-
 //Variables para manejar el dialogo del crupier
 const dialogText = ref([
   "Os doy la bienvenida a todos.",
@@ -49,6 +30,26 @@ const audioDialogo = [
   "/assets/sonido/vozCrupier/mns2_pu.mp3",
   "/assets/sonido/vozCrupier/mns3_pu.mp3",
 ];
+
+// Variables para manejar 3D / crupier / ambiente / iconos(Temp)
+const crupierState = ref("normal");
+const mensajeInput = ref(dialogText.value[0]);
+const juegoIniciado = ref(false);
+const show2DUI = ref(false);
+const animationDuration = ref(0);
+const otrosJugadores = ref([]);
+const todosLosJugadores = ref([]);
+const audioPlayer = new Audio(musicaAmbiente);
+const pasarLetra = new Audio(sound);
+const teclado = new Audio(sound1);
+const iconosDisponibles = [
+  "/assets/img/userIconos/corazon.png",
+  "/assets/img/userIconos/trevol.png",
+  "/assets/img/userIconos/picas.png",
+  "/assets/img/userIconos/rombos.png",
+];
+const jugadorIcono = ref("/assets/img/iconos/corazon.png");
+
 
 // 🟩 Variables para manejar la pantalla final
 const mostrarPantallaFinal = ref(false);
@@ -117,6 +118,18 @@ function onUpdatePlayerWords(msg) {
   }
 }
 
+// FUNCIÓN CENTRAL PARA MOSTRAR LA UI DEL JUEGO
+function mostrarUIJuego(origen = "manual") {
+  if (!show2DUI.value) {
+    console.log(`🎮 Mostrando UI del juego (origen: ${origen})`);
+    show2DUI.value = true;
+
+    if (!comenzar.value) {
+      empiezaJuego();
+    }
+  }
+}
+
 //Controla el progreso de todos los jugadores y separa los usuarios
 function onUpdateProgress(msg) {
   console.log("📦 Mensaje update_progress:", msg.data);
@@ -175,13 +188,13 @@ function onUpdateProgress(msg) {
     emit("juego-finalizado", ganador.value);
     console.log("🎉 La partida terminó. Ganador:", ganadorJugador.username);
   }
+  mostrarUIJuego("update_progress");
 }
 
 // 🟩 MOUNT / UNMOUNT
 onMounted(() => {
   // Conectar socket
   communicationManager.connect();
-
   const count = 10;
   const payload = {
     roomId: roomId.value,
@@ -319,6 +332,7 @@ function empiezaJuego() {
     if (i === dialogText.value.length - 1) {
       setTimeout(() => {
         comenzar.value = true;
+        show2DUI.value = true;
       }, (i + 1) * 2000);
     }
     console.log("El valor de mostrar es:", comenzar.value);
@@ -342,7 +356,7 @@ const esValido = computed(() => validarInput());
 
 //Captura la duración total de la animación 3D y programa la aparición de la UI 2D.
 const handleAnimationDuration = (durationInSeconds) => {
-  animationDuration.value = durationInSeconds; 
+  animationDuration.value = durationInSeconds;
 
   const delayBeforeEnd = 2;
   const delayMs = Math.max(100, (durationInSeconds - delayBeforeEnd) * 1000);
@@ -360,6 +374,7 @@ const handleAnimationDuration = (durationInSeconds) => {
  */
 const handleAnimationFinished = () => {
   console.log("Animación 3D oficialmente terminada. El juego comienza.");
+  mostrarUIJuego("animacion-finalizada");
 };
 
 // 🧮 Computadas de Estética
@@ -386,7 +401,7 @@ const slideInUpClass = computed(() => ({
   </button>
 
   <!-- Div para la estadistica de jugadores -->
-  <div class="player-container-exterior" v-if="show2DUI">
+  <div v-if="show2DUI" class="player-container-exterior" >
     <div v-for="(jugador, index) in otrosJugadores" :key="jugador.id"
       :class="['other-player-stat', `player-pos-${index}`]">
       <div class="player-name-chip">
@@ -400,16 +415,12 @@ const slideInUpClass = computed(() => ({
 
   <!-- Lista que muestra usuarios alrededor -->
 
-  <div class="iconos-jugadores-container" v-if="show2DUI">
-  <div
-    v-for="(jugador, index) in otrosJugadores"
-    :key="jugador.id"
-    class="icono-jugador-item"
-  >
-    <img :src="jugador.icono" alt="icono" class="icono-jugador-img" />
-    <p class="icono-jugador-nombre">{{ jugador.username }}</p>
+  <div v-if="show2DUI" class="iconos-jugadores-container">
+    <div v-for="(jugador, index) in otrosJugadores" :key="jugador.id" class="icono-jugador-item">
+      <img :src="jugador.icono" alt="icono" class="icono-jugador-img" />
+      <p class="icono-jugador-nombre">{{ jugador.username }}</p>
+    </div>
   </div>
-</div>
 
   <!-- Lista de palabras / Input / Estadisticas del usuario que esta jugando -->
   <div v-if="comenzar" class="bottom-ui-container" :class="slideInUpClass">
@@ -918,9 +929,11 @@ const slideInUpClass = computed(() => ({
   0% {
     box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
   }
+
   50% {
     box-shadow: 0 0 25px rgba(255, 255, 255, 1);
   }
+
   100% {
     box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
   }
@@ -949,6 +962,4 @@ const slideInUpClass = computed(() => ({
   align-items: center;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
-
-
 </style>
