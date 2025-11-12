@@ -106,41 +106,43 @@ export function registerGameEvents(io, socket) {
 });
 
 
+// socket.on("use_powerup", (msg) => {
+//   const { roomId, playerId, cartaId } = msg.data;
+//   const room = getRoom(roomId);
+//   if (!room) return;
+
+//   const jugador = room.players.find(p => p.playerId === playerId);
+//   if (!jugador) return;
+
+//   const carta = jugador.powerups.find(c => c.id === cartaId);
+//   if (!carta) return;
+
+//   // 🔥 Eliminar carta del jugador
+//   eliminarCartaJugador({ [roomId]: room }, roomId, playerId, cartaId);
+
+//   // 🔔 Notificar a todos los jugadores que la carta fue usada
+//   // io.to(roomId).emit("powerup_spawned", { data: { carta, playerId} });
+// });
+
+
 socket.on("use_powerup", (msg) => {
-  const { roomId, playerId, cartaId } = msg.data;
+  const { roomId, playerId, efecto, cardId } = msg.data;
   const room = getRoom(roomId);
   if (!room) return;
 
-  const jugador = room.players.find(p => p.playerId === playerId);
-  if (!jugador) return;
+  console.log(`🃏 Powerup recibido: ${efecto} (jugador ${playerId}) en sala ${roomId}`);
 
-  const carta = jugador.powerups.find(c => c.id === cartaId);
-  if (!carta) return;
+  // Emitimos SIEMPRE a todos el mismo evento de powerup
+  io.to(roomId).emit("powerup_applied", { 
+    data: { efecto, from: playerId } 
+  });
 
-  // 🔥 Eliminar carta del jugador
-  eliminarCartaJugador({ [roomId]: room }, roomId, playerId, cartaId);
+  // Eliminamos la carta del jugador
+  eliminarCartaJugador({ [roomId]: room }, roomId, playerId, cardId);
 
-  // 🔔 Notificar a todos los jugadores que la carta fue usada
-  // io.to(roomId).emit("powerup_spawned", { data: { carta, playerId} });
+  console.log(`💥 Powerup ${efecto} usado por ${playerId}, carta ${cardId} eliminada`);
 });
 
-
-socket.on("use_powerup", (msg) => {
-  const { roomId, playerId, efecto } = msg.data;
-  const room = getRoom(roomId);
-  if (!room) return;
-
-  if (efecto === "reset_game") {
-    console.log(`🔄 Powerup reset usado por ${playerId} en room ${roomId}`);
-
-    // Emitir a todos los jugadores para que reinicien sus palabras
-    io.to(roomId).emit("powerup_reset_words", { data: { from: playerId } });
-  } else {
-    // Efectos normales a los demás jugadores
-    socket.broadcast.to(roomId).emit("powerup_applied", { data: { efecto, from: playerId } });
-    console.log(`💥 Powerup ${efecto} usado por ${playerId} en room ${roomId}`);
-  }
-});
 
 
 

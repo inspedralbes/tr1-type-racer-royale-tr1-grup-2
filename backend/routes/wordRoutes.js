@@ -27,8 +27,8 @@ router.post("/words", (req, res) => {
       if (jugador) {
         if (!jugador.words || jugador.words.length === 0) {
         selected = generarPalabras(600);
-        selected_ = seleccionarRandom(selected, count)
-        jugador.words = [...selected];
+        const selected_ = seleccionarRandom(selected, count)
+        jugador.words = [...selected_];
         } else {
           console.log(`🆕 Nuevo jugador ${playerId}, añadiendo a la sala.`);
           selected = generarPalabras(count);

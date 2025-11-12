@@ -11,9 +11,14 @@ export function aplicarUpsideDown(duracion = 3000) {
   setTimeout(() => { efectoUpsideDownActivo.value = false; }, duracion);
 }
 
-export function aplicarSlowEnemy(duracion = 2000) {
+export function aplicarSlowEnemy(duracion = 5000) { // duración por defecto 5s
   slowEnemyActivo.value = true;
-  setTimeout(() => { slowEnemyActivo.value = false; }, duracion);
+  console.log(`🐢 Slow Enemy activado por ${duracion / 1000} segundos`);
+
+  setTimeout(() => {
+    slowEnemyActivo.value = false;
+    console.log("⌨️ Teclado reactivado tras slow_enemy");
+  }, duracion);
 }
 
 export function activarEscudo(duracion = 10000) {

@@ -12,7 +12,7 @@ import {
   aplicarSlowEnemy,
   efectoUpsideDownActivo,
   slowEnemyActivo,
-  reiniciarPartida
+  // reiniciarPartida
 } from "../logic/cardEffects.js";
 
 // --- 3D / CRUPIER ESTADO (TRAÍDO DEL ANTIGUO juego.vue) ---
@@ -181,9 +181,15 @@ onMounted(() => {
 
   communicationManager.on("powerup_applied", (msg) => {
   const { efecto, from } = msg.data;
-    console.log(`los valores son de efecto: ${efecto}, from: ${from}, y escudo ${escudoActivo.value}`);
-  if (escudoActivo.value) {
+  console.log(`los valores son de efecto: ${efecto}, from: ${from}, y escudo ${escudoActivo.value}`);
+  
+  if (escudoActivo.value && from !== playerId.value) {
     console.log(`🛡️ Escudo activo, ignorando efecto ${efecto} de ${from}`);
+    return;
+  }
+
+  if (from === playerId.value && efecto !== "shield") {
+    console.log(`🙈 Ignorando mi propio efecto ${efecto}`);
     return;
   }
 
@@ -197,9 +203,9 @@ onMounted(() => {
     case "shield":
       // No hace nada a otros, es protección
       break;
-    case "reset_game":
-      reiniciarPartida(); // Este efecto local solo puede resetear algo visual o contadores si quieres
-      break;
+    // case "reset_game":
+    //   reiniciarPartida(); // Este efecto local solo puede resetear algo visual o contadores si quieres
+    //   break;
   }
 
   console.log(`💫 Powerup ${efecto} activado por ${from}`);
