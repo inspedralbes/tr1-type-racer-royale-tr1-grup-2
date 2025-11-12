@@ -1,59 +1,89 @@
 // DEPENDENCIAS
 import express from "express";
-import bcrypt from "bcryptjs";
-import { dbPool } from "../db/dbPool.js"; // Importamos el pool de conexión
+// import bcrypt from "bcryptjs"; // 👈 COMENTADO: Ya no necesitamos bcrypt sin MySQL
+// import { dbPool } from "../db/dbPool.js"; // 👈 COMENTADO: Ya no necesitamos el pool de MySQL
+import Usuario from "../models/User.js";
 
 // --- Router ---
 const router = express.Router();
 
-// --- Registro ---
+// --- Registro (SIMULADO) ---
 router.post("/register", async (req, res) => {
   const { username, password } = req.body;
+
   if (!username || !password) {
     return res
       .status(400)
       .json({ message: "Usuario y contraseña son requeridos." });
   }
+
   try {
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-    const sql = "INSERT INTO users (username, password) VALUES (?, ?)";
-    await dbPool.query(sql, [username, hashedPassword]);
-    res.status(201).json({ message: "¡Usuario registrado con éxito!" });
+    // --- 1. Lógica de registro en MySQL (Si está descomentada) ---
+    //        const salt = await bcrypt.genSalt(10);
+    //    const hashedPassword = await bcrypt.hash(password, salt);
+    //    const sql = "INSERT INTO users (username, password) VALUES (?, ?)";
+    //    const [result] = await dbPool.query(sql, [username, hashedPassword]);
+
+    // 🚨 Obtener la ID generada por MySQL (la necesitas para Mongo)
+    //    const newPlayerId = result.insertId;
+    const simulatedPlayerId = `u_${Date.now()}`;
+
+    // --- 2. Lógica de creación en MongoDB (¡NUEVO!) ---
+    await Usuario.create({
+      playerId: simulatedPlayerId, // Usar la ID de MySQL como playerId en Mongo
+      username: username,
+      aciertos: 0,
+      errores: 0,
+      palabrasFrecuentes: [],
+      palabrasFalladas: [],
+      totalIntentos: 0,
+    });
+
+    // --- 3. Respuesta al Frontend ---
+    res.status(201).json({
+      message: "¡Usuario registrado con éxito!",
+      playerId: simulatedPlayerId,
+      username: username,
+    });
   } catch (error) {
-    if (error.code === "ER_DUP_ENTRY") {
-      return res
-        .status(409)
-        .json({ message: "Error: El nombre de usuario ya existe." });
-    }
-    console.error("Error en /api/register:", error);
-    res.status(500).json({ message: "Error interno del servidor." });
+    console.error("Error SIMULADO en /register:", error);
+    res.status(500).json({ message: "Error interno del servidor (simulado)." });
   }
 });
 
-// --- Login ---
+// --- Login (SIMULADO) ---
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
+
   if (!username || !password) {
     return res
       .status(400)
       .json({ message: "Usuario y contraseña son requeridos." });
   }
+
   try {
-    const sql = "SELECT * FROM users WHERE username = ?";
-    const [rows] = await dbPool.query(sql, [username]);
-    if (rows.length === 0) {
-      return res.status(404).json({ message: "Usuario no encontrado." });
+    // COMENTADO: Toda la lógica de SELECT, bcrypt.compare, etc. se ha quitado.
+
+    // Simulación: Comprobar credenciales estáticas para prueba
+    if (username === "test" && password === "1234") {
+      // Genera la misma ID estática para que la app funcione
+      const simulatedPlayerId = "u_ESTATICO_TEST";
+
+      // Responde como si el login hubiera sido exitoso
+      return res.status(200).json({
+        message: "Login SIMULADO exitoso",
+        playerId: simulatedPlayerId,
+        username: username,
+      });
+    } else {
+      // Falla si no son las credenciales estáticas
+      return res
+        .status(401)
+        .json({ message: "Credenciales de prueba SIMULADAS incorrectas." });
     }
-    const user = rows[0];
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ message: "Contraseña incorrecta." });
-    }
-    res.status(200).json({ message: "Login exitoso" /* token: "..." */ });
   } catch (error) {
-    console.error("Error en /api/login:", error);
-    res.status(500).json({ message: "Error interno del servidor." });
+    console.error("Error SIMULADO en /login:", error);
+    res.status(500).json({ message: "Error interno del servidor (simulado)." });
   }
 });
 

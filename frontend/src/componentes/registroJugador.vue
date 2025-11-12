@@ -15,10 +15,18 @@ async function registrarJugador() {
 
   if (nomJugador.value && nomJugador.value.trim() !== "") {
     try {
-      const res = await fetch("/user/register", {
+      // La URL correcta, apuntando al backend (Node.js en puerto 3000)
+      const urlBackend = "http://localhost:3000/user/register";
+
+      // 🛑 CORRECCIÓN CLAVE AQUÍ: Usar urlBackend en lugar de "/user/register"
+      const res = await fetch(urlBackend, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: nomJugador.value }),
+        // 🛑 CORRECCIÓN CLAVE: Añadir el campo 'password' con un valor de prueba
+        body: JSON.stringify({
+          username: nomJugador.value,
+          password: "passwordDePrueba123", // <-- Valor estático
+        }),
       });
 
       if (!res.ok) throw new Error("Error al registrar jugador");
@@ -42,7 +50,6 @@ async function registrarJugador() {
   }
 }
 </script>
-
 
 <template>
   <!-- From Uiverse.io by Praashoo7 -->

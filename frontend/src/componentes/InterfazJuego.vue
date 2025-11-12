@@ -63,7 +63,6 @@ const roomId = ref(props.room.roomId);
 
 // 🟦 FUNCIONES DE SOCKET ADAPTADAS A COMMUNICATION MANAGER
 
-
 // // FUNCION QUE RECLAMA UNA CARTA POWER-UP
 // function reclamarCarta(carta) {
 //   console.log("Intentando reclamar carta:", carta);
@@ -76,8 +75,7 @@ const roomId = ref(props.room.roomId);
 //   });
 // }
 
-
-// FUNCION QUE MANEJA EL USO DEL POWERUP 
+// FUNCION QUE MANEJA EL USO DEL POWERUP
 function usarPowerup(indice) {
   const carta = misPowerups.value[indice];
   if (!carta) return;
@@ -88,11 +86,10 @@ function usarPowerup(indice) {
       playerId: playerId.value,
       roomId: roomId.value,
       cartaId: carta.id,
-      efecto: carta.efecto
-    }
+      efecto: carta.efecto,
+    },
   });
 }
-
 
 // FUNCION QUE MANEJA LA ACTUALIZACION DE PALABRAS DEL JUGADOR
 function onUpdatePlayerWords(msg) {
@@ -153,7 +150,7 @@ onMounted(() => {
   // Conectar socket
   communicationManager.connect();
 
-  // 🔹 Fetch palabras iniciales
+  // 1️⃣ 🔹 Fetch palabras iniciales (POST)
   const payload = {
     roomId: roomId.value,
     playerId: playerId.value,
@@ -161,7 +158,8 @@ onMounted(() => {
     count: 10,
   };
 
-  fetch("/palabras/words", {
+  // 🛑 CORRECCIÓN DE URL: Usar http://localhost:3000
+  fetch("http://localhost:3000/palabras/words", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -174,18 +172,22 @@ onMounted(() => {
     })
     .catch((err) => console.error("❌ Error al obtener palabras:", err));
 
-  // 🔹 Petición de estadísticas iniciales desde la API
-  fetch(`/api/user/${playerId.value}/palabras`)
+  // 2️⃣ 🔹 Petición de estadísticas iniciales desde la API (GET)
+  // 🛑 CORRECCIÓN DE URL Y SINTAXIS: Usar /stats/ y envolver en fetch()
+  const urlEstadisticas = `http://localhost:3000/stats/${playerId.value}`;
+
+  fetch(urlEstadisticas)
     .then((res) =>
       res.ok ? res.json() : Promise.reject(`Error HTTP: ${res.status}`)
     )
     .then((data) => {
-      palabrasAcertadas.value = data.palabrasAcertadas || [];
-      palabrasFallidas.value = data.palabrasFallidas || [];
+      // Nota: Asumiendo que los campos en Mongo son palabrasFrecuentes y palabrasFalladas
+      palabrasAcertadas.value = data.palabrasFrecuentes || [];
+      palabrasFallidas.value = data.palabrasFalladas || [];
     })
     .catch((err) => console.error("❌ Error al obtener estadísticas:", err));
 
-  // 🔹 Escuchar eventos de juego
+  // 3️⃣ 🔹 Escuchar eventos de juego
   communicationManager.on("update_player_words", ({ data }) => {
     // Actualizar palabras acertadas en tiempo real
     palabrasAcertadas.value = data.completedWords || [];
@@ -200,7 +202,7 @@ onMounted(() => {
 
   communicationManager.on("update_progress", onUpdateProgress);
 
-  // 🔹 Powerup disponible en la sala
+  // 4️⃣ 🔹 Powerup disponible en la sala
   communicationManager.on("powerup_available", (msg) => {
     const { carta, palabra } = msg.data;
     currentPowerupWord.value = palabra;
@@ -212,89 +214,93 @@ onMounted(() => {
   });
 
   communicationManager.on("powerup_applied", (msg) => {
-  const { efecto, from } = msg.data;
-  console.log(`los valores son de efecto: ${efecto}, from: ${from}, y escudo ${escudoActivo.value}`);
-  
-  if (escudoActivo.value && from !== playerId.value) {
-    console.log(`🛡️ Escudo activo, ignorando efecto ${efecto} de ${from}`);
-    return;
-  }
+    const { efecto, from } = msg.data;
+    console.log(
+      `los valores son de efecto: ${efecto}, from: ${from}, y escudo ${escudoActivo.value}`
+    );
 
-  if (from === playerId.value && efecto !== "shield") {
-    console.log(`🙈 Ignorando mi propio efecto ${efecto}`);
-    return;
-  }
+    if (escudoActivo.value && from !== playerId.value) {
+      console.log(`🛡️ Escudo activo, ignorando efecto ${efecto} de ${from}`);
+      return;
+    }
 
-  switch (efecto) {
-    case "word_upside_down":
-      aplicarUpsideDown(); // afecta solo a los demás
-      break;
-    case "slow_enemy":
-      aplicarSlowEnemy();
-      break;
-    case "shield":
-      // No hace nada a otros, es protección
-      break;
-    // case "reset_game":
-    //   reiniciarPartida(); // Este efecto local solo puede resetear algo visual o contadores si quieres
-    //   break;
-  }
+    if (from === playerId.value && efecto !== "shield") {
+      console.log(`🙈 Ignorando mi propio efecto ${efecto}`);
+      return;
+    }
 
-  console.log(`💫 Powerup ${efecto} activado por ${from}`);
-});
+    switch (efecto) {
+      case "word_upside_down":
+        aplicarUpsideDown(); // afecta solo a los demás
+        break;
+      case "slow_enemy":
+        aplicarSlowEnemy();
+        break;
+      case "shield":
+        // No hace nada a otros, es protección
+        break;
+      // case "reset_game":
+      //   reiniciarPartida(); // Este efecto local solo puede resetear algo visual o contadores si quieres
+      //   break;
+    }
 
-communicationManager.on("powerup_reset_words", (msg) => {
-  const { from } = msg.data;
-  console.log(`🔄 Powerup reset recibido de ${from}`);
+    console.log(`💫 Powerup ${efecto} activado por ${from}`);
+  });
 
-  // Limpiar input y palabras actuales
-  palabraUser.value = "";
-  listaEntera.value = []; // vaciar palabras actuales
-  completedWords.value = 0;
-  palabraInvalida.value = false;
-  errorCount.value = 0;
+  communicationManager.on("powerup_reset_words", (msg) => {
+    const { from } = msg.data;
+    console.log(`🔄 Powerup reset recibido de ${from}`);
 
-  // Pedir nuevas palabras al servidor
-  fetch("/palabras/words", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      roomId: roomId.value,
-      playerId: playerId.value,
-      playerName: playerName.value,
-      count: 10,
-    }),
-  })
-    .then(res => res.ok ? res.json() : Promise.reject(`Error HTTP: ${res.status}`))
-    .then(data => {
-      listaEntera.value = data.data.initialWords;
-      console.log("✅ Palabras reiniciadas:", listaEntera.value);
+    // Limpiar input y palabras actuales
+    palabraUser.value = "";
+    listaEntera.value = []; // vaciar palabras actuales
+    completedWords.value = 0;
+    palabraInvalida.value = false;
+    errorCount.value = 0;
+
+    // Pedir nuevas palabras al servidor
+    // 🛑 CORRECCIÓN DE URL: Usar http://localhost:3000
+    fetch("http://localhost:3000/palabras/words", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        roomId: roomId.value,
+        playerId: playerId.value,
+        playerName: playerName.value,
+        count: 10,
+      }),
     })
-    .catch(err => console.error("❌ Error al reiniciar palabras:", err));
-});
-
+      .then((res) =>
+        res.ok ? res.json() : Promise.reject(`Error HTTP: ${res.status}`)
+      )
+      .then((data) => {
+        listaEntera.value = data.data.initialWords;
+        console.log("✅ Palabras reiniciadas:", listaEntera.value);
+      })
+      .catch((err) => console.error("❌ Error al reiniciar palabras:", err));
+  });
 
   // 🔹 Powerup reclamado por el jugador
   communicationManager.on("powerup_spawned", (msg) => {
-  const { carta, playerId: ganadorId } = msg.data;
+    const { carta, playerId: ganadorId } = msg.data;
 
-  // Si es mi carta, la agrego a misPowerups
-  if (ganadorId === playerId.value) {
-    misPowerups.value.push(carta);
-  }
+    // Si es mi carta, la agrego a misPowerups
+    if (ganadorId === playerId.value) {
+      misPowerups.value.push(carta);
+    }
     // Limpiar palabra activa si coincide
     if (cartaActual.value && cartaActual.value.id === carta.id) {
       currentPowerupWord.value = null;
       cartaActual.value = null;
     }
-  
-    powerupsDisponibles.value = powerupsDisponibles.value.filter(
-    (c) => c.id !== carta.id
-  );
 
-  // Mostrar visualmente que se ha ganado una carta (para todos)
-  console.log(`🃏 Jugador ${playerId} ha ganado la carta`, carta);
-});
+    powerupsDisponibles.value = powerupsDisponibles.value.filter(
+      (c) => c.id !== carta.id
+    );
+
+    // Mostrar visualmente que se ha ganado una carta (para todos)
+    console.log(`🃏 Jugador ${playerId} ha ganado la carta`, carta);
+  });
 
   // 🔹 Powerup reclamado por otros jugadores
   communicationManager.on("powerup_claimed", (msg) => {
@@ -314,7 +320,7 @@ onUnmounted(() => {
   communicationManager.off("update_progress", onUpdateProgress);
   communicationManager.off("powerup_claimed");
   communicationManager.off("powerup_available");
-  communicationManager.off("powerup_spawned");                                                                                                                                                                                        
+  communicationManager.off("powerup_spawned");
 
   // Desconectar socket
   // communicationManager.emit("leave_room", { playerId });
@@ -498,21 +504,21 @@ const slideInUpClass = computed(() => ({
   <div class="juego-container">
     <!-- 🧠 Columna izquierda con palabras -->
     <div class="estadisticas">
-  <h3>📊 Estadísticas de {{ userStats?.username }}</h3>
-  <p>Total intentos: {{ userStats?.totalIntentos }}</p>
-  <p>Aciertos: {{ userStats?.aciertos }}</p>
-  <p>Errores: {{ userStats?.errores }}</p>
+      <h3>📊 Estadísticas de {{ userStats?.username }}</h3>
+      <p>Total intentos: {{ userStats?.totalIntentos }}</p>
+      <p>Aciertos: {{ userStats?.aciertos }}</p>
+      <p>Errores: {{ userStats?.errores }}</p>
 
-  <h4>✅ Palabras frecuentes</h4>
-  <ul>
-    <li v-for="w in userStats?.palabrasFrecuentes" :key="w">{{ w }}</li>
-  </ul>
+      <h4>✅ Palabras frecuentes</h4>
+      <ul>
+        <li v-for="w in userStats?.palabrasFrecuentes" :key="w">{{ w }}</li>
+      </ul>
 
-  <h4>❌ Palabras falladas</h4>
-  <ul>
-    <li v-for="w in userStats?.palabrasFalladas" :key="w">{{ w }}</li>
-  </ul>
-</div>
+      <h4>❌ Palabras falladas</h4>
+      <ul>
+        <li v-for="w in userStats?.palabrasFalladas" :key="w">{{ w }}</li>
+      </ul>
+    </div>
 
     <!-- 🎮 Zona principal del juego -->
     <div class="bottom-ui-container" :class="slideInUpClass">
@@ -537,19 +543,19 @@ const slideInUpClass = computed(() => ({
       </ul>
 
       <!-- 🃏 Power-Ups disponibles para reclamar -->
-  <div class="powerups-disponibles">
-    <h3>Cartas disponibles</h3>
-    <div class="cartas">
-      <div 
-        v-for="carta in powerupsDisponibles" 
-        :key="carta.id" 
-        class="carta"
-      >
-        <strong>{{ carta.nombre }}</strong>
-        <p>{{ carta.descripcion }}</p>
+      <div class="powerups-disponibles">
+        <h3>Cartas disponibles</h3>
+        <div class="cartas">
+          <div
+            v-for="carta in powerupsDisponibles"
+            :key="carta.id"
+            class="carta"
+          >
+            <strong>{{ carta.nombre }}</strong>
+            <p>{{ carta.descripcion }}</p>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
       <!-- Power-Ups disponibles -->
       <div class="powerups-disponibles">
         <h3>Cartas disponibles</h3>
@@ -566,15 +572,15 @@ const slideInUpClass = computed(() => ({
         </div>
       </div>
 
-  <!-- 🧰 Mis Power-Ups -->
-  <div class="mis-powerups">
-    <h3>Mis cartas</h3>
-    <div class="cartas">
-      <div v-for="carta in misPowerups" :key="carta.id" class="carta">
-        <strong>{{ carta.nombre }}</strong>
+      <!-- 🧰 Mis Power-Ups -->
+      <div class="mis-powerups">
+        <h3>Mis cartas</h3>
+        <div class="cartas">
+          <div v-for="carta in misPowerups" :key="carta.id" class="carta">
+            <strong>{{ carta.nombre }}</strong>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
 
       <div class="input-stats-row">
         <div class="contenedor-texto">
@@ -660,7 +666,6 @@ const slideInUpClass = computed(() => ({
   transform: rotate(180deg);
   display: inline-block;
 }
-
 
 .game-background {
   position: fixed;

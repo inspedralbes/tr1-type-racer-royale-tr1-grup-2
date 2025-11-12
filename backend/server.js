@@ -3,13 +3,14 @@ import cors from "cors";
 import express from "express";
 import http from "http";
 import "dotenv/config";
-import mongoose from "mongoose";
-import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 
+// 👉 Importamos la función de conexión a MongoDB desde el archivo dbmongo.js
+import connectMongoStatsDB from "./dbmongo.js";
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.resolve(__dirname, "../.env") });
+// dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 // SOCKET.IO
 import { Server } from "socket.io";
@@ -17,8 +18,8 @@ import { initializeSocketIO } from "./socket/socketInit.js";
 
 // RUTAS DE LA API
 import wordsRouter from "./routes/wordRoutes.js";
-import registerRouter from "./routes/registerRoutes.js";
-import { initializeSocketIO } from "./socket/socketInit.js";
+import registerRouter from "./routes/registerRoutes.js"; // 👈 1. DESCOMENTAR/IMPORTAR
+import statsRouter from "./routes/statsRoutes.js";
 
 // --- Express ---
 const app = express();
@@ -32,21 +33,18 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
+// --- Conexión a MongoDB (Estadísticas) ---
+connectMongoStatsDB();
+
 // --- Routers ---
 app.use("/palabras", wordsRouter);
-app.use("/api", registerRouter);
-app.use("/user", registerRouter);
+// app.use("/api", registerRouter); // 👈 2. DESCOMENTAR SOLO SI TU FRONTEND USA /api/register
+app.use("/user", registerRouter); // 👈 3. DESCOMENTAR (ESTA RUTA CAUSA EL 404)
 app.use("/stats", statsRouter);
 
 // --- Socket.IO ---
 const io = new Server(server, { cors: corsOptions });
 initializeSocketIO(io);
-// CONEXIÓN A MONGODB
-const uri = process.env.MONGODB_URI;
-mongoose
-  .connect(uri)
-  .then(() => console.log("✅ Conectado a MongoDB"))
-  .catch((err) => console.error("❌ Error al conectar MongoDB:", err));
 
 io.on("connection", (socket) => {
   socket.on("ping_test", (data) => {
