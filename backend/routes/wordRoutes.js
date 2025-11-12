@@ -22,12 +22,13 @@ router.post("/words", (req, res) => {
     } else {
       const jugador = room.players.find(p => p.playerId === playerId);
       console.log("🟡 room.players actuales:", room.players.map(p => p.playerId));
-console.log("🔍 Buscando playerId:", playerId);
+      console.log("🔍 Buscando playerId:", playerId);
 
       if (jugador) {
         if (!jugador.words || jugador.words.length === 0) {
-        selected = generarPalabras(count);
-        jugador.words = [...selected];
+        selected = generarPalabras(600);
+        const selected_ = seleccionarRandom(selected, count)
+        jugador.words = [...selected_];
         } else {
           console.log(`🆕 Nuevo jugador ${playerId}, añadiendo a la sala.`);
           selected = generarPalabras(count);

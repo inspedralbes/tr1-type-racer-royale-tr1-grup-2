@@ -1,6 +1,6 @@
 import { registerLobbyEvents } from "./lobbyEvents.js";
 import { registerGameEvents } from "./gameEvents.js";
-import { handleDisconnect } from "./disconnectHandler.js";
+import { handlePlayerLeave } from "./disconnectHandler.js";
 
 export function initializeSocketIO(io) {
   io.on("connection", (socket) => {
@@ -11,6 +11,9 @@ export function initializeSocketIO(io) {
     registerGameEvents(io, socket);
 
     // Manejo común de desconexión
-    socket.on("disconnect", () => handleDisconnect(io, socket));
+    socket.on("leave_game", ({ playerId }) => handlePlayerLeave(io, socket, playerId));
+    socket.on("disconnect", () => {
+      console.log(`🔴 Jugador desconectado: ${socket.id} FINAL`);
+    });
   });
 }

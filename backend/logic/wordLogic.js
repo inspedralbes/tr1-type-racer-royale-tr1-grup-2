@@ -97,3 +97,25 @@ export const añadirPalabraCompletada = (rooms, roomId, playerId, palabraElimina
     }
   });
 };
+
+
+
+// 🔹 Array de palabras especiales para powerups
+export const palabrasPowerup = [
+  "desafortunadamente",
+  "incomprensible",
+  "extraordinario",
+  "electrodoméstico",
+  "contemporáneo",
+  "trascendental",
+  "ininteligible",
+  "paralelepípedo",
+  "hipopótamo",
+  "otorrinolaringólogo"
+];
+
+
+export const generarPalabraPowerup = () => {
+  const index = Math.floor(Math.random() * palabrasPowerup.length);
+  return palabrasPowerup[index];
+};
