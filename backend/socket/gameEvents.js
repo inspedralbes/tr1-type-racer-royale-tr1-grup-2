@@ -130,11 +130,18 @@ socket.on("use_powerup", (msg) => {
   const room = getRoom(roomId);
   if (!room) return;
 
-  // Emitir a todos menos al que lo usó
-  socket.broadcast.to(roomId).emit("powerup_applied", { data: { efecto, from: playerId } });
+  if (efecto === "reset_game") {
+    console.log(`🔄 Powerup reset usado por ${playerId} en room ${roomId}`);
 
-  console.log(`💥 Powerup ${efecto} usado por ${playerId} en room ${roomId}`);
+    // Emitir a todos los jugadores para que reinicien sus palabras
+    io.to(roomId).emit("powerup_reset_words", { data: { from: playerId } });
+  } else {
+    // Efectos normales a los demás jugadores
+    socket.broadcast.to(roomId).emit("powerup_applied", { data: { efecto, from: playerId } });
+    console.log(`💥 Powerup ${efecto} usado por ${playerId} en room ${roomId}`);
+  }
 });
+
 
 
 }

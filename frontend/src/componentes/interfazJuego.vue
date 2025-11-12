@@ -11,7 +11,8 @@ import {
   escudoActivo,
   aplicarSlowEnemy,
   efectoUpsideDownActivo,
-  slowEnemyActivo
+  slowEnemyActivo,
+  reiniciarPartida
 } from "../logic/cardEffects.js";
 
 // --- 3D / CRUPIER ESTADO (TRAÍDO DEL ANTIGUO juego.vue) ---
@@ -196,9 +197,42 @@ onMounted(() => {
     case "shield":
       // No hace nada a otros, es protección
       break;
+    case "reset_game":
+      reiniciarPartida(); // Este efecto local solo puede resetear algo visual o contadores si quieres
+      break;
   }
 
   console.log(`💫 Powerup ${efecto} activado por ${from}`);
+});
+
+communicationManager.on("powerup_reset_words", (msg) => {
+  const { from } = msg.data;
+  console.log(`🔄 Powerup reset recibido de ${from}`);
+
+  // Limpiar input y palabras actuales
+  palabraUser.value = "";
+  listaEntera.value = []; // vaciar palabras actuales
+  completedWords.value = 0;
+  palabraInvalida.value = false;
+  errorCount.value = 0;
+
+  // Pedir nuevas palabras al servidor
+  fetch("/palabras/words", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      roomId: roomId.value,
+      playerId: playerId.value,
+      playerName: playerName.value,
+      count: 10,
+    }),
+  })
+    .then(res => res.ok ? res.json() : Promise.reject(`Error HTTP: ${res.status}`))
+    .then(data => {
+      listaEntera.value = data.data.initialWords;
+      console.log("✅ Palabras reiniciadas:", listaEntera.value);
+    })
+    .catch(err => console.error("❌ Error al reiniciar palabras:", err));
 });
 
 
