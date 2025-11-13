@@ -124,12 +124,8 @@ onUnmounted(() => {
                 />
                 <LogicaSalirSala @logout="handleLogout" />
               </div>
-              <!--Crear sala
-              <buttomCreate v-model="nuevaSala" @crear-lobby="crearSala" />
-              -->
-              <!--Listar salaS
-              <renderSalas v-model="rooms" @unirse-sala="unirseSala" />
-              -->
+              <LogicaCrearLobby v-model="nuevaSala" @crear-lobby="crearSala" />
+              <LogicaPintarSalas v-model="rooms" @unirse-sala="unirseSala" />
             </div>
             <!--FIN-->
           </div>
