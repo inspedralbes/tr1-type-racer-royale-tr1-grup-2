@@ -156,10 +156,10 @@ onMounted(() => {
     refContenedor.value.appendChild(renderizador.domElement);
   }
 
-  // --- LUCES (ILUMINACIÓN CLANDESTINA) ---
+  // --- LUCES ---
 
-  escena.add(new THREE.AmbientLight(0x443300, 0.25));
-  const luzDireccional = new THREE.DirectionalLight(0xffb000, 0.4);
+  escena.add(new THREE.AmbientLight(0x443300, 1));
+  const luzDireccional = new THREE.DirectionalLight(0xffb000, 1.5);
   luzDireccional.position.set(0, 10, 0);
   luzDireccional.castShadow = true;
   escena.add(luzDireccional);
@@ -208,6 +208,13 @@ onMounted(() => {
           };
         });
       }
+
+      try {
+      refRenderizador.value.compile(escena, refCamara.value);
+      console.log("Compilación de shaders completada.");
+    } catch (e) {
+      console.error("Error durante la compilación de shaders:", e);
+    }
 
       estaListo.value = true;
       iniciarAnimacion();
