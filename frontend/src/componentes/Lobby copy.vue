@@ -16,10 +16,15 @@ const players = ref(props.room.players || []);
 
 // Emitir al padre cuando la partida debe comenzar
 const emit = defineEmits(["juego-iniciado"]);
+const emit = defineEmits(["leave-lobby"]);
 
 // Solo el host puede iniciar la partida si hay al menos 2 jugadores
 const canStartGame = computed(() => players.value.length >= 2);
 
+
+function emitirSalir() {
+  emit("leave-lobby");
+}
 // Función para iniciar el juego
 function iniciarJuego() {
   console.log("⏳ El host inicia la partida...");
@@ -30,8 +35,8 @@ function iniciarJuego() {
     hostId: props.room.playerId,
   });
 
-  // Emitimos a App.vue que la partida empieza (cambio de pantalla)
-  emit("juego-iniciado", props.room);
+  // // Emitimos a App.vue que la partida empieza (cambio de pantalla)
+  // emit("juego-iniciado", props.room);
 }
 
 // Montamos los listeners de socket
@@ -97,7 +102,7 @@ onUnmounted(() => {
     <div class="phone-bottom">
       <div class="keypad">
         <div class="soft-keys">
-          <button class="call-red">⏻ Salir</button>
+          <button class="call-red" @click="emitirSalir">⏻ Salir</button>
         </div>
 
         <div class="nav-pad">

@@ -15,6 +15,8 @@ router.post("/words", (req, res) => {
     let room = getRoom(roomId);
     let selected;
 
+
+
     if (!room) {
       // 🆕 Crear sala con jugador inicial y sus palabras personales
       const palabrasIniciales = generarPalabras(count);
@@ -38,9 +40,8 @@ router.post("/words", (req, res) => {
 
       if (jugador) {
         if (!jugador.words || jugador.words.length === 0) {
-          selected = generarPalabras(600);
-          const selected_ = seleccionarRandom(selected, count);
-          jugador.words = [...selected_];
+          selected = generarPalabras(count);
+          jugador.words = [...selected];
         } else {
           console.log(`🆕 Nuevo jugador ${playerId}, añadiendo a la sala.`);
           selected = generarPalabras(count);

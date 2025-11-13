@@ -1,78 +1,75 @@
 version: '3.8'
 
 services:
-
-  # --- Servicio de la Base de Datos (MySQL) ---
+  # --- Base de datos MySQL ---
   db:
     image: mysql:8.0
-    container_name: tr1-mysql-db
+    container_name: tr1-mysql-db-dev
     restart: always
     environment:
-      # Lee estas variables de tu archivo .env
-      MYSQL_ROOT_PASSWORD: passwordDeRootQueNoShaDeFerServirMai # No es ideal para producción, pero OK para dev
+      MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASS}
     ports:
-      - "127.0.0.1:3307:3306"
+      - "3307:3306"
     volumes:
-      # Volumen para persistencia de datos
       - mysql-data:/var/lib/mysql
-      # CORRECCIÓN:
-      # Monta tu CARPETA local (./db_init) que contiene los .sql
-      # dentro del directorio que MySQL usa para inicializarse.
       - ./db_init:/docker-entrypoint-initdb.d
 
-  # --- Servicio de Adminer (Gestor de BD) ---
+  # --- Adminer (gestor de base de datos) ---
   adminer:
     image: adminer
+    restart: always
     ports:
-      # Podrás acceder en http://localhost:8081
       - "8081:8080"
     depends_on:
       - db
 
-  # --- Servicio del Backend (con Hot-Reload) ---
+  # --- Backend (con Hot Reload) ---
   backend:
     build:
       context: .
       dockerfile: Dockerfile
-      target: backend-builder
+      target: backend-dev
     image: tr1-backend-dev
+    container_name: tr1-backend-dev
     working_dir: /app/backend
     command: "npx nodemon server.js"
     ports:
-      - "${BACKEND_HOST_IP:-127.0.0.1}:${BACKEND_HOST_PORT:-3000}:3000"
+      - "3000:3000"
     environment:
-      - NODE_ENV=development
-      - DB_HOST=db # <--- ¡CLAVE! El nombre del servicio de arriba
-      - DB_USER=${DB_USER}
-      - DB_PASS=${DB_PASS}
-      - DB_NAME=${DB_NAME}
+      NODE_ENV: development
+      DB_HOST: db
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_NAME: ${DB_NAME}
     volumes:
       - ./backend:/app/backend
       - /app/backend/node_modules
     depends_on:
       - db
 
-  # --- Servicio del Frontend (con Hot-Reload) ---
+  # --- Frontend (con Hot Reload de Vite) ---
   frontend:
     build:
       context: .
       dockerfile: Dockerfile
-      target: frontend-builder
+      target: frontend-dev
     image: tr1-frontend-dev
+    container_name: tr1-frontend-dev
     working_dir: /app/frontend
-    command: "npm run dev" 
+    command: "npm run dev"
     ports:
-      - "${FRONTEND_HOST_IP:-127.0.0.1}:${FRONTEND_HOST_PORT:-4000}:4000"
+      - "5173:5173"
+    environment:
+      NODE_ENV: development
+      VITE_BACKEND_URL: http://localhost:3000
     volumes:
       - ./frontend:/app/frontend
       - /app/frontend/node_modules
     depends_on:
       - backend
 
-# --- Volúmenes ---
 volumes:
   mysql-data:
-    driver: local

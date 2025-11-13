@@ -1,252 +1,434 @@
 <template>
-  <div
-    class="final-screen"
-    role="dialog"
-    aria-labelledby="winner-title"
-    aria-modal="true"
-  >
-    <div class="card">
-      <h2 id="winner-title" class="title">¡PARTIDA TERMINADA!</h2>
+  <div class="slot-machine-container">
+    <div class="machine-frame">
+      <div class="machine-top">
+        <h2 class="machine-title">☠ Máquina del Destino ☠</h2>
+      </div>
 
-      <p class="winner-name" v-if="winner">{{ winner }} ¡GANADOR! 🎉</p>
-      <p class="winner-name placeholder" v-else>— Sin ganador claro —</p>
-
-      <hr class="stats-separator" v-if="!loading && !error" />
-
-      <div class="stats-area">
-        <p v-if="loading">Cargando tus estadísticas...</p>
-        <p v-else-if="error" class="error-message">
-          ❌ Error al cargar estadísticas: {{ error }}
-        </p>
-
-        <div v-else>
-          <h4 class="stats-title">Tus Resultados (ID: {{ playerId }})</h4>
-
-          <div class="stats-section">
-            <h5 class="stats-subtitle">
-              ✅ Acertadas ({{ correctWords.length }})
-            </h5>
-            <div class="word-list">
-              <span
-                v-for="word in correctWords"
-                :key="'c-' + word"
-                class="word-tag word-correct"
-              >
-                {{ word }}
-              </span>
-            </div>
+      <div class="slot-display">
+        <div class="slot-reel">
+          <div class="reel-ticker" :style="reelStyle(reel1)">
+            <span
+              v-for="symbol in reelSymbols"
+              :key="'r1-' + symbol"
+              class="slot-symbol"
+              >{{ symbol }}</span
+            >
+            <span
+              v-for="symbol in reelSymbols"
+              :key="'r1dup-' + symbol"
+              class="slot-symbol"
+              >{{ symbol }}</span
+            >
           </div>
-
-          <div class="stats-section">
-            <h5 class="stats-subtitle">
-              ❌ Falladas ({{ failedWords.length }})
-            </h5>
-            <div class="word-list">
-              <span
-                v-for="word in failedWords"
-                :key="'f-' + word"
-                class="word-tag word-failed"
-              >
-                {{ word }}
-              </span>
-            </div>
+        </div>
+        <div class="slot-reel">
+          <div class="reel-ticker" :style="reelStyle(reel2)">
+            <span
+              v-for="symbol in reelSymbols2"
+              :key="'r2-' + symbol"
+              class="slot-symbol"
+              >{{ symbol }}</span
+            >
+            <span
+              v-for="symbol in reelSymbols2"
+              :key="'r2dup-' + symbol"
+              class="slot-symbol"
+              >{{ symbol }}</span
+            >
+          </div>
+        </div>
+        <div class="slot-reel">
+          <div class="reel-ticker" :style="reelStyle(reel3)">
+            <span
+              v-for="symbol in reelSymbols3"
+              :key="'r3-' + symbol"
+              class="slot-symbol"
+              >{{ symbol }}</span
+            >
+            <span
+              v-for="symbol in reelSymbols3"
+              :key="'r3dup-' + symbol"
+              class="slot-symbol"
+              >{{ symbol }}</span
+            >
           </div>
         </div>
       </div>
-      <div class="controls">
-        <button class="btn" @click="goHome" aria-label="Volver al inicio">
-          Volver al inicio
-        </button>
+
+      <div class="machine-details">
+        <h1>El elegido es:</h1>
+        <span v-if="winner" class="winner-name">{{ winner }}</span>
+        <span v-else-if="!canSpin" class="winner-name placeholder"
+          >...Calculando Destino...</span
+        >
+        <span v-else class="winner-name placeholder">— Nadie aún —</span>
+      </div>
+
+      <div class="lever-housing">
+        <div
+          class="lever"
+          :class="{ pulling: isPulling }"
+          @click="goHomeAction"
+          :style="{ cursor: canGoHome ? 'pointer' : 'default' }"
+        >
+          <div class="lever-ball"></div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { defineEmits, defineProps, ref, onMounted } from "vue";
-import communicationManager from "../services/communicationManager.js";
-import { playerId, roomId } from "../logic/globalState.js"; // tu estado global
+import { ref, reactive, onMounted, defineEmits, defineProps } from "vue";
+// IMPORTANTE: Asegúrate de que las rutas a los archivos de sonido sean correctas en tu proyecto
+import soundSpin from "../../public/assets/sonido/sonidoAccion/playful-casino-slot-machine.mp3";
+import soundWin from "../../public/assets/sonido/sonidoAccion/slot-machine-coin-payout.mp3";
 
-// --- PROPS & EMITS ---
 const props = defineProps({
-  winner: {
-    type: String,
-    default: "",
-  },
+  winner: { type: String, default: "" },
 });
 
 const emit = defineEmits(["go-home"]);
 
-// --- ESTADO DE ESTADÍSTICAS ---
-const correctWords = ref([]);
-const failedWords = ref([]);
-const loading = ref(true);
-const error = ref(null);
+const isPulling = ref(false);
+const canSpin = ref(false);
+const canGoHome = ref(false);
 
-// --- LÓGICA DE FETCH ---
-const fetchStats = async () => {
-  loading.value = true;
-  error.value = null;
+// Altura del símbolo (150px)
+const SYMBOL_HEIGHT = 150;
+const SYMBOL_HEIGHT_HALF = SYMBOL_HEIGHT / 2;
 
-  // Asegúrate de usar la URL base correcta de tu backend (si es localhost:3000)
-  // Para desarrollo, usa la ruta relativa si el proxy está configurado,
-  // o la ruta completa si es necesario (ej: 'http://localhost:3000/stats/')
-  const url = `/stats/${playerId.value}`;
+// Duración del giro antes de frenar (1.5 segundos)
+const AUDIO_DURATION_MS = 1500;
 
-  try {
-    const res = await fetch(url);
+// Definición de símbolos (Palabras)
+const reelSymbols = ["Nada", "Muerte", "Estadisticas"];
+const reelSymbols2 = ["Muerte", "Nada", "Estadisticas"];
+const reelSymbols3 = ["Nada", "Muerte", "Estadisticas"];
 
-    if (!res.ok) {
-      // Intenta leer el mensaje de error del servidor
-      const errorData = await res.json();
-      throw new Error(
-        errorData.message || `Error ${res.status}: No se encontraron datos.`
-      );
-    }
+const STATS_INDEXES = [2, 2, 2];
 
-    const data = await res.json();
-
-    // Asignamos los arrays del objeto Usuario devuelto por la API
-    correctWords.value = data.palabrasFrecuentes || [];
-    failedWords.value = data.palabrasFalladas || [];
-  } catch (err) {
-    console.error("Fallo al obtener estadísticas:", err);
-    error.value = err.message;
-  } finally {
-    loading.value = false;
-  }
-};
-
-// --- CICLO DE VIDA ---
-onMounted(() => {
-  // Solo cargamos estadísticas si el jugador tiene una ID
-  if (playerId.value) {
-    fetchStats();
-  } else {
-    error.value =
-      "No se pudo obtener la ID del jugador para cargar estadísticas.";
-    loading.value = false;
-  }
+const reel1 = reactive({
+  offset: 0,
+  speed: 0,
+  isSpinning: false,
+  transitionDuration: "0s",
+});
+const reel2 = reactive({
+  offset: 0,
+  speed: 0,
+  isSpinning: false,
+  transitionDuration: "0s",
+});
+const reel3 = reactive({
+  offset: 0,
+  speed: 0,
+  isSpinning: false,
+  transitionDuration: "0s",
 });
 
-// --- FUNCIÓN DE NAVEGACIÓN ---
-function goHome() {
-  communicationManager.emit("leave_game", {
-    playerId: playerId.value,
-    roomId: roomId.value,
-  });
-  communicationManager.disconnect();
-  emit("go-home");
+const sonidoTragaperras = new Audio(soundSpin);
+const sonidoMonedas = new Audio(soundWin);
+
+function reelStyle(reel) {
+  return {
+    transform: `translateY(${reel.offset}px)`,
+    transition: `transform ${reel.transitionDuration} ${
+      reel.speed > 0 ? "linear" : "ease-out"
+    }`,
+  };
 }
+
+let animationFrame;
+function animateReels() {
+  if (reel1.speed > 0) {
+    reel1.offset -= reel1.speed;
+    reel1.offset %= reelSymbols.length * SYMBOL_HEIGHT;
+  }
+
+  if (reel2.speed > 0) {
+    reel2.offset -= reel2.speed;
+    reel2.offset %= reelSymbols2.length * SYMBOL_HEIGHT;
+  }
+
+  if (reel3.speed > 0) {
+    reel3.offset -= reel3.speed;
+    reel3.offset %= reelSymbols3.length * SYMBOL_HEIGHT;
+  }
+
+  animationFrame = requestAnimationFrame(animateReels);
+}
+
+function stopReel(reel, targetSymbolIndex, symbolCount, delay) {
+  return new Promise((resolve) => {
+    // Cálculo para centrar el símbolo en la ventana de 150px
+    let targetOffset =
+      -(targetSymbolIndex * SYMBOL_HEIGHT) + SYMBOL_HEIGHT_HALF;
+
+    let extraTurns = 3;
+    let finalOffset = targetOffset - symbolCount * SYMBOL_HEIGHT * extraTurns;
+
+    setTimeout(() => {
+      reel.speed = 0;
+      reel.transitionDuration = "2s";
+      reel.offset = finalOffset;
+
+      setTimeout(() => {
+        reel.transitionDuration = "0s";
+        reel.offset = targetOffset;
+        resolve();
+      }, 2000);
+    }, delay);
+  });
+}
+
+function startSpin() {
+  canSpin.value = false;
+  canGoHome.value = false;
+
+  sonidoTragaperras.pause();
+  sonidoTragaperras.currentTime = 0;
+  sonidoTragaperras.loop = false;
+  sonidoTragaperras.play();
+
+  reel1.speed = reel2.speed = reel3.speed = 40;
+  reel1.transitionDuration =
+    reel2.transitionDuration =
+    reel3.transitionDuration =
+      "0s";
+
+  // Posición inicial: El primer símbolo está medio fuera por arriba.
+  reel1.offset = SYMBOL_HEIGHT_HALF;
+  reel2.offset = SYMBOL_HEIGHT_HALF;
+  reel3.offset = SYMBOL_HEIGHT_HALF;
+
+  setTimeout(() => {
+    Promise.resolve()
+      .then(() => stopReel(reel1, STATS_INDEXES[0], reelSymbols.length, 0))
+      .then(() => stopReel(reel2, STATS_INDEXES[1], reelSymbols2.length, 500))
+      .then(() => stopReel(reel3, STATS_INDEXES[2], reelSymbols3.length, 500))
+      .then(() => {
+        if (props.winner) {
+          sonidoMonedas.play();
+        }
+        canGoHome.value = true;
+      });
+  }, AUDIO_DURATION_MS);
+}
+
+function goHomeAction() {
+  if (!canGoHome.value) return;
+
+  isPulling.value = true;
+  sonidoTragaperras.pause();
+
+  setTimeout(() => {
+    isPulling.value = false;
+    communicationManager.emit("leave_game", {
+      playerId: playerId.value,
+      roomId: roomId.value,
+    });
+
+    // 2️⃣ Desconectar el socket
+    communicationManager.disconnect();
+
+    // 3️⃣ Emitir evento local para navegación
+    emit("go-home");
+  }, 500);
+}
+
+onMounted(() => {
+  animateReels();
+  sonidoTragaperras.volume = 0.2;
+  sonidoMonedas.volume = 0.3;
+
+  startSpin();
+});
 </script>
 
+--- ## 🎨 Estilos CSS Actualizados ```css
 <style scoped>
-/* Estilos existentes */
-.final-screen {
-  position: fixed;
-  inset: 0;
+/* Colores */
+:root {
+  --metal-dark: #3b2b2b;
+  --metal-rust: #5c4033;
+  --wood-old: #5a4030;
+  --paper-aged: #d2b48c;
+  --light-amber: #bda27e;
+  --shadow-deep: rgba(0, 0, 0, 0.8);
+  --lever-red: #8b0000;
+  --lever-red-light: #ff3333;
+}
+
+/* Contenedor */
+.slot-machine-container {
   display: flex;
-  align-items: center;
   justify-content: center;
-  background: rgba(6, 10, 20, 0.6);
-  backdrop-filter: blur(2px);
-  z-index: 1000;
-  padding: 1rem;
+  align-items: center;
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(circle at center, #3c2a2a 0%, #000 80%);
+  font-family: "Courier New", Courier, monospace;
 }
 
-.card {
-  background: white;
-  color: #0b1220;
-  padding: 2rem 2.5rem;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(2, 6, 23, 0.4);
-  text-align: center;
-  min-width: 380px; /* Aumentado para las estadísticas */
-  max-width: 90%;
-  animation: pop 240ms ease;
-}
-
-/* Estilos de estadísticas AÑADIDOS */
-.stats-separator {
-  margin: 1.5rem 0 1rem 0;
-  border: none;
-  border-top: 1px solid #e0e7ff;
-}
-
-.stats-area {
-  margin-bottom: 1.5rem;
-  text-align: left;
-}
-
-.stats-title {
-  font-size: 1rem;
-  color: #334155;
-  margin: 0 0 1rem 0;
-  text-align: center;
-  font-weight: 500;
-}
-
-.stats-subtitle {
-  font-size: 0.9rem;
-  margin: 0.8rem 0 0.5rem 0;
-  color: #0b1220;
-  font-weight: 600;
-}
-
-.word-list {
+/* Marco */
+.machine-frame {
+  position: relative;
+  width: 80vw;
+  height: 90vh;
+  background: linear-gradient(
+    135deg,
+    var(--metal-dark) 0%,
+    var(--wood-old) 100%
+  );
+  border: 0.6vw solid var(--metal-rust);
+  border-radius: 1vw;
+  padding: 2vh 2vw;
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  max-height: 100px; /* Limita la altura para no hacer el modal gigante */
-  overflow-y: auto;
-  padding: 4px;
-  border: 1px solid #f1f5f9;
-  border-radius: 4px;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: inset 0 0 3vw var(--shadow-deep);
 }
 
-.word-tag {
-  font-size: 0.75rem;
-  padding: 2px 6px;
-  border-radius: 4px;
-  line-height: 1;
-  word-break: break-word; /* Útil para palabras largas */
+/* Cabecera */
+.machine-top {
+  text-align: center;
+  padding-top: 1vh;
 }
 
-.word-correct {
-  color: #16a34a; /* Tailwind green-600 */
-  background-color: #f0fdf4; /* Tailwind green-50 */
+.machine-title {
+  font-size: 4vh;
+  color: var(--light-amber);
+  text-shadow: 0 0 0.4vh #000;
 }
 
-.word-failed {
-  color: #dc2626; /* Tailwind red-600 */
-  background-color: #fef2f2; /* Tailwind red-50 */
+/* Rodillos */
+.slot-display {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: var(--metal-dark);
+  border: 0.4vw solid var(--metal-rust);
+  border-radius: 0.8vw;
+  box-shadow: inset 0 0 2vw #000;
+  padding: 2vh 1vw;
+  flex-grow: 1;
 }
 
-.error-message {
-  color: #dc2626;
-  font-weight: 600;
-  margin-top: 1rem;
+.slot-reel {
+  width: 28%;
+  /* Altura para mostrar solo 1 símbolo (150px) */
+  height: 150px;
+  background: var(--paper-aged);
+  border: 0.2vw solid #3e2f1d;
+  border-radius: 0.5vw;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-/* Estilos de botones existentes */
-.btn {
-  background: #0f62fe;
-  color: white;
-  border: none;
-  padding: 0.6rem 1rem;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+.reel-ticker {
+  display: flex;
+  flex-direction: column;
+  /* El desplazamiento lo gestiona el JS */
 }
 
-.btn:active {
-  transform: translateY(1px);
+.slot-symbol {
+  height: 150px;
+  line-height: 150px;
+  font-size: 8vh; /* Se redujo ligeramente el tamaño del texto para que quepa mejor */
+  text-align: center;
+  text-shadow: 0 0 0.5vh var(--shadow-deep);
+  color: black;
+
+  /* 🔑 CAMBIO CLAVE AQUÍ: Fondo para el texto */
+  background-color: rgba(0, 0, 0, 0.4);
+  padding: 0 10px;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8);
+  color: var(
+    --light-amber
+  ); /* Cambiamos el color del texto a ámbar para que contraste con el negro */
 }
 
-.btn:focus {
-  outline: 3px solid rgba(15, 98, 254, 0.18);
-  outline-offset: 2px;
-  box-shadow: 0 6px 18px rgba(15, 98, 254, 0.16);
+/* Panel inferior y Palanca (sin cambios) */
+.machine-details {
+  background: var(--metal-dark);
+  border: 0.3vw solid var(--metal-rust);
+  border-radius: 0.8vw;
+  box-shadow: inset 0 0 2vw #000;
+  text-align: center;
+  padding: 2vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.machine-details h1 {
+  font-size: 3vh;
+  color: var(--light-amber);
+  margin: 0;
+  text-shadow: 0 0 0.2vh #000;
+}
+
+.winner-name {
+  display: block;
+  margin-top: 1vh;
+  font-size: 3.5vh;
+  color: #d4c093;
+  text-shadow: 0 0.3vh 0.6vh #000;
+}
+
+.placeholder {
+  opacity: 0.6;
+  font-style: italic;
+}
+
+.lever-housing {
+  position: absolute;
+  right: -5vh;
+  top: 45%;
+  width: 6vh;
+  height: 18vh;
+  background: #1e1a1a;
+  border-radius: 2vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 1vh;
+  border: 0.2vh solid var(--metal-rust);
+}
+
+.lever {
+  width: 1.8vh;
+  height: 12vh;
+  background: linear-gradient(to bottom, #6e5842, #3c2e24);
+  border-radius: 1vh;
+  position: relative;
+  transform-origin: top center;
+  transition: transform 0.1s ease-out;
+  box-shadow: inset 0 0 0.4vh #000;
+}
+
+.lever-ball {
+  position: absolute;
+  bottom: -2.2vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3.5vh;
+  height: 3.5vh;
+  background: radial-gradient(
+    circle at 30% 30%,
+    var(--lever-red-light),
+    var(--lever-red)
+  );
+  border: 0.3vh solid #2a1b1b;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0.5vh #000, 0 0 0.5vh var(--lever-red-light);
+}
+
+.lever.pulling {
+  transform: rotate(25deg);
 }
 </style>

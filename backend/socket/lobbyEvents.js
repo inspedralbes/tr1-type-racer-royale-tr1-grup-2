@@ -1,4 +1,9 @@
-import { createRoom, getRoom, getPublicRooms, joinRoom } from "../logic/roomsManager.js";
+import {
+  createRoom,
+  getRoom,
+  getPublicRooms,
+  joinRoom,
+} from "../logic/roomsManager.js";
 import { globalPlayers } from "../logic/globalState.js";
 
 export function registerLobbyEvents(io, socket) {
@@ -7,7 +12,7 @@ export function registerLobbyEvents(io, socket) {
       const room = await joinRoom(roomId, playerId, username);
 
       // Añadir a globalPlayers si no estaba
-      if (!globalPlayers.some(p => p.playerId === playerId)) {
+      if (!globalPlayers.some((p) => p.playerId === playerId)) {
         globalPlayers.push({ playerId, username });
       }
 
@@ -17,7 +22,11 @@ export function registerLobbyEvents(io, socket) {
       // Info solo al jugador actual para que le envie un mensaje personalizado
       socket.emit("player_registered", { playerId, username });
 
-      console.log("🔎 Sockets dentro de la sala", roomId, io.sockets.adapter.rooms.get(roomId));
+      console.log(
+        "🔎 Sockets dentro de la sala",
+        roomId,
+        io.sockets.adapter.rooms.get(roomId)
+      );
 
       // Info de la sala a todos los jugadores de la sala para mensaje general de unión
       io.to(roomId).emit("joined_lobby", {
@@ -31,27 +40,33 @@ export function registerLobbyEvents(io, socket) {
 
       io.emit("rooms_list", getPublicRooms()); // actualizar lista global
 
-      console.log(`[🎮 Lobby] Jugador ${username} (${playerId}) unido a ${roomId}`);
+      console.log(
+        `[🎮 Lobby] Jugador ${username} (${playerId}) unido a ${roomId}`
+      );
     } catch (err) {
       socket.emit("join_error", { message: err.message });
       console.error(`[ERROR] player_join: ${err.message}`);
     }
   });
 
-  socket.on("player_ready", ({ roomId, playerId, isReady }) => {
-    const room = getRoom(roomId);
-    if (!room) return;
+  // socket.on("player_ready", ({ playerId, isReady }) => {
+  //   const room = getRoom("room-abc");
+  //   if (!room) return;
 
-    const player = room.players.find((p) => p.playerId === playerId);
-    if (player) {
-      player.isReady = isReady;
-    }
+  //   const player = room.players.find(p => p.playerId === playerId);
+  //   if (player) player.isReady = isReady;
 
-    io.to(roomId).emit("player_list_updated", { players: room.players });
-  });
+  //   io.to("room-abc").emit("joined_lobby", { players: room.players });
+  //   // console.log(`[✅ READY] ${playerId} está ${isReady ? "listo" : "no listo"}`);
+  // });
 
   socket.on("start_game_signal", ({ roomId }) => {
+    const room = getRoom(roomId);
+    if (!room) return;
+    room.gameState = "in game"; // actualizamos el estado de la sala
+    console.log(room);
     io.to(roomId).emit("start_game_signal");
+    io.emit("rooms_list", getPublicRooms());
     console.log(`[🚀] Partida iniciada en ${roomId}`);
   });
 
@@ -67,6 +82,7 @@ export function registerLobbyEvents(io, socket) {
         roomId: room.roomId,
         playerId: playerId,
         isHost: true,
+        gameState: room.gameState,
         players: room.players, // aquí ya incluye al host
       });
 
@@ -84,4 +100,3 @@ export function registerLobbyEvents(io, socket) {
     socket.emit("rooms_list", rooms); // 👈 solo al cliente que hizo la petición
   });
 }
-

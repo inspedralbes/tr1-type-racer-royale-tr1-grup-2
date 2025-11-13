@@ -37,10 +37,8 @@ app.use(express.json());
 connectMongoStatsDB();
 
 // --- Routers ---
-app.use("/palabras", wordsRouter);
-// app.use("/api", registerRouter); // 👈 2. DESCOMENTAR SOLO SI TU FRONTEND USA /api/register
-app.use("/user", registerRouter); // 👈 3. DESCOMENTAR (ESTA RUTA CAUSA EL 404)
-app.use("/stats", statsRouter);
+app.use("/api/palabras", wordsRouter);
+app.use("/api/user", registerRouter);
 
 // --- Socket.IO ---
 const io = new Server(server, { cors: corsOptions });
