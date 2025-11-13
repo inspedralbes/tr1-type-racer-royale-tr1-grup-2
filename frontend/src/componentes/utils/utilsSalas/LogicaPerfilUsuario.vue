@@ -1,21 +1,31 @@
 <script setup>
-import {
-  playerName,
-  playerId,
-  playerAvatar,
-} from "../../../logic/globalState.js";
+const props = defineProps({
+  jugador: {
+    type: Object,
+    default: () => ({
+      id: "N/A",
+      username: "Invitado",
+      avatar: null,
+    }),
+  },
+});
 
 const emit = defineEmits(["ver-perfil"]);
 </script>
 
 <template>
-  <button id="btn-message" class="button-message" @click="$emit('ver-perfil')">
+  <button
+    id="btn-message"
+    class="button-message"
+    @click="$emit('ver-perfil')"
+    :disabled="!jugador"
+  >
     <div class="content-avatar">
       <div class="status-user"></div>
       <div class="avatar">
         <img
-          v-if="playerAvatar"
-          :src="playerAvatar"
+          v-if="jugador && jugador.avatar"
+          :src="jugador.avatar"
           alt="Avatar"
           class="user-img"
         />
@@ -33,11 +43,11 @@ const emit = defineEmits(["ver-perfil"]);
       </div>
     </div>
     <div class="notice-content">
-      <div class="username">{{ playerName }}</div>
+      <div class="username">{{ jugador ? jugador.username : "Invitado" }}</div>
       <div class="lable-message">
-        <span> {{ playerName }} </span>
+        <span> {{ jugador ? jugador.username : "Invitado" }} </span>
       </div>
-      <div class="user-id">@{{ playerId }}</div>
+      <div class="user-id">@{{ jugador ? jugador.id : "N/A" }}</div>
     </div>
   </button>
 </template>

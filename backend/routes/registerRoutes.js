@@ -1,6 +1,7 @@
 // DEPENDENCIAS
 import express from "express";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import { dbPool } from "../db/dbPool.js"; // Importamos el pool de conexión
 
 // --- Router ---
@@ -50,9 +51,63 @@ router.post("/login", async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({ message: "Contraseña incorrecta." });
     }
-    res.status(200).json({ message: "Login exitoso" /* token: "..." */ });
+
+    // Generar token JWT
+    const payload = {
+      id: user.id,
+      username: user.username,
+      avatar: user.avatar_url,
+    };
+    const token = jwt.sign(payload, process.env.JWT_SECRET || "default_secret", {
+      expiresIn: "1h",
+    });
+
+    res.status(200).json({
+      message: "Login exitoso",
+      token,
+      id: user.id,
+      username: user.username,
+      avatar: user.avatar_url,
+    });
   } catch (error) {
     console.error("Error en /api/login:", error);
+    res.status(500).json({ message: "Error interno del servidor." });
+  }
+});
+
+// --- Get User Data from Token ---
+router.post("/user", async (req, res) => {
+  const { token } = req.body;
+  if (!token) {
+    return res.status(400).json({ message: "Token no proporcionado." });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "default_secret");
+    
+    // Opcional: Verificar si el usuario todavía existe en la BD
+    const sql = "SELECT id, username, avatar_url FROM users WHERE id = ?";
+    const [rows] = await dbPool.query(sql, [decoded.id]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Usuario del token no encontrado." });
+    }
+    const user = rows[0];
+
+    res.status(200).json({
+      id: user.id,
+      username: user.username,
+      avatar: user.avatar_url,
+    });
+
+  } catch (error) {
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({ message: "Token inválido." });
+    }
+    if (error instanceof jwt.TokenExpiredError) {
+      return res.status(401).json({ message: "Token expirado." });
+    }
+    console.error("Error en /api/user:", error);
     res.status(500).json({ message: "Error interno del servidor." });
   }
 });

@@ -1,20 +1,18 @@
 <script setup>
 import { ref, onMounted, onUnmounted, defineProps } from "vue";
 import communicationManager from "../services/communicationManager";
-import {
-  playerName,
-  playerId,
-  rooms,
-  playerAvatar,
-} from "../logic/globalState.js";
+import { rooms } from "../logic/globalState.js";
 
 // Importar los hijos de Salas (utilsSalas)
-import buttomUsuari from "./utils/utilsSalas/buttomUsuari.vue";
-import buttomLogout from "./utils/utilsSalas/buttomLogout.vue";
-import buttomCreate from "./utils/utilsSalas/buttomCreate.vue";
-import renderSalas from "./utils/utilsSalas/renderSalas.vue";
+import LogicaPerfilUsuario from "./utils/utilsSalas/LogicaPerfilUsuario.vue";
+import LogicaSalirSala from "./utils/utilsSalas/LogicaSalirSalas.vue";
+import LogicaCrearLobby from "./utils/utilsSalas/LogicaCrearLobby.vue";
+import LogicaPintarSalas from "./utils/utilsSalas/LogicaPintarSalas.vue";
 
-const props = defineProps({ escena: String });
+const props = defineProps({
+  escena: String,
+  jugador: Object,
+});
 
 // 🔹 AÑADIMOS 'ver-perfil' y 'logout' a los eventos que este componente puede emitir
 const emit = defineEmits(["sala-seleccionada", "ver-perfil", "logout"]);
@@ -34,9 +32,9 @@ function handleRoomCreated(payload) {
 
   const room = {
     roomId: payload.roomId,
-    playerId: playerId.value, // host
+    playerId: props.jugador.id, // host
     isHost: true,
-    players: [{ playerId: playerId.value, username: playerName.value }], // solo él por ahora
+    players: [{ playerId: props.jugador.id, username: props.jugador.username }], // solo él por ahora
   };
   emit("sala-seleccionada", room);
 }
@@ -55,12 +53,13 @@ function actualizarSalas() {
 
 // 🔹 Crear una nueva sala
 function crearSala() {
-  const roomName = nuevaSala.value.trim() || `Room_${playerName.value}`;
+  if (!props.jugador) return;
+  const roomName = nuevaSala.value.trim() || `Room_${props.jugador.username}`;
 
   communicationManager.emit("create_room", {
     roomName: roomName,
-    playerId: playerId.value,
-    username: playerName.value,
+    playerId: props.jugador.id,
+    username: props.jugador.username,
   });
 
   nuevaSala.value = "";
@@ -68,10 +67,11 @@ function crearSala() {
 
 // 🔹 Unirse a una sala
 function unirseSala(room) {
+  if (!props.jugador) return;
   communicationManager.emit("join_room", {
     roomId: room.roomId,
-    playerId: playerId.value,
-    username: playerName.value,
+    playerId: props.jugador.id,
+    username: props.jugador.username,
   });
 
   emit("sala-seleccionada", room);
@@ -88,12 +88,15 @@ function handleLogout() {
 }
 
 onMounted(() => {
+  // El componente ahora solo se monta cuando 'jugador' existe.
+  console.log("onMounted: PantallaSalas montada. Conectando socket...");
+  console.log("ID del jugador:", props.jugador.id);
+  console.log("Username del jugador:", props.jugador.username);
+
   communicationManager.connect();
   communicationManager.on("rooms_list", handleRoomsList);
   communicationManager.on("room_created", handleRoomCreated);
   communicationManager.on("room_error", handleRoomError);
-
-  // pedir lista inicial
   actualizarSalas();
 });
 
@@ -114,16 +117,19 @@ onUnmounted(() => {
             <!--Contenido principal-->
             <div class="salas-container">
               <div class="header-container">
-                <buttomUsuari
-                  :avatar-url="playerAvatar"
+                <LogicaPerfilUsuario
+                  v-if="jugador"
+                  :jugador="jugador"
                   @ver-perfil="handleVerPerfil"
                 />
-                <buttomLogout @logout="handleLogout" />
+                <LogicaSalirSala @logout="handleLogout" />
               </div>
-              <!--Crear sala-->
+              <!--Crear sala
               <buttomCreate v-model="nuevaSala" @crear-lobby="crearSala" />
-              <!--Listar sala-->
+              -->
+              <!--Listar salaS
               <renderSalas v-model="rooms" @unirse-sala="unirseSala" />
+              -->
             </div>
             <!--FIN-->
           </div>
