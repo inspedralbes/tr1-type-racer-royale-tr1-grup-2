@@ -76,19 +76,19 @@ export function registerGameEvents(io, socket) {
   
 
 
-  socket.on("leave_game", ({ playerId, roomId }) => {
-  const room = getRoom(roomId);
-  if (!room) return;
+  // socket.on("leave_game", ({ playerId, roomId }) => {
+  // const room = getRoom(roomId);
+  // if (!room) return;
 
-  leaveRoom(roomId, playerId);
+  // leaveRoom(roomId, playerId);
 
-  // Notificar a los jugadores restantes
-  if (room.players.length > 0) {
-    io.to(roomId).emit("update_players", room.players);
-  }
+  // // Notificar a los jugadores restantes
+  // if (room.players.length > 0) {
+  //   io.to(roomId).emit("update_players", room.players);
+  // }
 
-    console.log(`👋 Jugador ${playerId} salió de la sala ${roomId}`);
-  });
+  //   console.log(`👋 Jugador ${playerId} salió de la sala ${roomId}`);
+  // });
 
   socket.on("claim_powerup", (msg) => {
   const { roomId, playerId, carta } = msg.data;

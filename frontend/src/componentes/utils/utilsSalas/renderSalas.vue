@@ -31,14 +31,25 @@ const salasFiltradas = computed(() => {
   />
 
   <div class="lista-salas">
-    <div v-for="sala in salasFiltradas" :key="sala.roomId" class="sala-card">
+    <div v-for="sala in salasFiltradas" :key="sala.roomId" class="sala-card"
+    :class="{ 'sala-bloqueada': sala.gameState === 'in game' }">
       <p>
         <strong>{{ sala.roomName }}</strong>
       </p>
       <p>{{ sala.numPlayers }}/{{ sala.maxPlayers }}</p>
-      <p>Estado: {{ sala.gameState }}</p>
+      <p 
+      :class="{
+      'estado-esperando': sala.gameState === 'waiting',
+      'estado-jugando': sala.gameState === 'in game'}">
+      Estado: {{ sala.gameState }}</p>
 
-      <button @click="emit('unirse-sala', sala)">Unirse</button>
+      <button 
+      :disabled="sala.gameState === 'in game'"
+      :class="{
+          'boton-bloqueado': sala.gameState === 'game',
+          'boton-activo': sala.gameState !== 'game'
+        }"
+      @click="sala.gameState !== 'game' && emit('unirse-sala', sala)">Unirse</button>
     </div>
 
     <div v-if="!modelValue || modelValue.length === 0">
@@ -53,6 +64,36 @@ const salasFiltradas = computed(() => {
 
 <style scoped>
 /* Estilo para el nuevo input */
+
+.sala-bloqueada {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.estado-esperando {
+  color: green;
+}
+
+.estado-jugando {
+  color: red;
+  font-weight: bold;
+}
+
+.boton-bloqueado {
+  background-color: #9ca3af;
+  color: white;
+  cursor: not-allowed;
+}
+
+.boton-activo {
+  background-color: #3b82f6;
+  color: white;
+}
+
+
+.boton-activo:hover {
+  background-color: #2563eb;
+}
 
 .titulo {
   border: 1ex solid none;

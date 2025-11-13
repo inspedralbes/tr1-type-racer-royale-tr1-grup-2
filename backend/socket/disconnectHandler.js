@@ -1,4 +1,5 @@
 import { getAllRooms, leaveRoom, getPublicRooms } from "../logic/roomsManager.js";
+import { stopPowerupSpawner } from "../logic/powerups/powerupLogic.js"; // importa tu función
 
 export function handlePlayerLeave(io, socket, playerId) {
   const allRooms = getAllRooms();
@@ -15,6 +16,11 @@ export function handlePlayerLeave(io, socket, playerId) {
       // Si aún existe la sala, actualiza a los jugadores
       if (allRooms[roomId]) {
         io.to(roomId).emit("update_players", allRooms[roomId].players);
+
+        if (allRooms[roomId].players.length === 0) {
+          console.log(`🛑 Sala ${roomId} vacía, deteniendo powerup spawner`);
+          stopPowerupSpawner(roomId);
+        }
       }
 
       io.emit("rooms_list", getPublicRooms());

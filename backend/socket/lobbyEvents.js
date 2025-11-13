@@ -38,19 +38,24 @@ export function registerLobbyEvents(io, socket) {
 
 });
 
-  socket.on("player_ready", ({ playerId, isReady }) => {
-    const room = getRoom("room-abc");
-    if (!room) return;
+  // socket.on("player_ready", ({ playerId, isReady }) => {
+  //   const room = getRoom("room-abc");
+  //   if (!room) return;
 
-    const player = room.players.find(p => p.playerId === playerId);
-    if (player) player.isReady = isReady;
+  //   const player = room.players.find(p => p.playerId === playerId);
+  //   if (player) player.isReady = isReady;
 
-    io.to("room-abc").emit("joined_lobby", { players: room.players });
-    // console.log(`[✅ READY] ${playerId} está ${isReady ? "listo" : "no listo"}`);
-  });
+  //   io.to("room-abc").emit("joined_lobby", { players: room.players });
+  //   // console.log(`[✅ READY] ${playerId} está ${isReady ? "listo" : "no listo"}`);
+  // });
 
   socket.on("start_game_signal", ({ roomId }) => {
+    const room = getRoom(roomId);
+    if (!room) return;
+    room.gameState = "in game"; // actualizamos el estado de la sala
+    console.log(room);
     io.to(roomId).emit("start_game_signal");
+    io.emit("rooms_list", getPublicRooms());
     console.log(`[🚀] Partida iniciada en ${roomId}`);
   });
 
@@ -66,6 +71,7 @@ export function registerLobbyEvents(io, socket) {
       roomId: room.roomId,
       playerId: playerId,
       isHost: true,
+      gameState: room.gameState,
       players: room.players, // aquí ya incluye al host
     });
     

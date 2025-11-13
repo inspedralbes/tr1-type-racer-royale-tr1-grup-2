@@ -31,10 +31,7 @@ const props = defineProps({
 const emit = defineEmits(['go-home'])
 
 function goHome() {
-  communicationManager.emit('leave_game', { playerId: playerId.value, roomId: roomId.value })
-
-  // 2️⃣ Desconectar el socket
-  communicationManager.disconnect()
+  communicationManager.emit('leave_game', { playerId: playerId.value })
 
   // 3️⃣ Emitir evento local para navegación
   emit('go-home')

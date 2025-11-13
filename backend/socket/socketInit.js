@@ -14,7 +14,7 @@ export function initializeSocketIO(io) {
     socket.on("leave_game", ({ playerId }) => handlePlayerLeave(io, socket, playerId));
     socket.on("disconnect", () => {
       console.log(`🔴 Jugador desconectado: ${socket.id} FINAL`);
-      handlePlayerLeave(io, socket, socket.id);
+      // handlePlayerLeave(io, socket, socket.id);
     });
   });
 }

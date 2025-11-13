@@ -40,6 +40,11 @@ function onJuegoFinalizado(winner) {
 // 🔹 Evento: Salir del Lobby (de Lobby.vue)
 function handleLobbyLeave() {
   console.log("APP: Recibido 'leave-lobby'. Volviendo a pantalla de salas.");
+
+  if (jugador.value && jugador.value.playerId) {
+    communicationManager.emit("leave_game", { playerId: jugador.value.playerId });
+  }
+  
   vistaActual.value = "salas";
   roomSeleccionada.value = null; // Limpiamos la sala seleccionada
 }
