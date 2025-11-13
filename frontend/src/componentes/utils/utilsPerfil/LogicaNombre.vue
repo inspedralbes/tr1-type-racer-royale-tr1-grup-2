@@ -65,7 +65,7 @@ function handleToggle() {
   outline: 7px solid #383838;
   color: #f1e8e8;
   word-wrap: break-word;
-  height: 30px;
+  height: 40px;
   font-size: 17px;
   text-align: center;
   transition: all 1s;
@@ -119,7 +119,7 @@ button:active {
   background-color: #555;
   color: #f1e8e8;
   font-size: 15px;
-  height: 30px;
+  height: 40px;
   padding: 0;
 }
 .btn-editar-campo:hover {

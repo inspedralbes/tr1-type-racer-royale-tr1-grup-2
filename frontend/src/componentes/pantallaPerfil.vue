@@ -31,6 +31,7 @@ const editando = ref({
   email: false,
 });
 
+
 function toggleEdit(campo) {
   if (campo in editando.value) {
     editando.value[campo] = !editando.value[campo];
@@ -43,37 +44,50 @@ function seleccionarAvatar(avatar) {
 
 // SUBIR IMAGEN
 
-const avatarEsPersonalizado = computed(() => {
-  if (!formData.value.avatar) return false;
-  return !avataresDisponibles.value.includes(formData.value.avatar);
-});
-
-function onFileChange(event) {
-  const file = event.target.files[0];
-  if (file && file.type.startsWith("image/")) {
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-      formData.value.avatar = e.target.result;
-    };
-
-    reader.readAsDataURL(file);
+async function guardarCambios() {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    console.error("No se encontró token de autenticación.");
+    // Manejar el caso de que no haya token, por ejemplo, redirigiendo al login
+    return;
   }
-}
 
-function guardarCambios() {
-  playerName.value = formData.value.nombre;
-  playerAvatar.value = formData.value.avatar;
+  try {
+    const response = await fetch("/api/profile", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        newName: formData.value.nombre,
+        newAvatar: formData.value.avatar,
+      }),
+    });
 
-  emit("guardar-perfil", {
-    newName: formData.value.nombre,
-    newAvatar: formData.value.avatar,
-  });
+    const data = await response.json();
 
-  guardado.value = true;
-  setTimeout(() => {
-    guardado.value = false;
-  }, 1500);
+    if (response.ok) {
+      playerName.value = formData.value.nombre;
+      playerAvatar.value = formData.value.avatar;
+
+      emit("guardar-perfil", {
+        newName: formData.value.nombre,
+        newAvatar: formData.value.avatar,
+      });
+
+      guardado.value = true;
+      setTimeout(() => {
+        guardado.value = false;
+      }, 1500);
+    } else {
+      console.error("Error al guardar el perfil:", data.message);
+      // Aquí podrías emitir un evento de error para mostrar un mensaje al usuario
+    }
+  } catch (error) {
+    console.error("Error de red al guardar el perfil:", error);
+    // Manejar errores de red
+  }
 }
 
 function handleGoHome() {
@@ -99,8 +113,6 @@ function handleGoHome() {
       <LogicaAvatar
         v-model="formData.avatar"
         :avatares-disponibles="avataresDisponibles"
-        :avatar-es-personalizado="avatarEsPersonalizado"
-        @file-change="onFileChange"
       />
 
       <div class="acciones">
@@ -123,7 +135,7 @@ function handleGoHome() {
   padding: 20px;
   font-family: "Courier New", Courier, monospace;
   font-weight: bold;
-  background-color: #333;
+  background-color: #2b2b2b;
   color: #f1e8e8;
   min-height: 100vh;
   box-sizing: border-box;
@@ -132,8 +144,8 @@ function handleGoHome() {
 h2 {
   border: 1ex solid none;
   color: #f1e8e8;
-  height: 30px;
-  font-size: 20px;
+  height: 40px;
+  font-size: 24px;
   text-align: center;
   transition: all 1s;
   font-weight: bold;
@@ -168,6 +180,7 @@ button {
   padding: 10px 16px;
   cursor: pointer;
   white-space: nowrap;
+  height: 40px;
 }
 button:hover {
   background-color: #ffffff;
@@ -187,6 +200,15 @@ button:active {
 }
 
 /* Clases específicas para los botones de acción */
+.btn-primario {
+  background-color: #ff9800;
+  color: #2b2b2b;
+}
+.btn-primario:hover {
+  background-color: #ffb74d;
+  transform: scale(1.03);
+}
+
 .btn-secundario {
   background-color: #555;
   color: #f1e8e8;

@@ -56,7 +56,7 @@ router.post("/login", async (req, res) => {
     const payload = {
       id: user.id,
       username: user.username,
-      avatar: user.avatar_url,
+      avatar: user.imagen,
     };
     const token = jwt.sign(payload, process.env.JWT_SECRET || "default_secret", {
       expiresIn: "1h",
@@ -67,7 +67,7 @@ router.post("/login", async (req, res) => {
       token,
       id: user.id,
       username: user.username,
-      avatar: user.avatar_url,
+      avatar: user.imagen,
     });
   } catch (error) {
     console.error("Error en /api/login:", error);
@@ -86,7 +86,7 @@ router.post("/user", async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "default_secret");
     
     // Opcional: Verificar si el usuario todavía existe en la BD
-    const sql = "SELECT id, username, avatar_url FROM users WHERE id = ?";
+    const sql = "SELECT id, username, imagen FROM users WHERE id = ?";
     const [rows] = await dbPool.query(sql, [decoded.id]);
 
     if (rows.length === 0) {
@@ -97,7 +97,7 @@ router.post("/user", async (req, res) => {
     res.status(200).json({
       id: user.id,
       username: user.username,
-      avatar: user.avatar_url,
+      avatar: user.imagen,
     });
 
   } catch (error) {

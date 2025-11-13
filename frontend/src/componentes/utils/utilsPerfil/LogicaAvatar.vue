@@ -1,19 +1,32 @@
 <script setup>
-defineProps({
+import { computed } from "vue";
+
+const props = defineProps({
   modelValue: String, // v-model:avatar
   avataresDisponibles: Array,
-  avatarEsPersonalizado: Boolean,
 });
 
-const emit = defineEmits(["update:modelValue", "file-change"]);
+const emit = defineEmits(["update:modelValue"]);
 
 function seleccionarAvatar(avatarSrc) {
   emit("update:modelValue", avatarSrc);
 }
 
 function handleFileChange(event) {
-  emit("file-change", event);
+  const file = event.target.files[0];
+  if (file && file.type.startsWith("image/")) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      emit("update:modelValue", e.target.result);
+    };
+    reader.readAsDataURL(file);
+  }
 }
+
+const avatarEsPersonalizado = computed(() => {
+  if (!props.modelValue) return false;
+  return !props.avataresDisponibles.includes(props.modelValue);
+});
 </script>
 
 <template>

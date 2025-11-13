@@ -8,6 +8,7 @@ import "dotenv/config";
 // RUTAS DE LA API
 import wordsRouter from "./routes/wordRoutes.js";
 import registerRouter from "./routes/registerRoutes.js";
+import profileRouter from "./routes/profileRoutes.js";
 import { initializeSocketIO } from "./socket/socketInit.js";
 
 // --- Express ---
@@ -17,14 +18,15 @@ const server = http.createServer(app);
 // --- CORS ---
 const corsOptions = {
   origin: "*",
-  methods: ["GET", "POST"],
+  methods: ["GET", "POST", "PUT"],
 };
 app.use(cors(corsOptions));
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
 
 // --- Routers ---
-app.use("/palabras", wordsRouter);
+app.use("/api/palabras", wordsRouter);
 app.use("/api", registerRouter);
+app.use("/api", profileRouter);
 
 // --- Socket.IO ---
 const io = new Server(server, { cors: corsOptions });

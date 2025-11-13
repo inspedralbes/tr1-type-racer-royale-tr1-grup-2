@@ -21,6 +21,6 @@ CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY NOT NULL,
     username VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(500),
-    imagen VARCHAR(500)
+    imagen LONGTEXT
 );
 
