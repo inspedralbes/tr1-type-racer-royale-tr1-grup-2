@@ -17,12 +17,3 @@ body {
   align-items: center;
   overflow: hidden;
 }
-
-:root {
-    --gold-old: #4a3e30;
-    --gold-worn: #38312a;
-    --red-dark: #7b1e1e;
-    --red-dirty: #5a1818;
-    --black-deep: #1a1a1a;
-    --paper-old: #a0978c;
-}

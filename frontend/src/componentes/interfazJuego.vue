@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, computed, nextTick, watch } from "vue";
 import communicationManager from "../services/communicationManager.js";
 import { playerName, playerId } from "../logic/globalState.js";
 import AnimacionJuego from "./interfazAnimacion.vue";
+import pantallaFinal from "./pantallaFinal.vue";
 
 import {
   aplicarUpsideDown,
@@ -14,42 +15,60 @@ import {
   // reiniciarPartida
 } from "../logic/cardEffects.js";
 //Import sonidos y musica
-import musicaAmbiente from "../../public/assets/sonido/musica_ambiente.mp3";
-import sound from "../../public/assets/sonido/sonidoAccion/carddrop.mp3";
-import sound1 from "../../public/assets/sonido/sonidoAccion/mech-keyboard.mp3";
+import sound from "/assets/sonido/sonidoAccion/carddrop.mp3";
+import sound1 from "/assets/sonido/sonidoAccion/mech-keyboard.mp3";
 
 //Variables para manejar el dialogo del crupier
-const dialogText = ref([
+const dialogTextEntrada = ref([
   "Os doy la bienvenida a todos.",
   "Si estáis aquí es porque ya sabeis lo que se viene.",
   "Muy bien, comencemos.",
 ]);
-const audioDialogo = [
+const dialogTextError = ref([
+  "Eso no esta bien.",
+  "Vuelve a intentarlo.",
+]);
+const dialogTextAcierto = ref([
+  "Buen trabajo.",
+  "Bien hecho.",
+]);
+const dialogTextPowerUp = ref([
+  "Vamos a animar un poco las cosas, te parece?",
+  "No la fastidies.",
+  "Esta es tu única oportunidad",
+]);
+const audioDialogoEntrada= [
   //Voz de bienvenida
-  "/assets/sonido/vozCrupier/mns1_b.mp3",
-  "/assets/sonido/vozCrupier/mns2_b.mp3",
-  "/assets/sonido/vozCrupier/mns3_b.mp3",
-  //Voz de error
-  "/assets/sonido/vozCrupier/mns1_e.mp3",
-  "/assets/sonido/vozCrupier/mns2_e.mp3",
-  //Voz de acierto
-  "/assets/sonido/vozCrupier/mns1_w.mp3",
-  "/assets/sonido/vozCrupier/mns2_w.mp3",
-  //Voz de power up
-  "/assets/sonido/vozCrupier/mns1_pu.mp3",
-  "/assets/sonido/vozCrupier/mns2_pu.mp3",
-  "/assets/sonido/vozCrupier/mns3_pu.mp3",
+  "/assets/sonido/vozCrupier/frasesWelcome/mns1_w.mp3",
+  "/assets/sonido/vozCrupier/frasesWelcome/mns2_w.mp3",
+  "/assets/sonido/vozCrupier/frasesWelcome/mns3_w.mp3",
 ];
+const audioDialogoErrores=[
+  //Voz de error
+  "/assets/sonido/vozCrupier/frasesError/mns1_e.mp3",
+  "/assets/sonido/vozCrupier/frasesError/mns2_e.mp3",
+]
+const audioDialogoAciertos=[
+    //Voz de acierto
+  "/assets/sonido/vozCrupier/frasesAcierto/mns1_a.mp3",
+  "/assets/sonido/vozCrupier/frasesAcierto/mns2_a.mp3",
+]
+const audioDialogoPowerUps=[
+   //Voz de power up
+  "/assets/sonido/vozCrupier/frasesPowerUp/mns1_pu.mp3",
+  "/assets/sonido/vozCrupier/frasesPowerUp/mns2_pu.mp3",
+  "/assets/sonido/vozCrupier/frasesPowerUp/mns3_pu.mp3",
+]
 
 // Variables para manejar 3D / crupier / ambiente / iconos(Temp)
 const crupierState = ref("normal");
-const mensajeInput = ref(dialogText.value[0]);
+const mensajeInput = ref(dialogTextEntrada.value[0]);
 const juegoIniciado = ref(false);
 const show2DUI = ref(false);
 const animationDuration = ref(0);
 const otrosJugadores = ref([]);
 const todosLosJugadores = ref([]);
-const audioPlayer = new Audio(musicaAmbiente);
+const audioPlayer = new Audio("/assets/sonido/Creepy_Casino.mp3");
 const pasarLetra = new Audio(sound);
 const teclado = new Audio(sound1);
 const iconosDisponibles = [
@@ -109,6 +128,13 @@ watch(show2DUI, (newValue) => {
     empiezaJuego();
   }
 });
+watch(mostrarPantallaFinal, (nuevoValor) => {
+  console.log("asdasdasd")
+  if (nuevoValor) {
+    
+    console.log("🎵 Música detenida al mostrar Pantalla Final");
+  }
+});
 
 // 🟦 FUNCIONES DE SOCKET ADAPTADAS A COMMUNICATION MANAGER
 
@@ -165,6 +191,9 @@ function onUpdatePlayerWords(msg) {
     if (status === "finished") {
       ganador.value = playerNameActual || playerIdActual;
       emit("juego-finalizado", ganador.value);
+      mostrarPantallaFinal.value = true;
+      audioPlayer.pause();
+      audioPlayer.currentTime = 0;
       console.log(
         `🎉 Has terminado todas las palabras. Eres el ganador: ${ganador.value}`
       );
@@ -183,7 +212,9 @@ function onUpdateProgress(msg) {
   if (ganadorJugador) {
     ganador.value = ganadorJugador.username;
     emit('juego-finalizado', ganador.value);
-    console.log(`🎉 La partida terminó. Ganador: ${ganadorJugador.playerId}`);
+    mostrarPantallaFinal.value = true;
+    console.log(`🎉 La partida terminó. Ganador: ${ganadorJugador.playerId}`
+    );
   }
 }
 
@@ -401,6 +432,7 @@ function validarInput() {
       errorCount.value++;
       palabraInvalida.value = true;
       crupierState.value = "confundido";
+      hablarCrupierError();
     }
   } else {
     if (palabraInvalida.value) {
@@ -470,10 +502,12 @@ function onInputKeyDown(event) {
           error
         );
       });
+      hablarCrupierAcierto();
     } 
     else {
       errorCount.value++;
       console.warn("Palabra incorrecta. Errores:", errorCount.value);
+      hablarCrupierError();
     }
 
     // Limpiar input
@@ -503,7 +537,7 @@ function enviarPalabra(palabraCompletada) {
 
 // FUNCION QUE INICIA LA MUSICA DE FONDO
 function musica() {
-  audioPlayer.volume = 0.4;
+  audioPlayer.volume = 0.05;
   audioPlayer.loop = true;
 
   audioPlayer
@@ -518,18 +552,69 @@ function musica() {
 
 // FUNCION QUE INICIA EL JUEGO DESPUES DEL DIALOGO DEL CRUPIER
 function empiezaJuego() {
-  for (let i = 0; i < dialogText.value.length; i++) {
+  for (let i = 0; i < dialogTextEntrada.value.length; i++) {
     setTimeout(() => {
-      mensajeInput.value = dialogText.value[i];
-    }, i * 2000);
-    if (i === dialogText.value.length - 1) {
-      setTimeout(() => {
-        comenzar.value = true;
-      }, (i + 1) * 2000);
-    }
-    console.log("El valor de mostrar es:", comenzar.value);
+      const linea = dialogTextEntrada.value[i];
+      mensajeInput.value = linea;
+
+      hablarCrupier(i);
+
+      if (i === dialogTextEntrada.value.length - 1) {
+        setTimeout(() => {
+          comenzar.value = true;
+        }, 2500); 
+      }
+    }, i * 4000); 
   }
 }
+
+// Funcion para reproducir la voz de el crupier: Bienvenida / Error / Aciertos / PowerUps
+
+function hablarCrupier(index) {
+  const audioSrc = audioDialogoEntrada[index];
+  if (!audioSrc) return;
+
+  const voz = new Audio(audioSrc);
+  voz.volume = 0.09;
+
+  crupierState.value = "normal";
+  voz.play().catch((e) => console.warn("No se pudo reproducir el audio:", e));
+
+}
+
+function hablarCrupierError() {
+  const index = Math.floor(Math.random() * dialogTextError.value.length);
+  mensajeInput.value = dialogTextError.value[index];
+
+  const audioSrc = audioDialogoErrores[index];
+  if (!audioSrc) return;
+
+  const voz = new Audio(audioSrc);
+  voz.volume = 0.1;
+  crupierState.value = "confundido";
+
+  voz.play().catch((e) => console.warn("No se pudo reproducir voz error:", e));
+
+  // Volver a estado normal después de un tiempo
+  setTimeout(() => {
+    crupierState.value = "normal";
+  }, 2500);
+}
+
+function hablarCrupierAcierto() {
+  const index = Math.floor(Math.random() * dialogTextAcierto.value.length);
+  mensajeInput.value = dialogTextAcierto.value[index];
+
+  const audioSrc = audioDialogoAciertos[index];
+  if (!audioSrc) return;
+
+  const voz = new Audio(audioSrc);
+  voz.volume = 0.1;
+  crupierState.value = "normal";
+
+  voz.play().catch((e) => console.warn("No se pudo reproducir voz acierto:", e));
+}
+
 
 // 🧮 Computadas
 const palabrasEnVista = computed(() => {

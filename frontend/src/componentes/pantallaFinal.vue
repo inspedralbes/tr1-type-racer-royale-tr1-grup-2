@@ -1,286 +1,381 @@
 <template>
   <div class="slot-machine-container">
     <div class="machine-frame">
-      <div class="ornate-border top-border"></div>
-      <div class="ornate-border bottom-border"></div>
+
+      <div class="machine-top">
+        <h2 class="machine-title">☠ Máquina del Destino ☠</h2>
+      </div>
 
       <div class="slot-display">
         <div class="slot-reel">
-          <span class="slot-symbol skull"> Aquí van las estadisticas</span>
+          <div
+            class="reel-ticker"
+            :style="reelStyle(reel1)"
+          >
+            <span v-for="symbol in reelSymbols" :key="'r1-'+symbol" class="slot-symbol">{{ symbol }}</span>
+            <span v-for="symbol in reelSymbols" :key="'r1dup-'+symbol" class="slot-symbol">{{ symbol }}</span>
+          </div>
         </div>
         <div class="slot-reel">
-          <span class="slot-symbol ace-spade">Aquí van las estadisticas</span>
+          <div
+            class="reel-ticker"
+            :style="reelStyle(reel2)"
+          >
+            <span v-for="symbol in reelSymbols2" :key="'r2-'+symbol" class="slot-symbol">{{ symbol }}</span>
+            <span v-for="symbol in reelSymbols2" :key="'r2dup-'+symbol" class="slot-symbol">{{ symbol }}</span>
+          </div>
         </div>
         <div class="slot-reel">
-          <span class="slot-symbol skull">Aquí van las estadisticas</span>
+          <div
+            class="reel-ticker"
+            :style="reelStyle(reel3)"
+          >
+            <span v-for="symbol in reelSymbols3" :key="'r3-'+symbol" class="slot-symbol">{{ symbol }}</span>
+            <span v-for="symbol in reelSymbols3" :key="'r3dup-'+symbol" class="slot-symbol">{{ symbol }}</span>
+          </div>
         </div>
       </div>
 
       <div class="machine-details">
-        <h1>EL GANADOR ES:</h1>
-        <span v-if="winner">{{ winner }}</span>
-        <span class="winner-name placeholder" v-else>— Sin nombre —</span>
-        <button class="btn" @click="goHome" aria-label="Volver al inicio">
-          Volver al inicio
-        </button>
+        <h1>El elegido es:</h1>
+        <span v-if="winner" class="winner-name">{{ winner }}</span>
+        <span v-else-if="!canSpin" class="winner-name placeholder">...Calculando Destino...</span>
+        <span v-else class="winner-name placeholder">— Nadie aún —</span>
+
+        </div>
+
+      <div class="lever-housing">
+        <div 
+          class="lever" 
+          :class="{ pulling: isPulling }" 
+          @click="goHomeAction" 
+          :style="{ cursor: canGoHome ? 'pointer' : 'default' }"
+        >
+          <div class="lever-ball"></div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { defineEmits, defineProps } from "vue";
-import communicationManager from "../services/communicationManager";
-import sound from "../../public/assets/sonido/sonidoAccion/playful-casino-slot-machine.mp3";
-import sound1 from "../../public/assets/sonido/sonidoAccion/slot-machine-coin-payout.mp3";
+import { ref, reactive, onMounted, defineEmits, defineProps } from "vue";
+// IMPORTANTE: Asegúrate de que las rutas a los archivos de sonido sean correctas en tu proyecto
+import soundSpin from "../../public/assets/sonido/sonidoAccion/playful-casino-slot-machine.mp3";
+import soundWin from "../../public/assets/sonido/sonidoAccion/slot-machine-coin-payout.mp3";
 
-const sonidoTragaperras = new Audio(sound);
-const sonidoMonedas = new Audio(sound1);
-
-// Prop para recibir el nombre del ganador
 const props = defineProps({
-  winner: {
-    type: String,
-    default: "",
-  },
+  winner: { type: String, default: "" },
 });
 
-// Evento que se emite cuando el usuario quiere volver al inicio
 const emit = defineEmits(["go-home"]);
 
-function goHome() {
-  communicationManager.emit('leave_game', { playerId: playerId.value, roomId: roomId.value })
+const isPulling = ref(false); 
+const canSpin = ref(false); 
+const canGoHome = ref(false); 
+
+// Altura del símbolo (150px)
+const SYMBOL_HEIGHT = 150; 
+const SYMBOL_HEIGHT_HALF = SYMBOL_HEIGHT / 2; 
+
+// Duración del giro antes de frenar (1.5 segundos)
+const AUDIO_DURATION_MS = 1500; 
+
+// Definición de símbolos (Palabras)
+const reelSymbols = ["Nada", "Muerte", "Estadisticas"];
+const reelSymbols2 = ["Muerte", "Nada", "Estadisticas"];
+const reelSymbols3 = ["Nada", "Muerte", "Estadisticas"];
+
+const STATS_INDEXES = [2, 2, 2];
+
+const reel1 = reactive({ offset: 0, speed: 0, isSpinning: false, transitionDuration: '0s' });
+const reel2 = reactive({ offset: 0, speed: 0, isSpinning: false, transitionDuration: '0s' });
+const reel3 = reactive({ offset: 0, speed: 0, isSpinning: false, transitionDuration: '0s' });
+
+const sonidoTragaperras = new Audio(soundSpin);
+const sonidoMonedas = new Audio(soundWin);
+
+function reelStyle(reel) {
+  return {
+    transform: `translateY(${reel.offset}px)`,
+    transition: `transform ${reel.transitionDuration} ${reel.speed > 0 ? 'linear' : 'ease-out'}`,
+  }
+}
+
+let animationFrame;
+function animateReels() {
+  if (reel1.speed > 0) {
+    reel1.offset -= reel1.speed;
+    reel1.offset %= (reelSymbols.length * SYMBOL_HEIGHT); 
+  }
+
+  if (reel2.speed > 0) {
+    reel2.offset -= reel2.speed;
+    reel2.offset %= (reelSymbols2.length * SYMBOL_HEIGHT);
+  }
+
+  if (reel3.speed > 0) {
+    reel3.offset -= reel3.speed;
+    reel3.offset %= (reelSymbols3.length * SYMBOL_HEIGHT);
+  }
+
+  animationFrame = requestAnimationFrame(animateReels);
+}
+
+function stopReel(reel, targetSymbolIndex, symbolCount, delay) {
+  return new Promise(resolve => {
+    // Cálculo para centrar el símbolo en la ventana de 150px
+    let targetOffset = - (targetSymbolIndex * SYMBOL_HEIGHT) + SYMBOL_HEIGHT_HALF;
+
+    let extraTurns = 3; 
+    let finalOffset = targetOffset - (symbolCount * SYMBOL_HEIGHT) * extraTurns;
+
+    setTimeout(() => {
+      reel.speed = 0; 
+      reel.transitionDuration = '2s'; 
+      reel.offset = finalOffset; 
+      
+      setTimeout(() => {
+        reel.transitionDuration = '0s'; 
+        reel.offset = targetOffset; 
+        resolve();
+      }, 2000); 
+    }, delay);
+  });
+}
+
+function startSpin() {
+  canSpin.value = false; 
+  canGoHome.value = false; 
+
+  sonidoTragaperras.pause(); 
+  sonidoTragaperras.currentTime = 0; 
+  sonidoTragaperras.loop = false; 
+  sonidoTragaperras.play();
+
+  reel1.speed = reel2.speed = reel3.speed = 40; 
+  reel1.transitionDuration = reel2.transitionDuration = reel3.transitionDuration = '0s';
+
+  // Posición inicial: El primer símbolo está medio fuera por arriba.
+  reel1.offset = SYMBOL_HEIGHT_HALF;
+  reel2.offset = SYMBOL_HEIGHT_HALF;
+  reel3.offset = SYMBOL_HEIGHT_HALF;
+
+
+  setTimeout(() => {
+    Promise.resolve()
+      .then(() => stopReel(reel1, STATS_INDEXES[0], reelSymbols.length, 0)) 
+      .then(() => stopReel(reel2, STATS_INDEXES[1], reelSymbols2.length, 500)) 
+      .then(() => stopReel(reel3, STATS_INDEXES[2], reelSymbols3.length, 500)) 
+      .then(() => {
+        if (props.winner) {
+            sonidoMonedas.play();
+        }
+        canGoHome.value = true; 
+      });
+  }, AUDIO_DURATION_MS);
+}
+
+function goHomeAction() {
+    if (!canGoHome.value) return;
+
+    isPulling.value = true; 
+    sonidoTragaperras.pause(); 
+    
+    setTimeout(() => {
+        isPulling.value = false;
+        communicationManager.emit('leave_game', { playerId: playerId.value, roomId: roomId.value })
 
   // 2️⃣ Desconectar el socket
   communicationManager.disconnect()
 
   // 3️⃣ Emitir evento local para navegación
   emit("go-home");
+    }, 500); 
 }
+
+onMounted(() => {
+  animateReels(); 
+  sonidoTragaperras.volume = 0.2;
+  sonidoMonedas.volume = 0.3;
+
+  startSpin();
+});
 </script>
 
-<style>
+---
+
+## 🎨 Estilos CSS Actualizados
+
+```css
+<style scoped>
+
+/* Colores */
+:root {
+  --metal-dark: #3b2b2b;
+  --metal-rust: #5c4033;
+  --wood-old: #5a4030;
+  --paper-aged: #d2b48c;
+  --light-amber: #bda27e;
+  --shadow-deep: rgba(0,0,0,0.8);
+  --lever-red: #8b0000; 
+  --lever-red-light: #ff3333;
+}
+
+/* Contenedor */
 .slot-machine-container {
   display: flex;
   justify-content: center;
   align-items: center;
   width: 100vw;
   height: 100vh;
-  margin: 0;
-  background-color: #222;
-  font-family: "Times New Roman", serif;
-  overflow: hidden;
+  background: radial-gradient(circle at center, #3c2a2a 0%, #000 80%);
+  font-family: 'Courier New', Courier, monospace; 
 }
 
+/* Marco */
 .machine-frame {
+  position: relative;
   width: 80vw;
   height: 90vh;
-  background-color: var(--gold-worn);
-  border: 1.5vw solid var(--gold-old);
-  border-radius: 2vw;
-  box-shadow: inset 0 0 2vw rgba(0, 0, 0, 0.9), 0 0 3vw rgba(0, 0, 0, 0.6);
-  position: relative;
-  overflow: hidden;
-  box-sizing: border-box;
+  background: linear-gradient(135deg, var(--metal-dark) 0%, var(--wood-old) 100%);
+  border: 0.6vw solid var(--metal-rust);
+  border-radius: 1vw;
+  padding: 2vh 2vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: inset 0 0 3vw var(--shadow-deep);
 }
 
-.ornate-border {
-  position: absolute;
-  left: 2%;
-  right: 2%;
-  height: 6vh;
-  background-color: var(--red-dirty);
-  border: 0.3vw solid var(--gold-old);
-  box-shadow: inset 0 0 1vh rgba(0, 0, 0, 0.9);
+/* Cabecera */
+.machine-top {
+  text-align: center;
+  padding-top: 1vh;
 }
 
-.top-border {
-  top: 1.5vh;
-  border-radius: 0.5vw 0.5vw 0 0;
+.machine-title {
+  font-size: 4vh;
+  color: var(--light-amber);
+  text-shadow: 0 0 0.4vh #000;
 }
 
-.bottom-border {
-  bottom: 18vh;
-  border-radius: 0 0 0.5vw 0.5vw;
-}
-
+/* Rodillos */
 .slot-display {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  position: absolute;
-  top: 10vh;
-  left: 5%;
-  right: 5%;
-  height: 45vh;
-  background-color: var(--black-deep);
-  border: 0.5vw solid var(--gold-old);
-  border-radius: 1vw;
-  box-shadow: inset 0 0 2vw rgba(0, 0, 0, 1), 0 0 1vw rgba(255, 255, 255, 0.05);
-  padding: 1vh 0.5vw;
+  background: var(--metal-dark);
+  border: 0.4vw solid var(--metal-rust);
+  border-radius: 0.8vw;
+  box-shadow: inset 0 0 2vw #000;
+  padding: 2vh 1vw;
+  flex-grow: 1; 
 }
 
 .slot-reel {
-  width: 30%;
-  height: 40vh;
-  background-color: var(--paper-old);
-  border: 0.2vw solid #706a62;
-  border-radius: 0.3vw;
+  width: 28%;
+  /* Altura para mostrar solo 1 símbolo (150px) */
+  height: 150px; 
+  background: var(--paper-aged);
+  border: 0.2vw solid #3e2f1d;
+  border-radius: 0.5vw;
+  overflow: hidden;
   display: flex;
   justify-content: center;
-  align-items: center;
-  position: relative;
-  box-shadow: inset 0 0 0.5vw rgba(0, 0, 0, 0.5);
-  overflow: hidden;
+  align-items: center; 
+}
+
+.reel-ticker {
+  display: flex;
+  flex-direction: column;
+  /* El desplazamiento lo gestiona el JS */
 }
 
 .slot-symbol {
-  font-size: 8vh;
-  color: #333;
-  text-shadow: 0.1vh 0.1vh 0.2vh rgba(0, 0, 0, 0.7);
+  height: 150px; 
+  line-height: 150px;
+  font-size: 8vh; /* Se redujo ligeramente el tamaño del texto para que quepa mejor */
+  text-align: center;
+  text-shadow: 0 0 0.5vh var(--shadow-deep);
+  color: black;
+  
+  /* 🔑 CAMBIO CLAVE AQUÍ: Fondo para el texto */
+  background-color: rgba(0, 0, 0, 0.4); 
+  padding: 0 10px;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8);
+  color: var(--light-amber); /* Cambiamos el color del texto a ámbar para que contraste con el negro */
 }
 
+/* Panel inferior y Palanca (sin cambios) */
 .machine-details {
-  position: absolute;
-  bottom: 2vh;
-  left: 5%;
-  right: 5%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  background: var(--metal-dark);
+  border: 0.3vw solid var(--metal-rust);
+  border-radius: 0.8vw;
+  box-shadow: inset 0 0 2vw #000;
+  text-align: center;
   padding: 2vh;
-  background-color: var(--black-deep);
-  border-radius: 1vw;
-  border: 0.3vw solid var(--gold-old);
-  box-shadow: 0 0.5vw 1vw rgba(0, 0, 0, 0.5);
+  display: flex; 
+  flex-direction: column;
+  align-items: center;
 }
 
-.button {
-  padding: 2vh 4vw;
-  background-color: var(--red-dark);
-  font-size: 2.5vh;
-  border-radius: 0.5vw;
+.machine-details h1 {
+  font-size: 3vh;
+  color: var(--light-amber);
+  margin: 0;
+  text-shadow: 0 0 0.2vh #000;
 }
+
+.winner-name {
+  display: block;
+  margin-top: 1vh;
+  font-size: 3.5vh;
+  color: #d4c093;
+  text-shadow: 0 0.3vh 0.6vh #000;
+}
+
+.placeholder { opacity: 0.6; font-style: italic; }
+
 
 .lever-housing {
   position: absolute;
   right: -5vh;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 5vh;
-  height: 15vh;
+  top: 45%;
+  width: 6vh;
+  height: 18vh;
+  background: #1e1a1a;
+  border-radius: 2vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 1vh;
+  border: 0.2vh solid var(--metal-rust);
 }
 
 .lever {
-  width: 3vh;
+  width: 1.8vh;
   height: 12vh;
-  background-color: var(--gold-old);
-  border-radius: 1.5vh;
+  background: linear-gradient(to bottom, #6e5842, #3c2e24);
+  border-radius: 1vh;
+  position: relative;
+  transform-origin: top center;
+  transition: transform 0.1s ease-out; 
+  box-shadow: inset 0 0 0.4vh #000;
 }
 
-.lever::before {
-  content: "";
+.lever-ball {
   position: absolute;
-  top: -2vh;
-  left: -1vh;
-  width: 6vh;
-  height: 6vh;
-  background-color: var(--red-dark);
+  bottom: -2.2vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3.5vh;
+  height: 3.5vh;
+  background: radial-gradient(circle at 30% 30%, var(--lever-red-light), var(--lever-red));
+  border: 0.3vh solid #2a1b1b;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0.5vh #000, 0 0 0.5vh var(--lever-red-light);
 }
 
-.machine-details h1 {
-  color: #fff;
-  font-size: 4vh;
-  text-transform: uppercase;
-  letter-spacing: 0.2vh;
-  margin: 0;
-  padding: 0;
-  animation: neon-flicker 1.5s infinite alternate;
-}
-
-.machine-details span {
-  color: #ffcc00;
-  font-size: 5vh;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 0.3vh;
-  margin-top: 1vh;
-  animation: neon-flicker-gold 2s infinite alternate;
-}
-
-@keyframes neon-flicker {
-  0% {
-    text-shadow: 0 0 0.5vh #fff, 0 0 1vh #fff, 0 0 2vh #00f, 0 0 3vh #00f,
-      0 0 4vh #00f, 0 0 5vh #00f;
-    opacity: 1;
-  }
-
-  20% {
-    opacity: 0.8;
-  }
-
-  40% {
-    opacity: 1;
-    text-shadow: 0 0 0.5vh #fff, 0 0 1vh #fff, 0 0 2vh #00f, 0 0 3vh #00f,
-      0 0 4vh #00f, 0 0 5vh #00f;
-  }
-
-  60% {
-    opacity: 0.6;
-    text-shadow: none;
-  }
-
-  80% {
-    opacity: 1;
-    text-shadow: 0 0 0.5vh #fff, 0 0 1vh #fff, 0 0 2vh #00f, 0 0 3vh #00f,
-      0 0 4vh #00f, 0 0 5vh #00f;
-  }
-
-  100% {
-    text-shadow: 0 0 0.5vh #fff, 0 0 1vh #fff, 0 0 2vh #00f, 0 0 3vh #00f,
-      0 0 4vh #00f, 0 0 5vh #00f;
-    opacity: 1;
-  }
-}
-
-@keyframes neon-flicker-gold {
-  0% {
-    text-shadow: 0 0 0.5vh #fff, 0 0 1vh #ffcc00, 0 0 2vh #ffaa00,
-      0 0 3vh #ffaa00, 0 0 4vh #ffaa00, 0 0 5vh #ffaa00;
-    opacity: 1;
-  }
-
-  25% {
-    opacity: 0.7;
-    text-shadow: none;
-  }
-
-  50% {
-    opacity: 1;
-    text-shadow: 0 0 0.5vh #fff, 0 0 1vh #ffcc00, 0 0 2vh #ffaa00,
-      0 0 3vh #ffaa00, 0 0 4vh #ffaa00, 0 0 5vh #ffaa00;
-  }
-
-  75% {
-    opacity: 0.9;
-  }
-
-  100% {
-    text-shadow: 0 0 0.5vh #fff, 0 0 1vh #ffcc00, 0 0 2vh #ffaa00,
-      0 0 3vh #ffaa00, 0 0 4vh #ffaa00, 0 0 5vh #ffaa00;
-    opacity: 1;
-  }
-}
-
-.machine-details {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-}
-
-.lever-housing {
-  right: -8vh;
-}
+.lever.pulling { transform: rotate(25deg); }
 </style>

@@ -154,7 +154,6 @@ function handleGoHome() {
     :room="roomSeleccionada"
     @juego-finalizado="onJuegoFinalizado"
   />
-
   <PantallaFinal
     v-if="vistaActual === 'final'"
     :winner="ganador"
