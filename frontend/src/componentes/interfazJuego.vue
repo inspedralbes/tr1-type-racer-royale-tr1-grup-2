@@ -234,7 +234,7 @@ onMounted(() => {
 
   // 🔹 Fetch palabras iniciales usando endpoint dinámico
 
-  fetch("/palabras/words", {
+  fetch("/api/palabras/words", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -306,7 +306,7 @@ communicationManager.on("powerup_reset_words", (msg) => {
   errorCount.value = 0;
 
   // Pedir nuevas palabras al servidor
-  fetch("/palabras/words", {
+  fetch("/api/palabras/words", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

@@ -13,7 +13,7 @@ router.post("/words", (req, res) => {
     let selected;
 
 
-    
+
     if (!room) {
       const allWords = generarPalabras(600);
       selected = seleccionarRandom(allWords, count);
@@ -26,9 +26,8 @@ router.post("/words", (req, res) => {
 
       if (jugador) {
         if (!jugador.words || jugador.words.length === 0) {
-        selected = generarPalabras(600);
-        const selected_ = seleccionarRandom(selected, count)
-        jugador.words = [...selected_];
+          selected = generarPalabras(count);
+          jugador.words = [...selected];
         } else {
           console.log(`🆕 Nuevo jugador ${playerId}, añadiendo a la sala.`);
           selected = generarPalabras(count);
@@ -38,10 +37,10 @@ router.post("/words", (req, res) => {
             words: [...selected],
             completedWords: 0,
             status: "playing",
-        });
+          });
         }
+      }
     }
-  }
 
     res.json({
       data: {

@@ -23,8 +23,8 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 // --- Routers ---
-app.use("/palabras", wordsRouter);
-app.use("/api", registerRouter);
+app.use("/api/palabras", wordsRouter);
+app.use("/api/user", registerRouter);
 
 // --- Socket.IO ---
 const io = new Server(server, { cors: corsOptions });

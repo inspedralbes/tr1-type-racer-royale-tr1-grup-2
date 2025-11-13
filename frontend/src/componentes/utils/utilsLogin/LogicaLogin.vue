@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from "vue";
+import { playerName, playerId } from "../../../logic/globalState.js";
 
 // Emits al elemento padre este caso PantallaLogin.vue:
 const emit = defineEmits(["success", "error"]); // "success" si el login es correcto, "error" si falla.
@@ -21,7 +22,7 @@ async function manejoLogin() {
   // Manejo de errores de red o del fetch (try/catch):
   try {
     // Petición POST al backend con las credenciales:
-    const respuesta = await fetch("/api/login", {
+    const respuesta = await fetch("/api/user/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -36,6 +37,7 @@ async function manejoLogin() {
     // Comprobamos si la respuesta es exitosa o no:
     if (respuesta.ok) {
       localStorage.setItem("token", data.token); // Almacena el token en el localStorage para persistir la sesión.
+      playerId.value = data.id;
       emit("success", data); // Emite el evento "success" con el usuario/token.
     } else {
       emit("error", data.message); // Emite el mensaje de error.
