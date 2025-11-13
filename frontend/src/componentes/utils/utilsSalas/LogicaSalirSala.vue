@@ -1,4 +1,5 @@
 <script setup>
+//Emits al padre (PantallaSalas.vue):
 const emit = defineEmits(["logout"]);
 </script>
 

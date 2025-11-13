@@ -3,8 +3,8 @@ import { ref, computed } from "vue";
 import { playerName, playerId, playerAvatar } from "../logic/globalState.js";
 
 // Importar los hijos de Perfil (utilsPerfil)
-import PerfilCampoNombre from "./utils/utilsPerfil/PerfilCampoNombre.vue";
-import PerfilAvatarSelector from "./utils/utilsPerfil/PerfilAvatarSelector.vue";
+import LogicaNombre from "./utils/utilsPerfil/LogicaNombre.vue";
+import LogicaAvatar from "./utils/utilsPerfil/LogicaAvatar.vue";
 
 const emit = defineEmits(["go-home", "guardar-perfil"]);
 
@@ -90,13 +90,13 @@ function handleGoHome() {
         ¡Cambios guardados con éxito!
       </div>
 
-      <PerfilCampoNombre
+      <LogicaNombre
         v-model="formData.nombre"
         :editando="editando.nombre"
         @toggle-edit="toggleEdit('nombre')"
       />
 
-      <PerfilAvatarSelector
+      <LogicaAvatar
         v-model="formData.avatar"
         :avatares-disponibles="avataresDisponibles"
         :avatar-es-personalizado="avatarEsPersonalizado"

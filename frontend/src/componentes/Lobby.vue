@@ -19,61 +19,61 @@ const emit = defineEmits(["juego-iniciado", "leave-lobby"]);
 
 const canStartGame = computed(() => players.value.length >= 2);
 
+// --- Manejadores de eventos de Socket ---
+
+const onJoinedLobby = (data) => {
+  console.log("📥 joined_lobby recibido:", data);
+  if (data.roomId === props.room.roomId) {
+    players.value = data.players;
+  }
+};
+
+const onPlayerLeftLobby = (data) => {
+  console.log("📥 player_left_lobby recibido:", data);
+  if (data.roomId === props.room.roomId) {
+    players.value = data.players;
+  }
+};
+
+const onStartGameSignal = () => {
+  emit("juego-iniciado", props.room);
+};
+
+// --- Lógica del componente ---
+
 function iniciarJuego() {
   console.log("⏳ El host inicia la partida...");
 
   communicationManager.emit("start_game_signal", {
     roomId: props.room.roomId,
-    hostId: props.room.playerId, // Asumo que room.playerId es el ID del host
+    hostId: props.room.playerId,
   });
 
   emit("juego-iniciado", props.room);
 }
 
-// ✅ 2. Esta es la función que se llama cuando el HIJO emite
 function handleExit() {
   console.log(`🚪 Saliendo del lobby ${props.room.roomId}...`);
 
-  // 1. Notificar al backend que nos vamos
   communicationManager.emit("leave_lobby_signal", {
     roomId: props.room.roomId,
-    playerId: playerId.value, // Usamos .value porque es un ref importado
+    playerId: playerId.value,
   });
 
-  // 2. Emitir a App.vue (el "abuelo") para que cambie la vista
   emit("leave-lobby");
 }
 
 onMounted(() => {
-  // Este evento es para cuando ALGUIEN (incluyéndote a ti) SE UNE
-  communicationManager.on("joined_lobby", (data) => {
-    console.log("📥 joined_lobby recibido:", data);
-    if (data.roomId === props.room.roomId) {
-      players.value = data.players;
-    }
-  });
-
-  // ✅ 3. AÑADIMOS ESTE LISTENER:
-  // Este evento es para cuando OTRA PERSONA SE VA
-  // Tu backend debe emitir "player_left_lobby" a todos en la sala cuando alguien usa "leave_lobby_signal"
-  communicationManager.on("player_left_lobby", (data) => {
-    console.log("📥 player_left_lobby recibido:", data);
-    if (data.roomId === props.room.roomId) {
-      // Simplemente actualizamos la lista de jugadores con la nueva lista del servidor
-      players.value = data.players;
-    }
-  });
-
-  communicationManager.on("start_game_signal", () => {
-    emit("juego-iniciado", props.room);
-  });
+  communicationManager.on("joined_lobby", onJoinedLobby);
+  communicationManager.on("player_left_lobby", onPlayerLeftLobby);
+  communicationManager.on("start_game_signal", onStartGameSignal);
 });
 
 onUnmounted(() => {
-  communicationManager.off("joined_lobby");
-  communicationManager.off("start_game_signal");
-  // ✅ 4. Limpiamos el nuevo listener
-  communicationManager.off("player_left_lobby");
+  console.log(`🧹 Limpiando listeners del lobby ${props.room.roomId}`);
+  communicationManager.off("joined_lobby", onJoinedLobby);
+  communicationManager.off("player_left_lobby", onPlayerLeftLobby);
+  communicationManager.off("start_game_signal", onStartGameSignal);
 });
 </script>
 

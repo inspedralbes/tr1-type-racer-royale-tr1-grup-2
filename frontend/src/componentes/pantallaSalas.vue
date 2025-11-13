@@ -1,73 +1,79 @@
 <script setup>
-import { ref, onMounted, onUnmounted, defineProps } from "vue";
+import { ref, onMounted, onUnmounted, defineProps, defineEmits } from "vue";
 import communicationManager from "../services/communicationManager";
+
+// Importamos 'rooms' desde un estado global.
 import { rooms } from "../logic/globalState.js";
 
-// Importar los hijos de Salas (utilsSalas)
+// Importar los hijos de Salas (utilsSalas):
 import LogicaPerfilUsuario from "./utils/utilsSalas/LogicaPerfilUsuario.vue";
-import LogicaSalirSala from "./utils/utilsSalas/LogicaSalirSalas.vue";
+import LogicaSalirSala from "./utils/utilsSalas/LogicaSalirSala.vue";
 import LogicaCrearLobby from "./utils/utilsSalas/LogicaCrearLobby.vue";
 import LogicaPintarSalas from "./utils/utilsSalas/LogicaPintarSalas.vue";
 
+// Los datos que esperamos recibir del elemento padre (App.vue):
 const props = defineProps({
   escena: String,
   jugador: Object,
 });
 
-// 🔹 AÑADIMOS 'ver-perfil' y 'logout' a los eventos que este componente puede emitir
+//Emits al padre (App.vue):
 const emit = defineEmits(["sala-seleccionada", "ver-perfil", "logout"]);
-const nuevaSala = ref("");
-const errorMessage = ref("");
 
-// 🔹 Recibir lista de salas del servidor
-const handleRoomsList = (payload) => {
+// Variables internas:
+const nuevaSala = ref("");
+const mensajeError = ref("");
+
+// Funciones:
+function manejarListaSalas(payload) {
   rooms.value = payload;
   console.log("📜 Lista de salas:", payload);
-};
-
-// 🔹 Cuando una sala se crea correctamente
-function handleRoomCreated(payload) {
-  console.log("🆕 Sala creada desde backend:", payload);
-  // Emitimos solo los datos necesarios a App.vue
-
-  const room = {
-    roomId: payload.roomId,
-    playerId: props.jugador.id, // host
-    isHost: true,
-    players: [{ playerId: props.jugador.id, username: props.jugador.username }], // solo él por ahora
-  };
-  emit("sala-seleccionada", room);
 }
 
-// 🔹 Error al crear o unirse
-const handleRoomError = (payload) => {
-  console.error("❌ Error:", payload.message);
-  errorMessage.value = payload.message;
-};
+function manejarSalasCreadas(payload) {
+  console.log("🆕 Sala creada desde backend:", payload);
+  const room = {
+    roomId: payload.roomId,
+    playerId: props.jugador.id,
+    isHost: true,
+    players: [{ playerId: props.jugador.id, username: props.jugador.username }], // Nos añadimos a la lista
+  };
+  emit("sala-seleccionada", room); // Emit el evento 'sala-seleccionada' hacia el padre (App.vue).
+}
 
-// 🔹 Solicitar lista de salas al servidor
+function manejarErrorSalas(payload) {
+  console.error("❌ Error:", payload.message);
+  mensajeError.value = payload.message;
+}
+
+// Emits al servidor (Acciones del Usuario)
+
+//Pide al servidor la lista de salas actualizada:
 function actualizarSalas() {
   console.log("📡 Solicitando lista de salas...");
+  // Enviamos el evento 'get_rooms' al servidor y responderá enviando 'rooms_list'.
   communicationManager.emit("get_rooms");
 }
 
-// 🔹 Crear una nueva sala
+// Envía una petición al servidor para crear una nueva sala cuando el usuario presiona el botón "CREAR".
 function crearSala() {
-  if (!props.jugador) return;
-  const roomName = nuevaSala.value.trim() || `Room_${props.jugador.username}`;
+  if (!props.jugador) return; // Comprobación de que si el jugador existe.
+  const roomName = nuevaSala.value.trim() || `Room_${props.jugador.username}`; // Obtenemos el nombre del input. Si está vacío, usamos uno por defecto.
 
+  // Enviamos el evento 'create_room' al servidor, pasando nuestros datos.
   communicationManager.emit("create_room", {
     roomName: roomName,
     playerId: props.jugador.id,
     username: props.jugador.username,
   });
 
+  // Limpiamos el input después de enviar la petición.
   nuevaSala.value = "";
 }
 
-// 🔹 Unirse a una sala
 function unirseSala(room) {
   if (!props.jugador) return;
+
   communicationManager.emit("join_room", {
     roomId: room.roomId,
     playerId: props.jugador.id,
@@ -77,33 +83,44 @@ function unirseSala(room) {
   emit("sala-seleccionada", room);
 }
 
-// --- 🔹 LÓGICA DE NAVEGACIÓN (CORREGIDA) ---
+// Eventos de Hijos a Padre
 
-function handleVerPerfil() {
-  emit("ver-perfil");
+function manejarVerPerfil() {
+  emit("ver-perfil"); // Emit a App.vue
 }
 
-function handleLogout() {
-  emit("logout");
+function manejarSalirSalas() {
+  emit("logout"); // Emit a App.vue
 }
+
+//HOOKS DE CICLO DE VIDA
 
 onMounted(() => {
-  // El componente ahora solo se monta cuando 'jugador' existe.
-  console.log("onMounted: PantallaSalas montada. Conectando socket...");
-  console.log("ID del jugador:", props.jugador.id);
-  console.log("Username del jugador:", props.jugador.username);
+  console.log(
+    "ID:",
+    props.jugador.id,
+    ", Nombre:",
+    props.jugador.username,
+    "."
+  );
 
+  // 1. Nos conectamos al servidor de Sockets.
   communicationManager.connect();
-  communicationManager.on("rooms_list", handleRoomsList);
-  communicationManager.on("room_created", handleRoomCreated);
-  communicationManager.on("room_error", handleRoomError);
-  actualizarSalas();
+
+  // 2. Registramos nuestros "oyentes". Le decimos al 'communicationManager'
+  // qué funciones debe ejecutar cuando lleguen estos mensajes del servidor.
+  communicationManager.on("rooms_list", manejarListaSalas);
+  communicationManager.on("room_created", manejarSalasCreadas);
+  communicationManager.on("room_error", manejarErrorSalas);
+
+  actualizarSalas(); // 3. Pedimos la lista de salas por primera vez.
 });
 
+// Limpiar
 onUnmounted(() => {
-  communicationManager.off("rooms_list", handleRoomsList);
-  communicationManager.off("room_created", handleRoomCreated);
-  communicationManager.off("room_error", handleRoomError);
+  communicationManager.off("rooms_list", manejarListaSalas);
+  communicationManager.off("room_created", manejarSalasCreadas);
+  communicationManager.off("room_error", manejarErrorSalas);
 });
 </script>
 
@@ -114,20 +131,21 @@ onUnmounted(() => {
         <div class="wall-light"></div>
         <div class="door-frame">
           <div class="garage-door">
-            <!--Contenido principal-->
             <div class="salas-container">
               <div class="header-container">
                 <LogicaPerfilUsuario
                   v-if="jugador"
                   :jugador="jugador"
-                  @ver-perfil="handleVerPerfil"
+                  @ver-perfil="manejarVerPerfil"
                 />
-                <LogicaSalirSala @logout="handleLogout" />
+                <LogicaSalirSala @logout="manejarSalirSalas" />
               </div>
-              <LogicaCrearLobby v-model="nuevaSala" @crear-lobby="crearSala" />
-              <LogicaPintarSalas v-model="rooms" @unirse-sala="unirseSala" />
+              <LogicaCrearLobby
+                v-model:valorActual="nuevaSala"
+                @crear-lobby="crearSala"
+              />
+              <LogicaPintarSalas :rooms="rooms" @unirse-sala="unirseSala" />
             </div>
-            <!--FIN-->
           </div>
         </div>
       </div>
