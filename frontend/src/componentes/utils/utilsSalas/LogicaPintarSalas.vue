@@ -1,22 +1,41 @@
 <script setup>
 import { ref, computed } from "vue";
 
+// Los datos que esperamos recibir del elemento padre (PantallaSalas.vue):
 const props = defineProps({
-  modelValue: {
+  rooms: {
     type: Array,
     default: () => [],
   },
 });
 
+// Emit al padre
 const emit = defineEmits(["unirse-sala"]);
 
-const searchText = ref("");
+const buscarNombreSala = ref("");
 
 const salasFiltradas = computed(() => {
-  const filtradas = props.modelValue.filter((sala) =>
-    sala.roomName.toLowerCase().includes(searchText.value.toLowerCase())
-  );
-  return filtradas.slice(0, 3);
+  // Creamos el array final directamente.
+  const filtradas = [];
+
+  const busquedaLower = buscarNombreSala.value.toLowerCase();
+
+  let i = 0;
+
+  while (i < props.rooms.length && filtradas.length < 3) {
+    const sala = props.rooms[i];
+
+    if (sala.roomName) {
+      if (sala.roomName.toLowerCase().includes(busquedaLower)) {
+        filtradas.push(sala);
+      }
+    }
+
+    i++;
+  }
+
+  // Devolvemos la lista, que sabemos que tendrá como máximo 3 elementos.
+  return filtradas;
 });
 </script>
 
@@ -24,35 +43,29 @@ const salasFiltradas = computed(() => {
   <h3 class="titulo">Salas disponibles</h3>
 
   <input
-    v-model="searchText"
+    v-model="buscarNombreSala"
     type="text"
     class="input"
     placeholder="Buscar sala por nombre..."
   />
 
   <div class="lista-salas">
-    <div v-for="sala in salasFiltradas" :key="sala.roomId" class="sala-card"
-    :class="{ 'sala-bloqueada': sala.gameState === 'in game' }">
+    <div
+      v-for="sala in salasFiltradas"
+      :key="sala.roomId"
+      class="sala-card"
+      :class="{ 'sala-bloqueada': sala.gameState === 'in game' }"
+    >
       <p>
         <strong>{{ sala.roomName }}</strong>
       </p>
       <p>{{ sala.numPlayers }}/{{ sala.maxPlayers }}</p>
-      <p 
-      :class="{
-      'estado-esperando': sala.gameState === 'waiting',
-      'estado-jugando': sala.gameState === 'in game'}">
-      Estado: {{ sala.gameState }}</p>
+      <p>Estado: {{ sala.state }}</p>
 
-      <button 
-      :disabled="sala.gameState === 'in game'"
-      :class="{
-          'boton-bloqueado': sala.gameState === 'game',
-          'boton-activo': sala.gameState !== 'game'
-        }"
-      @click="sala.gameState !== 'game' && emit('unirse-sala', sala)">Unirse</button>
+      <button @click="emit('unirse-sala', sala)">Unirse</button>    
     </div>
 
-    <div v-if="!modelValue || modelValue.length === 0">
+    <div v-if="!rooms || rooms.length === 0">
       No hay salas disponibles en este momento.
     </div>
 
@@ -89,7 +102,6 @@ const salasFiltradas = computed(() => {
   background-color: #3b82f6;
   color: white;
 }
-
 
 .boton-activo:hover {
   background-color: #2563eb;

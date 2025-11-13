@@ -1,12 +1,17 @@
 <script setup>
+// Los datos que esperamos recibir del elemento padre (PantallaSalas.vue):
 defineProps({
-  modelValue: String,
+  valorActual: String,
 });
 
-const emit = defineEmits(["update:modelValue", "crear-lobby"]);
+// Emits al elemento padre en este caso PantallaSalas.vue:
+const emit = defineEmits(["update:valorActual", "crear-lobby"]);
+
+// Funciones:
 
 function onInput(event) {
-  emit("update:modelValue", event.target.value);
+  const newValue = event.target.value;
+  emit("update:valorActual", newValue);
 }
 </script>
 
@@ -14,10 +19,11 @@ function onInput(event) {
   <div class="crear-sala">
     <input
       class="nombre-sala"
-      :value="modelValue"
-      @input="onInput"
       placeholder="Nombre de sala"
+      :value="valorActual"
+      @input="onInput"
     />
+
     <button class="button-sala" @click="emit('crear-lobby')">Crear sala</button>
   </div>
 </template>

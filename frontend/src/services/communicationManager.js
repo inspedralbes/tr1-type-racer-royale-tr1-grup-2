@@ -28,17 +28,19 @@ class CommunicationManager {
 
   on(event, callback) {
     this.socket.on(event, callback);
-    console.log(`Registered callback for event: ${event}`);
+    // console.log(`Registered callback for event: ${event}`);
   }
 
   emit(event, data) {
     this.socket.emit(event, data);
-    console.log(`Emitting event: ${event} with data:`, data);
+    // console.log(`Emitting event: ${event} with data:`, data);
   }
 
   off(event, callback) {
-    this.socket.off(event, callback);
-    console.log(`Unregistered callback for event: ${event}`);
+    if (this.socket) {
+      this.socket.off(event, callback);
+      console.log(`Unregistered callback for event: ${event}`);
+    }
   }
 
   reset() {
@@ -53,7 +55,6 @@ class CommunicationManager {
     console.log("✅ Socket desconectado.");
 
     // Limpieza interna
-    this.socket = null;
   }
 }
 

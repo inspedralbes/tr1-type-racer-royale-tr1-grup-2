@@ -1,7 +1,10 @@
 <script setup>
+// Los datos que esperamos recibir del elemento padre (PantallaSalas.vue):
 const props = defineProps({
   jugador: {
     type: Object,
+
+    // Valores por defecto si queremos implementar un modo invitado o gost
     default: () => ({
       id: "N/A",
       username: "Invitado",
@@ -10,6 +13,7 @@ const props = defineProps({
   },
 });
 
+//Emits al padre (PantallaSalas.vue):
 const emit = defineEmits(["ver-perfil"]);
 </script>
 
