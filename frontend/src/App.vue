@@ -1,8 +1,9 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import communicationManager from "./services/communicationManager";
-import RegistroJugador from "./componentes/registroJugador.vue";
-import PantallaSalas from "./componentes/pantallaSalas.vue";
+
+import RegistroJugador from "./componentes/PantallaLogin.vue";
+import PantallaSalas from "./componentes/PantallaSalas.vue";
 import Lobby from "./componentes/Lobby.vue";
 import Juego from "./componentes/interfazJuego.vue";
 import PantallaFinal from "./componentes/pantallaFinal.vue";
@@ -14,7 +15,35 @@ const lobbyState = ref(null);
 const roomSeleccionada = ref(null);
 const ganador = ref(null);
 
+// Se ejecuta al montar el componente.
+onMounted(async () => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    try {
+      const response = await fetch("/api/user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        // Guardamos los datos del usuario y el token para futuras peticiones
+        jugador.value = { ...userData, token };
+        vistaActual.value = "salas";
+      } else {
+        // Si el token es inválido o expiró, limpiamos localStorage
+        localStorage.removeItem("token");
+      }
+    } catch (error) {
+      console.error("Error al verificar el token:", error);
+      localStorage.removeItem("token");
+    }
+  }
+});
+
 function onJugadorRegistrado(data) {
+  // data ya contiene el token y los datos del usuario desde el backend
   jugador.value = data;
   vistaActual.value = "salas";
 }
@@ -92,7 +121,7 @@ function handleGoHome() {
 
 <template>
   <PantallaSalas
-    v-if="vistaActual === 'registro' || vistaActual === 'salas'"
+    v-if="vistaActual === 'salas'"
     :jugador="jugador"
     @sala-seleccionada="onSalaSeleccionada"
     @ver-perfil="irAPerfil"
