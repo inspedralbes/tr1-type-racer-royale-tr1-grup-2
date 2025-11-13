@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import communicationManager from "./services/communicationManager";
+import { playerName, playerAvatar } from "./logic/globalState";
 
 import RegistroJugador from "./componentes/PantallaLogin.vue";
 import PantallaSalas from "./componentes/PantallaSalas.vue";
@@ -30,6 +31,8 @@ onMounted(async () => {
         const userData = await response.json();
         // Guardamos los datos del usuario y el token para futuras peticiones
         jugador.value = { ...userData, token };
+        playerName.value = userData.username;
+        playerAvatar.value = userData.avatar;
         vistaActual.value = "salas";
       } else {
         // Si el token es inválido o expiró, limpiamos localStorage
@@ -45,6 +48,8 @@ onMounted(async () => {
 function onJugadorRegistrado(data) {
   // data ya contiene el token y los datos del usuario desde el backend
   jugador.value = data;
+  playerName.value = data.username;
+  playerAvatar.value = data.avatar;
   vistaActual.value = "salas";
 }
 
@@ -136,6 +141,7 @@ function handleGoHome() {
 
   <PantallaPerfil
     v-if="vistaActual === 'perfil'"
+    :jugador="jugador"
     @go-home="handlePerfilVolver"
     @guardar-perfil="guardarPerfil"
   />

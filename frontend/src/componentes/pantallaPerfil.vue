@@ -8,6 +8,7 @@ import LogicaAvatar from "./utils/utilsPerfil/LogicaAvatar.vue";
 
 const emit = defineEmits(["go-home", "guardar-perfil"]);
 
+const props = defineProps({ jugador: Object });
 const guardado = ref(false);
 
 // --- Lógica de Avatares  ---
@@ -30,7 +31,6 @@ const editando = ref({
   nombre: false,
   email: false,
 });
-
 
 function toggleEdit(campo) {
   if (campo in editando.value) {

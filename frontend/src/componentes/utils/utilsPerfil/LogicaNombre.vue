@@ -1,5 +1,7 @@
 <script setup>
-defineProps({
+import { playerName } from "../../../logic/globalState";
+
+const props = defineProps({
   modelValue: String, // para v-model:nombre
   editando: Boolean,
 });
@@ -13,6 +15,8 @@ function handleInput(event) {
 function handleToggle() {
   emit("toggle-edit");
 }
+
+console.log(playerName);
 </script>
 
 <template>
@@ -25,7 +29,7 @@ function handleToggle() {
           id="nombre"
           :value="modelValue"
           @input="handleInput"
-          placeholder="Escribe tu nombre"
+          :placeholder="playerName"
           :readonly="!editando"
           class="input-con-accion"
         />
