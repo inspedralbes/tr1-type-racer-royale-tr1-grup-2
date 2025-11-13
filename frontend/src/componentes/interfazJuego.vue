@@ -72,12 +72,12 @@ const audioPlayer = new Audio("/assets/sonido/Creepy_Casino.mp3");
 const pasarLetra = new Audio(sound);
 const teclado = new Audio(sound1);
 const iconosDisponibles = [
-  "/assets/img/userIconos/corazon.png",
-  "/assets/img/userIconos/trevol.png",
-  "/assets/img/userIconos/picas.png",
-  "/assets/img/userIconos/rombos.png",
+  "public/assets/img/userIconos/corazon.png",
+  "public/assets/img/userIconos/trevol.png",
+  "public/assets/img/userIconos/picas.png",
+  "public/assets/img/userIconos/rombos.png",
 ];
-const jugadorIcono = ref("/assets/img/iconos/corazon.png");
+const jugadorIcono = ref("public/assets/img/iconos/corazon.png");
 
 
 // 🟩 Variables para manejar la pantalla final
@@ -234,7 +234,7 @@ onMounted(() => {
 
   // 🔹 Fetch palabras iniciales usando endpoint dinámico
 
-  fetch("/api/palabras/words", {
+  fetch("http://localhost:3000/api/palabras/words", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -306,7 +306,7 @@ communicationManager.on("powerup_reset_words", (msg) => {
   errorCount.value = 0;
 
   // Pedir nuevas palabras al servidor
-  fetch("/api/palabras/words", {
+  fetch("http://localhost:3000/api/palabras/words", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -675,10 +675,10 @@ const slideInUpClass = computed(() => ({
   <pantallaFinal v-if="mostrarPantallaFinal" :winner="ganador" @go-home="mostrarPantallaFinal = false" />
 
   <!-- Audios -->
-  <audio ref="keyPlayer" src="/assets/sonido/sonidoAccion/mech-keyboard.mp3"></audio>
-  <audio src="/assets/sonido/sonidoAccion/carddrop.mp3"></audio>
+  <audio ref="keyPlayer" src="/public/assets/sonido/sonidoAccion/mech-keyboard.mp3"></audio>
+  <audio src="/public/assets/sonido/sonidoAccion/carddrop.mp3"></audio>
   <button v-on:click="musica()" id="btn_music">
-    <img src="/assets/img/iconos/musica.jpg" alt="" />
+    <img src="/public/assets/img/iconos/musica.jpg" alt="" />
   </button>
 
   <!-- Div para la estadistica de jugadores -->
@@ -766,12 +766,12 @@ const slideInUpClass = computed(() => ({
           <span>{{ playerNameActual }}</span>
         </p>
         <p>
-          <img src="/assets/img/iconos/ficha.png" alt="" />
+          <img src="/public/assets/img/iconos/ficha.png" alt="" />
           <span>{{ completedWords }}</span>
         </p>
 
         <p>
-          <img src="/assets/img/iconos/calavera.jpg" alt="" />
+          <img src="/public/assets/img/iconos/calavera.jpg" alt="" />
           <span :class="{ 'error-count': errorCount > 0 }">{{
             errorCount
           }}</span>
@@ -789,15 +789,15 @@ const slideInUpClass = computed(() => ({
     <div id="contenedor-juego">
       <div id="crupier-entero" :class="reboteClass">
         <div id="crupier-normal" :style="{ display: crupierState === 'normal' ? 'flex' : 'none' }">
-          <img src="/assets/img/crupier-normal_oficial.png" alt="Crupier Normal" />
+          <img src="/public/assets/img/crupier-normal_oficial.png" alt="Crupier Normal" />
         </div>
 
         <div id="crupier-confundido" :style="{ display: showConfusedImage ? 'flex' : 'none' }">
-          <img src="/assets/img/crupier-confundido_oficial.png" alt="Crupier Confundido" />
+          <img src="/public/assets/img/crupier-confundido_oficial.png" alt="Crupier Confundido" />
         </div>
 
         <div id="crupier-carta" :style="{ display: showPowerupImage ? 'flex' : 'none' }">
-          <img src="/assets/img/crupier-carta_oficial.png" alt="Crupier Carta" />
+          <img src="/public/assets/img/crupier-carta_oficial.png" alt="Crupier Carta" />
         </div>
       </div>
 
