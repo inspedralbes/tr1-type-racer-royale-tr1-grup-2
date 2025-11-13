@@ -3,10 +3,10 @@ import { ref, onMounted, onUnmounted, computed, nextTick, watch } from "vue";
 import communicationManager from "../services/communicationManager.js";
 import { playerName, playerId } from "../logic/globalState.js";
 import AnimacionJuego from "./interfazAnimacion.vue";
+import pantallaFinal from "./pantallaFinal.vue";
 //Import sonidos y musica
-import musicaAmbiente from "../../public/assets/sonido/Creepy_Casino.mp3";
-import sound from "../../public/assets/sonido/sonidoAccion/carddrop.mp3";
-import sound1 from "../../public/assets/sonido/sonidoAccion/mech-keyboard.mp3";
+import sound from "/assets/sonido/sonidoAccion/carddrop.mp3";
+import sound1 from "/assets/sonido/sonidoAccion/mech-keyboard.mp3";
 
 //Variables para manejar el dialogo del crupier
 const dialogTextEntrada = ref([
@@ -58,7 +58,7 @@ const show2DUI = ref(false);
 const animationDuration = ref(0);
 const otrosJugadores = ref([]);
 const todosLosJugadores = ref([]);
-const audioPlayer = new Audio(musicaAmbiente);
+const audioPlayer = new Audio("/assets/sonido/Creepy_Casino.mp3");
 const pasarLetra = new Audio(sound);
 const teclado = new Audio(sound1);
 const iconosDisponibles = [
@@ -111,6 +111,13 @@ watch(show2DUI, (newValue) => {
     empiezaJuego();
   }
 });
+watch(mostrarPantallaFinal, (nuevoValor) => {
+  console.log("asdasdasd")
+  if (nuevoValor) {
+    
+    console.log("🎵 Música detenida al mostrar Pantalla Final");
+  }
+});
 
 // 🟦 FUNCIONES DE SOCKET ADAPTADAS A COMMUNICATION MANAGER
 
@@ -130,6 +137,9 @@ function onUpdatePlayerWords(msg) {
     if (status === "finished") {
       ganador.value = playerNameActual || playerIdActual;
       emit("juego-finalizado", ganador.value);
+      mostrarPantallaFinal.value = true;
+      audioPlayer.pause();
+      audioPlayer.currentTime = 0;
       console.log(
         `🎉 Has terminado todas las palabras. Eres el ganador: ${ganador.value}`
       );
@@ -148,7 +158,9 @@ function onUpdateProgress(msg) {
   if (ganadorJugador) {
     ganador.value = ganadorJugador.username;
     emit('juego-finalizado', ganador.value);
-    console.log(`🎉 La partida terminó. Ganador: ${ganadorJugador.playerId}`);
+    mostrarPantallaFinal.value = true;
+    console.log(`🎉 La partida terminó. Ganador: ${ganadorJugador.playerId}`
+    );
   }
 }
 
