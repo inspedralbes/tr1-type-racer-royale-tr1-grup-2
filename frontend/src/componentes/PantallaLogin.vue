@@ -67,7 +67,7 @@ function errorProceso(message) {
           ></path>
         </svg>
         <!-- Svg ChipCard -->
-        <svg
+        <!-- <svg
           version="1.1"
           class="chip"
           id="Layer_1"
@@ -113,7 +113,7 @@ function errorProceso(message) {
                 MjMtMDItMTNUMDg6MTU6MjkrMDA6MDA0eo8JAAAAKHRFWHRkYXRlOnRpbWVzdGFtcAAyMDIzLTAy
                 LTEzVDA4OjE1OjI5KzAwOjAwY2+u1gAAAABJRU5ErkJggg=="
           ></image>
-        </svg>
+        </svg> -->
         <!-- Svg NFC -->
         <svg
           version="1.1"

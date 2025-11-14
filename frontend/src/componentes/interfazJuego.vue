@@ -24,14 +24,8 @@ const dialogTextEntrada = ref([
   "Si estáis aquí es porque ya sabeis lo que se viene.",
   "Muy bien, comencemos.",
 ]);
-const dialogTextError = ref([
-  "Eso no esta bien.",
-  "Vuelve a intentarlo.",
-]);
-const dialogTextAcierto = ref([
-  "Buen trabajo.",
-  "Bien hecho.",
-]);
+const dialogTextError = ref(["Eso no esta bien.", "Vuelve a intentarlo."]);
+const dialogTextAcierto = ref(["Buen trabajo.", "Bien hecho."]);
 const dialogTextPowerUp = ref([
   "Vamos a animar un poco las cosas, te parece?",
   "No la fastidies.",
@@ -47,18 +41,18 @@ const audioDialogoErrores = [
   //Voz de error
   "/assets/sonido/vozCrupier/frasesError/mns1_e.mp3",
   "/assets/sonido/vozCrupier/frasesError/mns2_e.mp3",
-]
+];
 const audioDialogoAciertos = [
   //Voz de acierto
   "/assets/sonido/vozCrupier/frasesAcierto/mns1_a.mp3",
   "/assets/sonido/vozCrupier/frasesAcierto/mns2_a.mp3",
-]
+];
 const audioDialogoPowerUps = [
   //Voz de power up
   "/assets/sonido/vozCrupier/frasesPowerUp/mns1_pu.mp3",
   "/assets/sonido/vozCrupier/frasesPowerUp/mns2_pu.mp3",
   "/assets/sonido/vozCrupier/frasesPowerUp/mns3_pu.mp3",
-]
+];
 
 // Variables para manejar 3D / crupier / ambiente / iconos(Temp)
 const crupierState = ref("normal");
@@ -81,7 +75,6 @@ const iconosDisponibles = [
 ];
 const jugadorIcono = ref("/assets/img/userIconos/corazon.png");
 
-
 // Variables para manejar la pantalla final
 const mostrarPantallaFinal = ref(false);
 const ganador = ref("");
@@ -97,7 +90,6 @@ const palabraInvalida = ref(false);
 const playerIdActual = playerId.value;
 const playerNameActual = playerName.value;
 const comenzar = ref(false);
-
 
 // Power-Ups
 const powerupsDisponibles = ref([]); // cartas que aparecen en pantalla para reclamar
@@ -122,7 +114,7 @@ const roomId = ref(props.room.roomId);
 watch(palabraUser, (newVal, oldVal) => {
   if (newVal.length > oldVal.length && newVal.length > 0) {
     teclado.currentTime = 0;
-    teclado.play().catch((error) => { });
+    teclado.play().catch((error) => {});
   }
 });
 watch(show2DUI, (newValue) => {
@@ -131,15 +123,13 @@ watch(show2DUI, (newValue) => {
   }
 });
 watch(mostrarPantallaFinal, (nuevoValor) => {
-  console.log("asdasdasd")
+  console.log("asdasdasd");
   if (nuevoValor) {
-
     console.log("🎵 Música detenida al mostrar Pantalla Final");
   }
 });
 
 // FUNCIONES DE SOCKET ADAPTADAS A COMMUNICATION MANAGER
-
 
 // // FUNCION QUE RECLAMA UNA CARTA POWER-UP
 // function reclamarCarta(carta) {
@@ -153,10 +143,10 @@ watch(mostrarPantallaFinal, (nuevoValor) => {
 //   });
 // }
 
-
-// FUNCION QUE MANEJA EL USO DEL POWERUP 
+// FUNCION QUE MANEJA EL USO DEL POWERUP
 function usarPowerup(indice) {
   const carta = misPowerups.value[indice];
+  console.log("carta actual:" + carta);
   if (!carta) return;
 
   // Emitir al backend para que aplique el efecto a los demás
@@ -165,8 +155,8 @@ function usarPowerup(indice) {
       playerId: playerId.value,
       roomId: roomId.value,
       cartaId: carta.id,
-      efecto: carta.efecto
-    }
+      efecto: carta.efecto,
+    },
   });
 
   // Aplicar efecto local solo si te afecta a ti
@@ -175,7 +165,6 @@ function usarPowerup(indice) {
   misPowerups.value.splice(indice, 1);
   console.log("Powerup usado:", carta.nombre);
 }
-
 
 // FUNCION QUE MANEJA LA ACTUALIZACION DE PALABRAS DEL JUGADOR
 function onUpdatePlayerWords(msg) {
@@ -208,20 +197,19 @@ function onUpdateProgress(msg) {
   const { players } = msg.data;
   console.log("Datos brutos de jugadores del servidor:", players);
   players.forEach((p) => {
-    console.log(`Jugador ${p.id}: ${p.completedWords} palabras completadas, estado: ${p.status}`);
-    
+    console.log(
+      `Jugador ${p.id}: ${p.completedWords} palabras completadas, estado: ${p.status}`
+    );
   });
   actualizarJugadores(players);
-  const ganadorJugador = players.find(p => p.status === "finished");
+  const ganadorJugador = players.find((p) => p.status === "finished");
   if (ganadorJugador) {
     ganador.value = ganadorJugador.username;
-    emit('juego-finalizado', ganador.value);
+    emit("juego-finalizado", ganador.value);
     mostrarPantallaFinal.value = true;
-    console.log(`🎉 La partida terminó. Ganador: ${ganadorJugador.playerId}`
-    );
+    console.log(`🎉 La partida terminó. Ganador: ${ganadorJugador.playerId}`);
   }
 }
-
 
 // MOUNT / UNMOUNT
 onMounted(() => {
@@ -238,16 +226,18 @@ onMounted(() => {
 
   // 🔹 Fetch palabras iniciales usando endpoint dinámico
 
-  fetch("http://typebet.daw.inspedralbes.cat:3000/api/palabras/words", {
+  fetch("http://localhost:3000/api/palabras/words", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   })
-    .then(res => res.ok ? res.json() : Promise.reject(`Error HTTP: ${res.status}`))
-    .then(data => {
+    .then((res) =>
+      res.ok ? res.json() : Promise.reject(`Error HTTP: ${res.status}`)
+    )
+    .then((data) => {
       listaEntera.value = data.data.initialWords;
     })
-    .catch(err => console.error("Error al obtener palabras:", err)); // Escuchar eventos del servidor
+    .catch((err) => console.error("Error al obtener palabras:", err)); // Escuchar eventos del servidor
 
   // Escuchar eventos
   communicationManager.on("update_player_words", onUpdatePlayerWords);
@@ -273,7 +263,9 @@ onMounted(() => {
     const index = Math.floor(Math.random() * audioDialogoPowerUps.length);
     const voz = new Audio(audioDialogoPowerUps[index]);
     voz.volume = 0.1;
-    voz.play().catch((e) => console.warn("No se pudo reproducir voz powerup:", e));
+    voz
+      .play()
+      .catch((e) => console.warn("No se pudo reproducir voz powerup:", e));
 
     // Ocultar después de unos segundos
     setTimeout(() => {
@@ -284,14 +276,20 @@ onMounted(() => {
 
   communicationManager.on("powerup_applied", (msg) => {
     const { efecto, from } = msg.data;
-    console.log(`los valores son de efecto: ${efecto}, from: ${from}, y escudo ${escudoActivo.value}`);
+    console.log(
+      `los valores son de efecto: ${efecto}, from: ${from}, y escudo ${escudoActivo.value}`
+    );
 
     if (escudoActivo.value && from !== playerId.value) {
       console.log(`Escudo activo, ignorando efecto ${efecto} de ${from}`);
       return;
     }
 
-    if (from === playerId.value && efecto !== "shield") {
+    if (
+      from === playerId.value &&
+      efecto !== "shield" &&
+      efecto !== "reset_game"
+    ) {
       console.log(`Ignorando mi propio efecto ${efecto}`);
       return;
     }
@@ -306,9 +304,8 @@ onMounted(() => {
       case "shield":
         // No hace nada a otros, es protección
         break;
-      // case "reset_game":
-      //   reiniciarPartida(); // Este efecto local solo puede resetear algo visual o contadores si quieres
-      //   break;
+      case "reset_game":
+        break;
     }
 
     console.log(`💫 Powerup ${efecto} activado por ${from}`);
@@ -325,29 +322,30 @@ onMounted(() => {
     palabraInvalida.value = false;
     errorCount.value = 0;
 
-  // Pedir nuevas palabras al servidor
-  fetch("http://typebet.daw.inspedralbes.cat:3000/api/palabras/words", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      roomId: roomId.value,
-      playerId: playerId.value,
-      playerName: playerName.value,
-      count: 10,
-    }),
-  })
-    .then(res => res.ok ? res.json() : Promise.reject(`Error HTTP: ${res.status}`))
-    .then(data => {
-      listaEntera.value = data.data.initialWords;
-      console.log("✅ Palabras reiniciadas:", listaEntera.value);
+    // Pedir nuevas palabras al servidor
+    fetch("http://localhost:3000/api/palabras/words", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        roomId: roomId.value,
+        playerId: playerId.value,
+        playerName: playerName.value,
+        count: 10,
+      }),
     })
-    .catch(err => console.error("❌ Error al reiniciar palabras:", err));
-});
-
+      .then((res) =>
+        res.ok ? res.json() : Promise.reject(`Error HTTP: ${res.status}`)
+      )
+      .then((data) => {
+        listaEntera.value = data.data.initialWords;
+        console.log("✅ Palabras reiniciadas:", listaEntera.value);
+      })
+      .catch((err) => console.error("❌ Error al reiniciar palabras:", err));
+  });
 
   // 🔹 Powerup reclamado por el jugador
-communicationManager.on("powerup_spawned", (msg) => {
-  const { carta, playerId: ganadorId, powerups } = msg.data;
+  communicationManager.on("powerup_spawned", (msg) => {
+    const { carta, playerId: ganadorId, powerups } = msg.data;
 
     // Si es mi carta, la agrego a misPowerups
     if (ganadorId === playerId.value) {
@@ -389,8 +387,6 @@ communicationManager.on("powerup_spawned", (msg) => {
   });
 });
 
-
-
 onUnmounted(() => {
   // Desregistrar eventos
   communicationManager.off("update_player_words", onUpdatePlayerWords);
@@ -401,7 +397,6 @@ onUnmounted(() => {
 
   // communicationManager.emit("leave_room", { playerId });
   // communicationManager.disconnect();
-
 });
 
 // Funcion para actualizar la lista de jugadors
@@ -428,7 +423,7 @@ function actualizarJugadores(players) {
     if (idJugador === idPropio) {
       jugadorIcono.value = icono;
     } else {
-      console.log(`Inspeccionando jugador ${p.username}:`, p); 
+      console.log(`Inspeccionando jugador ${p.username}:`, p);
 
       otrosJugadores.value.push({
         id: "temp_" + tempId,
@@ -436,14 +431,14 @@ function actualizarJugadores(players) {
         completedWords: p.completedWords || 0,
         status: p.status || "playing",
         icono: icono,
-        powerupsNum: p.powerupsNum || 0, 
+        powerupsNum: p.powerupsNum || 0,
       });
     }
 
     tempId++;
   }
 
-  console.log("Otros jugadores (resultado final):", otrosJugadores.value); 
+  console.log("Otros jugadores (resultado final):", otrosJugadores.value);
 }
 
 // FUNCION QUE VALIDA SI CADA CARÁCTER ESTA BIEN ESCRITO
@@ -521,7 +516,10 @@ function onInputKeyDown(event) {
       } else {
         // palabra de powerup incorrecta
         errorCount.value++;
-        console.warn("❌ Palabra de powerup incorrecta. Errores:", errorCount.value);
+        console.warn(
+          "❌ Palabra de powerup incorrecta. Errores:",
+          errorCount.value
+        );
       }
     }
     // 🔹 Si no hay powerup, se procesa palabra normal
@@ -536,8 +534,7 @@ function onInputKeyDown(event) {
         );
       });
       hablarCrupierAcierto();
-    }
-    else {
+    } else {
       errorCount.value++;
       console.warn("Palabra incorrecta. Errores:", errorCount.value);
       hablarCrupierError();
@@ -612,7 +609,6 @@ function hablarCrupier(index) {
 
   crupierState.value = "normal";
   voz.play().catch((e) => console.warn("No se pudo reproducir el audio:", e));
-
 }
 
 function hablarCrupierError() {
@@ -645,9 +641,10 @@ function hablarCrupierAcierto() {
   voz.volume = 0.1;
   crupierState.value = "normal";
 
-  voz.play().catch((e) => console.warn("No se pudo reproducir voz acierto:", e));
+  voz
+    .play()
+    .catch((e) => console.warn("No se pudo reproducir voz acierto:", e));
 }
-
 
 // 🧮 Computadas
 const palabrasEnVista = computed(() => {
@@ -705,10 +702,17 @@ const slideInUpClass = computed(() => ({
 </script>
 
 <template>
-  <pantallaFinal v-if="mostrarPantallaFinal" :winner="ganador" @go-home="mostrarPantallaFinal = false" />
+  <pantallaFinal
+    v-if="mostrarPantallaFinal"
+    :winner="ganador"
+    @go-home="mostrarPantallaFinal = false"
+  />
 
   <!-- Audios -->
-  <audio ref="keyPlayer" src="/public/assets/sonido/sonidoAccion/mech-keyboard.mp3"></audio>
+  <audio
+    ref="keyPlayer"
+    src="/public/assets/sonido/sonidoAccion/mech-keyboard.mp3"
+  ></audio>
   <audio src="/public/assets/sonido/sonidoAccion/carddrop.mp3"></audio>
   <button v-on:click="musica()" id="btn_music">
     <img src="/public/assets/img/iconos/musica.jpg" alt="" />
@@ -717,8 +721,11 @@ const slideInUpClass = computed(() => ({
   <!-- Div para la estadistica de jugadores -->
 
   <div v-if="comenzar" class="player-container-exterior">
-    <div v-for="(jugador, index) in otrosJugadores" :key="jugador.id"
-      :class="['other-player-stat', `player-pos-${index}`]">
+    <div
+      v-for="(jugador, index) in otrosJugadores"
+      :key="jugador.id"
+      :class="['other-player-stat', `player-pos-${index}`]"
+    >
       <div class="player-name-chip">
         {{ jugador.username }}
       </div>
@@ -731,26 +738,37 @@ const slideInUpClass = computed(() => ({
   <!-- Lista que muestra usuarios alrededor -->
 
   <div v-if="comenzar" class="iconos-jugadores-container">
-    <div v-for="(jugador, index) in otrosJugadores" :key="jugador.id" class="icono-jugador-item">
+    <div
+      v-for="(jugador, index) in otrosJugadores"
+      :key="jugador.id"
+      class="icono-jugador-item"
+    >
       <img :src="jugador.icono" alt="icono" class="icono-jugador-img" />
       <p class="icono-jugador-nombre">{{ jugador.username }}</p>
 
       <!-- Cartas de powerup -->
       <div class="powerups-mini">
-      <img
-        v-for="i in jugador.powerupsNum"
-        :key="i"
-        src="/assets/img/imgPowerUps/reversoCartas.png"
-        alt="PowerUp"
-        class="powerup-mini-card"
-      />
-  </div>
-  </div>
+        <img
+          v-for="i in jugador.powerupsNum"
+          :key="i"
+          src="/assets/img/imgPowerUps/reversoCartas.png"
+          alt="PowerUp"
+          class="powerup-mini-card"
+        />
+      </div>
+    </div>
   </div>
   <!-- Lista de palabras / Input / Estadisticas del usuario que esta jugando -->
   <div v-if="comenzar" class="bottom-ui-container" :class="slideInUpClass">
-    <ul class="lista-palabras" :class="{ 'upside-down': efectoUpsideDownActivo }">
-      <li v-for="(palabra, index) in palabrasEnVista" :key="index" :class="{ 'palabra-actual': index === 0 }">
+    <ul class="lista-palabras">
+      <li
+        v-for="(palabra, index) in palabrasEnVista"
+        :key="index"
+        :class="{
+          'palabra-actual': index === 0,
+          'upside-down': efectoUpsideDownActivo,
+        }"
+      >
         <template v-if="index === 0">
           <span class="escrita-correcta">{{
             esValido ? palabraUser : ""
@@ -767,15 +785,21 @@ const slideInUpClass = computed(() => ({
       </li>
     </ul>
 
-  
     <!-- Mis Power-Ups -->
     <div class="mis-powerups">
       <h3>Mis cartas</h3>
       <div class="cartas">
-        <div v-for="carta in misPowerups" :key="carta.id" class="carta-container">
+        <div
+          v-for="carta in misPowerups"
+          :key="carta.id"
+          class="carta-container"
+        >
           <!-- Imagen base de la carta -->
           <div class="carta-imagen">
-            <img src="/assets/img/imgPowerUps/carta_joker_oficial.png" alt="Carta Power-Up" />
+            <img
+              src="/assets/img/imgPowerUps/carta_joker_oficial.png"
+              alt="Carta Power-Up"
+            />
           </div>
           <!-- Nombre que aparece al hacer hover -->
           <div class="carta-overlay">
@@ -787,13 +811,23 @@ const slideInUpClass = computed(() => ({
 
     <div class="input-stats-row">
       <div class="contenedor-texto">
-        <input type="text" class="text-input" :class="{
-          'input-error': !esValido && palabraUser.length > 0,
-          'input-ok': esValido && palabraUser.length > 0,
-        }" v-model="palabraUser" @keydown="onInputKeyDown" @paste="onInputPaste" :placeholder="palabraObjetivo
-          ? `Escribe: ${palabraObjetivo}`
-          : 'Cargando palabras...'
-          " autofocus />
+        <input
+          type="text"
+          class="text-input"
+          :class="{
+            'input-error': !esValido && palabraUser.length > 0,
+            'input-ok': esValido && palabraUser.length > 0,
+          }"
+          v-model="palabraUser"
+          @keydown="onInputKeyDown"
+          @paste="onInputPaste"
+          :placeholder="
+            palabraObjetivo
+              ? `Escribe: ${palabraObjetivo}`
+              : 'Cargando palabras...'
+          "
+          autofocus
+        />
       </div>
       <div class="stats-right">
         <p class="icono-propio">
@@ -818,25 +852,49 @@ const slideInUpClass = computed(() => ({
   <!-- Animacion / Crupier / Dialogo Crupier -->
 
   <div class="game-background">
-    <AnimacionJuego @animationFinished="handleAnimationFinished"
-      @animationDurationCalculated="handleAnimationDuration" />
+    <AnimacionJuego
+      @animationFinished="handleAnimationFinished"
+      @animationDurationCalculated="handleAnimationDuration"
+    />
 
     <div id="contenedor-juego">
       <div id="crupier-entero" :class="reboteClass">
-        <div id="crupier-normal" :style="{ display: crupierState === 'normal' ? 'flex' : 'none' }">
-          <img src="/public/assets/img/crupier-normal_oficial.png" alt="Crupier Normal" />
+        <div
+          id="crupier-normal"
+          :style="{ display: crupierState === 'normal' ? 'flex' : 'none' }"
+        >
+          <img
+            src="/public/assets/img/crupier-normal_oficial.png"
+            alt="Crupier Normal"
+          />
         </div>
 
-        <div id="crupier-confundido" :style="{ display: showConfusedImage ? 'flex' : 'none' }">
-          <img src="/public/assets/img/crupier-confundido_oficial.png" alt="Crupier Confundido" />
+        <div
+          id="crupier-confundido"
+          :style="{ display: showConfusedImage ? 'flex' : 'none' }"
+        >
+          <img
+            src="/public/assets/img/crupier-confundido_oficial.png"
+            alt="Crupier Confundido"
+          />
         </div>
 
-        <div id="crupier-carta" :style="{ display: showPowerupImage ? 'flex' : 'none' }">
-          <img src="/public/assets/img/crupier-carta_oficial.png" alt="Crupier Carta" />
+        <div
+          id="crupier-carta"
+          :style="{ display: showPowerupImage ? 'flex' : 'none' }"
+        >
+          <img
+            src="/public/assets/img/crupier-carta_oficial.png"
+            alt="Crupier Carta"
+          />
         </div>
       </div>
 
-      <div class="input-dialog-container" :class="reboteClass" v-if="!comenzar || mostrarDialogoPowerUp">
+      <div
+        class="input-dialog-container"
+        :class="reboteClass"
+        v-if="!comenzar || mostrarDialogoPowerUp"
+      >
         <div class="input__container">
           <div class="shadow__input"></div>
           <p v-if="mostrarDialogoPowerUp">{{ mensajePowerUp }}</p>
@@ -845,7 +903,6 @@ const slideInUpClass = computed(() => ({
       </div>
 
       <!-- Input de el crupier para las cartas -->
-
     </div>
   </div>
 </template>
@@ -860,7 +917,8 @@ const slideInUpClass = computed(() => ({
 
 @font-face {
   font-family: Font2;
-  src: url(../../public/assets/fuente/macabre/The\ Macabre.otf) format("opentype");
+  src: url(../../public/assets/fuente/macabre/The\ Macabre.otf)
+    format("opentype");
 }
 
 /* --- ESTILOS DE FONDO Y ESTRUCTURA --- */
@@ -869,7 +927,6 @@ const slideInUpClass = computed(() => ({
   transform: rotate(180deg);
   display: inline-block;
 }
-
 
 .game-background {
   position: fixed;
@@ -934,10 +991,12 @@ const slideInUpClass = computed(() => ({
   position: relative;
   z-index: 10;
   overflow: hidden;
-  background: linear-gradient(to bottom,
-      rgba(10, 0, 0, 0.9) 0%,
-      rgba(20, 0, 0, 0.7) 70%,
-      rgba(0, 0, 0, 0) 100%);
+  background: linear-gradient(
+    to bottom,
+    rgba(10, 0, 0, 0.9) 0%,
+    rgba(20, 0, 0, 0.7) 70%,
+    rgba(0, 0, 0, 0) 100%
+  );
 
   border: 1px solid rgba(139, 90, 43, 0.4);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7), 0 0 15px rgba(139, 90, 43, 0.3);
@@ -1027,7 +1086,8 @@ const slideInUpClass = computed(() => ({
   box-shadow: 6px 6px 12px rgba(0, 0, 0, 0.45);
   text-align: center;
   justify-content: center;
-  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.7) sepia(0.2) hue-rotate(340deg) saturate(1.5);
+  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.7) sepia(0.2)
+    hue-rotate(340deg) saturate(1.5);
   z-index: 15;
 
   position: absolute;
@@ -1052,7 +1112,6 @@ const slideInUpClass = computed(() => ({
   color: #555555;
   font-weight: normal;
 }
-
 
 /* --- AJUSTES DEL CRUPIER Y DIÁLOGO --- */
 
@@ -1080,13 +1139,15 @@ const slideInUpClass = computed(() => ({
 
 #crupier-entero img {
   max-height: 70vh;
-  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.5) sepia(0.5) hue-rotate(340deg) saturate(1.5);
+  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.5) sepia(0.5)
+    hue-rotate(340deg) saturate(1.5);
 }
 
 #crupier-confundido img {
   max-height: 80vh;
   margin-top: -5vh;
-  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.5) sepia(0.5) hue-rotate(340deg) saturate(1.5);
+  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.5) sepia(0.5)
+    hue-rotate(340deg) saturate(1.5);
 }
 
 #crupier-normal,
@@ -1137,9 +1198,11 @@ const slideInUpClass = computed(() => ({
   bottom: 0;
   z-index: -1;
   transform: translateZ(-50px);
-  background: linear-gradient(45deg,
-      rgba(0, 0, 0, 0.6) 0%,
-      + rgba(0, 0, 0, 0.3) 100%);
+  background: linear-gradient(
+    45deg,
+    rgba(0, 0, 0, 0.6) 0%,
+    + rgba(0, 0, 0, 0.3) 100%
+  );
   filter: blur(30px);
 }
 
@@ -1315,7 +1378,6 @@ const slideInUpClass = computed(() => ({
   }
 }
 
-
 /* --- Musica o sonido de Juego --- */
 #btn_music img {
   width: 30px;
@@ -1339,8 +1401,6 @@ const slideInUpClass = computed(() => ({
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
-
-
 /* ESTILO POWERUPS CARTAS */
 .powerups-disponibles {
   display: flex;
@@ -1362,7 +1422,7 @@ const slideInUpClass = computed(() => ({
 }
 
 .mis-powerups h3 {
-  font-family: 'Cinzel Decorative', serif;
+  font-family: "Cinzel Decorative", serif;
   color: #ffd700;
   text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
   margin-bottom: 12px;
@@ -1388,7 +1448,6 @@ const slideInUpClass = computed(() => ({
 .carta-container:hover {
   transform: translateY(-8px) scale(1.05);
 }
-
 
 .carta-imagen {
   width: 100%;
@@ -1438,17 +1497,16 @@ const slideInUpClass = computed(() => ({
 }
 
 .powerups-mini {
-  display: flex; 
-  justify-content: center; 
-  margin-top: 5px; 
-  gap: 2px; 
+  display: flex;
+  justify-content: center;
+  margin-top: 5px;
+  gap: 2px;
 }
 
-
 .powerup-mini-card {
-  width: 15px; 
-  height: 20px; 
-  border: 1px solid gold; 
+  width: 15px;
+  height: 20px;
+  border: 1px solid gold;
   border-radius: 2px;
   box-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
 }

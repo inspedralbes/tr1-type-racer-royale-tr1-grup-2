@@ -20,7 +20,7 @@ onMounted(async () => {
   const token = localStorage.getItem("token");
   if (token) {
     try {
-      const response = await fetch("http://typebet.daw.inspedralbes.cat:3000/api/user/user", {
+      const response = await fetch("http:/localhost:3000/api/user/user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token }),
@@ -71,9 +71,11 @@ function handleLobbyLeave() {
   console.log("APP: Recibido 'leave-lobby'. Volviendo a pantalla de salas.");
 
   if (jugador.value && jugador.value.playerId) {
-    communicationManager.emit("leave_game", { playerId: jugador.value.playerId });
+    communicationManager.emit("leave_game", {
+      playerId: jugador.value.playerId,
+    });
   }
-  
+
   vistaActual.value = "salas";
   roomSeleccionada.value = null; // Limpiamos la sala seleccionada
 }
