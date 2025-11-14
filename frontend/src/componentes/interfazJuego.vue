@@ -82,11 +82,11 @@ const iconosDisponibles = [
 const jugadorIcono = ref("/assets/img/userIconos/corazon.png");
 
 
-// 🟩 Variables para manejar la pantalla final
+// Variables para manejar la pantalla final
 const mostrarPantallaFinal = ref(false);
 const ganador = ref("");
 
-// 🟩 Variables reactivas
+// Variables reactivas
 const listaEntera = ref([]);
 const palabraUser = ref("");
 const completedWords = ref(0);
@@ -98,8 +98,8 @@ const playerIdActual = playerId.value;
 const playerNameActual = playerName.value;
 const comenzar = ref(false);
 
-// powerups 
-// 🟩 Power-Ups
+
+// Power-Ups
 const powerupsDisponibles = ref([]); // cartas que aparecen en pantalla para reclamar
 const misPowerups = ref([]); // cartas que ya tengo asignadas
 const currentPowerupWord = ref(null); // palabra activa de powerup
@@ -138,7 +138,7 @@ watch(mostrarPantallaFinal, (nuevoValor) => {
   }
 });
 
-// 🟦 FUNCIONES DE SOCKET ADAPTADAS A COMMUNICATION MANAGER
+// FUNCIONES DE SOCKET ADAPTADAS A COMMUNICATION MANAGER
 
 
 // // FUNCION QUE RECLAMA UNA CARTA POWER-UP
@@ -223,7 +223,7 @@ function onUpdateProgress(msg) {
 }
 
 
-// 🟩 MOUNT / UNMOUNT
+// MOUNT / UNMOUNT
 onMounted(() => {
   // Conectar socket
   communicationManager.connect();
@@ -247,7 +247,7 @@ onMounted(() => {
     .then(data => {
       listaEntera.value = data.data.initialWords;
     })
-    .catch(err => console.error("❌ Error al obtener palabras:", err)); // Escuchar eventos del servidor
+    .catch(err => console.error("Error al obtener palabras:", err)); // Escuchar eventos del servidor
 
   // Escuchar eventos
   communicationManager.on("update_player_words", onUpdatePlayerWords);
@@ -261,7 +261,7 @@ onMounted(() => {
     cartaActual.value = carta;
     powerupsDisponibles.value = [carta];
 
-    console.log("💥 Powerup disponible:", carta, "Palabra:", palabra);
+    console.log("Powerup disponible:", carta, "Palabra:", palabra);
 
     // Mostrar en el cuadro del crupier
     mensajePowerUp.value = `${carta.nombre}: ${carta.descripcion}`;
@@ -287,12 +287,12 @@ onMounted(() => {
     console.log(`los valores son de efecto: ${efecto}, from: ${from}, y escudo ${escudoActivo.value}`);
 
     if (escudoActivo.value && from !== playerId.value) {
-      console.log(`🛡️ Escudo activo, ignorando efecto ${efecto} de ${from}`);
+      console.log(`Escudo activo, ignorando efecto ${efecto} de ${from}`);
       return;
     }
 
     if (from === playerId.value && efecto !== "shield") {
-      console.log(`🙈 Ignorando mi propio efecto ${efecto}`);
+      console.log(`Ignorando mi propio efecto ${efecto}`);
       return;
     }
 
@@ -373,13 +373,13 @@ onMounted(() => {
     );
 
     // Mostrar visualmente que se ha ganado una carta (para todos)
-    console.log(`🃏 Jugador ${playerId.value} ha ganado la carta`, carta);
+    console.log(`Jugador ${playerId.value} ha ganado la carta`, carta);
   });
 
   // 🔹 Powerup reclamado por otros jugadores (solo para UI si quieres mostrarlo)
   communicationManager.on("powerup_claimed", (msg) => {
     const { carta, playerId: claimant } = msg.data;
-    console.log(`🎁 Powerup reclamado por ${claimant}:`, carta);
+    console.log(`Powerup reclamado por ${claimant}:`, carta);
 
     // Eliminarlo de las palabras disponibles si coincidía
     if (cartaActual.value && cartaActual.value.id === carta.id) {
@@ -476,7 +476,7 @@ function validarInput() {
   return esValidaAhora;
 }
 
-// 🧠 MANEJA LA PULSACIÓN DE LA TECLA ESPACIO
+// MANEJA LA PULSACIÓN DE LA TECLA ESPACIO
 function onInputKeyDown(event) {
   if (slowEnemyActivo.value) {
     event.preventDefault();
@@ -504,7 +504,7 @@ function onInputKeyDown(event) {
     // 🔹 Si hay una palabra de powerup activa
     if (currentPowerupWord.value) {
       if (palabraUser.value === currentPowerupWord.value) {
-        // ✅ Reclama el powerup
+        // Reclama el powerup
         completedWords.value++; // opcional: contar como completada también
         currentPowerupWord.value = null;
 
@@ -767,18 +767,8 @@ const slideInUpClass = computed(() => ({
       </li>
     </ul>
 
-    <!-- 🃏 Power-Ups disponibles para reclamar -->
-    <!-- <div class="powerups-disponibles">
-      <h3>Cartas disponibles</h3>
-      <div class="cartas">
-        <div v-for="carta in powerupsDisponibles" :key="carta.id" class="carta">
-          <strong>{{ carta.nombre }}</strong>
-          <p>{{ carta.descripcion }}</p>
-        </div>
-      </div>
-    </div> -->
-
-    <!-- 🧰 Mis Power-Ups -->
+  
+    <!-- Mis Power-Ups -->
     <div class="mis-powerups">
       <h3>Mis cartas</h3>
       <div class="cartas">
