@@ -28,6 +28,19 @@ export function registerGameEvents(io, socket) {
 
       // Emitir actualización de powerup al jugador
       io.to(playerId).emit("powerup_claimed", { data: { carta } });
+
+      // Después de que alguien reclame un powerup
+    io.in(roomId).emit("powerup_update", {
+      data: {
+        players: room.players.map(p => ({
+          playerId: p.playerId,
+          username: p.username,
+          icono: p.icono,
+          powerups: p.powerups
+        }))
+      }
+    });
+
     } else {
       return;
     }
@@ -47,6 +60,18 @@ export function registerGameEvents(io, socket) {
       io.to(jugadorBonus.playerId).emit("powerup_claimed", { data: { carta: cartaBonus } });
       console.log(`💡 [Powerup Bonus] Carta otorgada a ${jugadorBonus.playerId} por turno #${room.powerupTurnCounter}`);
     }
+
+    // Después de que alguien reclame un powerup
+    io.in(roomId).emit("powerup_update", {
+      data: {
+        players: room.players.map(p => ({
+          playerId: p.playerId,
+          username: p.username,
+          powerups: p.powerups
+        }))
+      }
+    });
+
   }
 
     // Limpiar palabra de powerup

@@ -342,10 +342,17 @@ onMounted(() => {
       .catch(err => console.error("❌ Error al reiniciar palabras:", err));
   });
 
+  socket.on("powerup_update", (msg) => {
+  const { players } = msg.data;
+
+  // Excluir al jugador local y actualizar otrosJugadores
+  otrosJugadores.value = players.filter(p => p.playerId !== playerId.value);
+});
+
 
   // 🔹 Powerup reclamado por el jugador
 communicationManager.on("powerup_spawned", (msg) => {
-  const { carta, playerId: ganadorId } = msg.data;
+  const { carta, playerId: ganadorId, powerups } = msg.data;
 
   // Si es mi carta, la agrego a misPowerups
   if (ganadorId === playerId.value) {
