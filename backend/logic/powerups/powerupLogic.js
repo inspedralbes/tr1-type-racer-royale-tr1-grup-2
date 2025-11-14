@@ -1,11 +1,11 @@
 // backend/game/powerups/powerupLogic.js
-import { generarPalabras, generarPalabraPowerup  } from "../wordLogic.js";
+import { obtenerPalabras, generarPalabraPowerup  } from "../wordLogic.js";
 import { generarPowerup } from "../powerups/powerupGenerator.js";
 
 const powerupTimers = {}; // timers por sala
 
 export function resetGame(cantidadPalabras = 10) {
-  return generarPalabras(cantidadPalabras);
+  return obtenerPalabras(cantidadPalabras);
 }
 
 

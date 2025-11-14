@@ -1,21 +1,21 @@
 import express from "express";
-import { generarPalabras, seleccionarRandom } from "../logic/wordLogic.js";
+import { obtenerPalabras, seleccionarRandom } from "../logic/wordLogic.js";
 import { createRoom, getRoom } from "../logic/roomsManager.js";
 
 const router = express.Router();
 
-router.post("/words", (req, res) => {
+router.post("/words", async (req, res) => {
   try {
     const { roomId, playerId, playerName, count } = req.body;
     console.log(`🔹 Generando palabras para sala ${roomId}, jugador ${playerId} (${playerName})`);
 
     let room = getRoom(roomId);
-    let selected;
+    let selected = [];
 
 
 
     if (!room) {
-      const allWords = generarPalabras(600);
+      const allWords = await obtenerPalabras(count);
       selected = seleccionarRandom(allWords, count);
       console.log(`🆕 Creando sala ${roomId} con jugador ${playerId} (${playerName})`);
       createRoom(roomId, playerId, playerName || "Jugador 1", selected);
@@ -26,11 +26,12 @@ router.post("/words", (req, res) => {
 
       if (jugador) {
         if (!jugador.words || jugador.words.length === 0) {
-          selected = generarPalabras(count);
+          selected = await obtenerPalabras(count);
+          console.log(selected)
           jugador.words = [...selected];
         } else {
           console.log(`🆕 Nuevo jugador ${playerId}, añadiendo a la sala.`);
-          selected = generarPalabras(count);
+          selected = await obtenerPalabras(count);
           room.players.push({
             playerId,
             username: playerName || `Jugador ${room.players.length + 1}`,
