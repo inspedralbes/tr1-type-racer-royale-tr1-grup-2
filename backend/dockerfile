@@ -1,16 +1,18 @@
-FROM node:18
+FROM node:18-alpine
 
 WORKDIR /usr/src/app
 
-
-# Copia los package.json y package-lock.json
+# Copiar package.json y package-lock.json
 COPY package*.json ./
 
-# Instala todas las dependencias, incluidas las de desarrollo (como nodemon)
-RUN npm install --legacy-peer-deps
+# Instalar solo dependencias de producción
+RUN npm install --only=production
 
-
-# Copia el resto de la aplicación
+# Copiar el resto del código
 COPY . .
 
+# Exponer el puerto de la app
 EXPOSE 3000
+
+# Comando para iniciar la app
+CMD ["node", "server.js"]
