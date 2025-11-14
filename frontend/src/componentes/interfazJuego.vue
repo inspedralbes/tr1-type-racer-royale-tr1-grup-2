@@ -306,7 +306,7 @@ communicationManager.on("powerup_reset_words", (msg) => {
   errorCount.value = 0;
 
   // Pedir nuevas palabras al servidor
-  fetch("http://localhost:3000/api/palabras/words", {
+  fetch("http://typebet.daw.inspedralbes.cat:3000/api/palabras/words", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
