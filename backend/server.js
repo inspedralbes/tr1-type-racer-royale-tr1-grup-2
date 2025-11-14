@@ -3,6 +3,8 @@ import cors from "cors";
 import express from "express";
 import http from "http";
 import "dotenv/config";
+import { Server } from "socket.io";
+import { initializeSocketIO } from "./socket/socketInit.js";
 
 import wordsRouter from "./routes/wordRoutes.js";
 import registerRouter from "./routes/registerRoutes.js";

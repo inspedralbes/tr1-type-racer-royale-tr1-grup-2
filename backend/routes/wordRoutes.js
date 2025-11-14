@@ -1,7 +1,6 @@
 import express from "express";
 import { obtenerPalabras, seleccionarRandom } from "../logic/wordLogic.js";
 import { createRoom, getRoom } from "../logic/roomsManager.js";
-import { seleccionarRandom } from "../logic/wordLogic.js";
 
 const router = express.Router();
 
