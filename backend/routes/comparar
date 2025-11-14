@@ -1,0 +1,8 @@
+
+--- Base de datos MongoDB (NUEVO SERVICIO) ---
+mongo: image: mongo:latest container_name: tr1-mongodb-dev restart: always # Mapeo del puerto 27017 a tu máquina host (127.0.0.1) ports: - "27017:27017" volumes: - mongo-data:/data/db
+--- Adminer (gestor de base de datos MySQL) ---
+adminer: image: adminer restart: always ports: - "8081:8080" depends_on: - db
+--- Backend (con Hot Reload) ---
+backend: build: context: . dockerfile: Dockerfile target: backend-dev image: tr1-backend-dev container_name: tr1-backend-dev working_dir: /app/backend command: "npx nodemon server.js" ports: - "3000:3000" environment: NODE_ENV: development
+ DB_HOST: db # Para MySQL # Asegúrate de que MONGODB_URI esté en tu .env, # y si vas a ejecutar localmente, debe ser: mongodb://127.0.0.1:27017/typebet DB_USER: ${DB_USER} DB_PASS: ${DB_PASS} DB_NAME: ${DB_NAME} volumes: - ./backend:/app/backend - /app/backend/node_modules depends_on: - db - mongo # Depende de ambos si usas ambos

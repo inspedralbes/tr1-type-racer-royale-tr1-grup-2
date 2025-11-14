@@ -15,6 +15,16 @@ services:
       - mysql-data:/var/lib/mysql
       - ./db_init:/docker-entrypoint-initdb.d
 
+# --- Base de datos MongoDB (NUEVO SERVICIO) ---
+  mongo:
+   image: mongo:latest
+   container_name: tr1-mongodb-dev 
+   restart: always # Mapeo del puerto 27017 a tu máquina host (127.0.0.1) 
+   ports: 
+     - "27017:27017" 
+   volumes:
+     - mongo-data:/data/d
+
   # --- Adminer (gestor de base de datos) ---
   adminer:
     image: adminer
@@ -71,3 +81,4 @@ services:
 
 volumes:
   mysql-data:
+  mongo-data:

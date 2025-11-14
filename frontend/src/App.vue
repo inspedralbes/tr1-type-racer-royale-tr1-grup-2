@@ -3,7 +3,7 @@ import { ref, onMounted } from "vue";
 import communicationManager from "./services/communicationManager";
 
 import RegistroJugador from "./componentes/PantallaLogin.vue";
-import PantallaSalas from "./componentes/PantallaSalas.vue";
+import PantallaSalas from "./componentes/pantallaSalas.vue";
 import Lobby from "./componentes/Lobby.vue";
 import Juego from "./componentes/InterfazJuego.vue";
 import PantallaFinal from "./componentes/pantallaFinal.vue";
