@@ -74,12 +74,12 @@ const audioPlayer = new Audio("/assets/sonido/Creepy_Casino.mp3");
 const pasarLetra = new Audio(sound);
 const teclado = new Audio(sound1);
 const iconosDisponibles = [
-  "public/assets/img/userIconos/corazon.png",
-  "public/assets/img/userIconos/trevol.png",
-  "public/assets/img/userIconos/picas.png",
-  "public/assets/img/userIconos/rombos.png",
+  "/assets/img/userIconos/corazon.png",
+  "/assets/img/userIconos/trebol.png",
+  "/assets/img/userIconos/picas.png",
+  "/assets/img/userIconos/rombos.png",
 ];
-const jugadorIcono = ref("public/assets/img/iconos/userIconos/corazon.png");
+const jugadorIcono = ref("/assets/img/userIconos/corazon.png");
 
 
 // 🟩 Variables para manejar la pantalla final
@@ -261,13 +261,13 @@ onMounted(() => {
 
     console.log("💥 Powerup disponible:", carta, "Palabra:", palabra);
 
-    // 👇 Mostrar en el cuadro del crupier
+    // Mostrar en el cuadro del crupier
     mensajePowerUp.value = `${carta.nombre}: ${carta.descripcion}`;
     mostrarDialogoPowerUp.value = true;
     crupierState.value = "powerup";
     mensajeInput.value = mensajePowerUp.value;
 
-    // Opcional: reproducir voz de powerup
+    // Reproducir voz de powerup
     const index = Math.floor(Math.random() * audioDialogoPowerUps.length);
     const voz = new Audio(audioDialogoPowerUps[index]);
     voz.volume = 0.1;
@@ -411,6 +411,7 @@ function actualizarJugadores(players) {
       id: "temp_" + tempId,
       username: p.username || "Jugador",
       icono: icono,
+      
     });
 
     if (idJugador === idPropio) {
@@ -422,6 +423,8 @@ function actualizarJugadores(players) {
         completedWords: p.completedWords || 0,
         status: p.status || "playing",
         icono: icono,
+        powerups: p.powerups || [],
+
       });
     }
 
@@ -431,7 +434,7 @@ function actualizarJugadores(players) {
   console.log("👥 Jugadores actualizados:", todosLosJugadores.value);
 }
 
-// 🧩 FUNCION QUE VALIDA SI CADA CARÁCTER ESTA BIEN ESCRITO
+// FUNCION QUE VALIDA SI CADA CARÁCTER ESTA BIEN ESCRITO
 function validarInput() {
   const palabraEscrita = palabraUser.value;
   const objetivo = palabraObjetivo.value;
@@ -633,6 +636,27 @@ function hablarCrupierAcierto() {
   voz.play().catch((e) => console.warn("No se pudo reproducir voz acierto:", e));
 }
 
+function getPowerupImagenes(jugador, index) {
+  // Si no tiene cartas, mostrar reverso
+  if (!jugador.powerups || jugador.powerups.length === 0) {
+    return "/assets/img/imgPowerUps/reversoCartas.png";
+  }
+
+  // Si tiene una carta y es el primer slot
+  if (jugador.powerups.length === 1 && index === 0) {
+    return "/assets/img/imgPowerUps/rey.png";
+  }
+
+  // Si tiene dos cartas
+  if (jugador.powerups.length >= 2) {
+    return index === 0
+      ? "/assets/img/imgPowerUps/rey.png"
+      : "/assets/img/imgPowerUps/reina.png";
+  }
+
+  // Si es el segundo slot pero solo tiene 1 carta
+  return "/assets/img/imgPowerUps/reversoCartas.png";
+}
 
 // 🧮 Computadas
 const palabrasEnVista = computed(() => {
@@ -718,9 +742,20 @@ const slideInUpClass = computed(() => ({
 
   <div v-if="comenzar" class="iconos-jugadores-container">
     <div v-for="(jugador, index) in otrosJugadores" :key="jugador.id" class="icono-jugador-item">
-      <img :src="jugador.icono" alt="icono" class="icono-jugador-img" />
-      <p class="icono-jugador-nombre">{{ jugador.username }}</p>
-    </div>
+  <img :src="jugador.icono" alt="icono" class="icono-jugador-img" />
+  <p class="icono-jugador-nombre">{{ jugador.username }}</p>
+
+  <!-- Cartas de powerup -->
+  <div class="powerups-mini">
+    <img
+      v-for="i in 2"
+      :key="i"
+      :src="getPowerupImagenes(jugador, i - 1)"
+      alt="PowerUp"
+      class="powerup-mini-img"
+    />
+  </div>
+</div>
   </div>
 
   <!-- Lista de palabras / Input / Estadisticas del usuario que esta jugando -->
@@ -756,13 +791,24 @@ const slideInUpClass = computed(() => ({
 
     <!-- 🧰 Mis Power-Ups -->
     <div class="mis-powerups">
-      <h3>Mis cartas</h3>
-      <div class="cartas">
-        <div v-for="carta in misPowerups" :key="carta.id" class="carta">
-          <strong>{{ carta.nombre }}</strong>
-        </div>
+  <h3>Mis cartas</h3>
+  <div class="cartas">
+    <div
+      v-for="carta in misPowerups"
+      :key="carta.id"
+      class="carta-container"
+    >
+      <!-- Imagen base de la carta -->
+      <div class="carta-imagen">
+        <img src="/assets/img/imgPowerUps/carta_joker_oficial.png" alt="Carta Power-Up" />
+      </div>
+      <!-- Nombre que aparece al hacer hover -->
+      <div class="carta-overlay">
+        <span>{{ carta.nombre }}</span>
       </div>
     </div>
+  </div>
+</div>
 
     <div class="input-stats-row">
       <div class="contenedor-texto">
@@ -1009,7 +1055,7 @@ const slideInUpClass = computed(() => ({
   filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.7) sepia(0.2) hue-rotate(340deg) saturate(1.5);
   z-index: 15;
   margin-top: 30%;
-  margin-bottom: -340px;
+  margin-bottom: -220px;
   margin-left: 20%;
 }
 
@@ -1319,35 +1365,116 @@ const slideInUpClass = computed(() => ({
 
 
 /* ESTILO POWERUPS CARTAS */
-.powerups-disponibles,
-.mis-powerups {
+.powerups-disponibles{
   display: flex;
   left: -100px;
   text-align: center;
 }
 
-
-
-.powerups-disponibles .cartas,
-.mis-powerups .cartas {
+.powerups-disponibles {
   display: flex;
   gap: 10px;
   justify-content: center;
   margin-left: -700px;
 }
 
-.carta {
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 2px solid #fff;
-  border-radius: 5px;
-  padding: 10px;
-  min-width: 120px;
-  cursor: pointer;
-  transition: transform 0.2s;
+.mis-powerups {
+  text-align: center;
+  margin-top: 20px;
+  margin-left: -30%;
 }
 
-.carta:hover {
-  transform: scale(1.1);
-  border-color: yellowgreen;
+.mis-powerups h3 {
+  font-family: 'Cinzel Decorative', serif;
+  color: #ffd700;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  margin-bottom: 12px;
 }
+
+.cartas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+}
+
+/* --- Cada carta --- */
+.carta-container {
+  position: relative;
+  width: 120px;
+  height: 180px;
+  cursor: pointer;
+  perspective: 1000px;
+  transition: transform 0.3s ease;
+}
+
+.carta-container:hover {
+  transform: translateY(-8px) scale(1.05);
+}
+
+
+.carta-imagen {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.carta-imagen img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 12px;
+}
+
+.carta-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 40%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent);
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  opacity: 0;
+  transform: translateY(40%);
+  transition: all 0.4s ease;
+  border-radius: 0 0 12px 12px;
+  padding-bottom: 8px;
+}
+
+.carta-overlay span {
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  color: #ffd700;
+  text-shadow: 0 0 6px rgba(255, 215, 0, 0.7);
+}
+
+/* Hover: muestra el overlay */
+.carta-container:hover .carta-overlay {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.powerups-mini {
+  display: flex;
+  justify-content: center;
+  margin-top: 5px;
+  gap: 4px;
+}
+
+.powerup-mini-img {
+  width: 30px;
+  height: 45px;
+  border-radius: 4px;
+  border: 1px solid #fff;
+  object-fit: cover;
+  box-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
 </style>
