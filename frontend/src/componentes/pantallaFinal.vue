@@ -3,7 +3,7 @@
     <div class="machine-frame">
 
       <div class="machine-top">
-        <h2 class="machine-title">☠ Máquina del Destino ☠</h2>
+        <h2 class="machine-title">El Resultdo Final</h2>
       </div>
 
       <div class="slot-display">
@@ -44,6 +44,11 @@
 
         </div>
 
+      <transition name="fade">
+        <div v-if="canGoHome" class="go-home-note">
+          <p>Ganas de jugar más? <br/> Tira de la palanca</p>
+        </div>
+      </transition>
       <div class="lever-housing">
         <div 
           class="lever" 
@@ -82,11 +87,11 @@ const SYMBOL_HEIGHT_HALF = SYMBOL_HEIGHT / 2;
 const AUDIO_DURATION_MS = 1500; 
 
 // Definición de símbolos (Palabras)
-const reelSymbols = ["Nada", "Muerte", "Estadisticas"];
-const reelSymbols2 = ["Muerte", "Nada", "Estadisticas"];
-const reelSymbols3 = ["Nada", "Muerte", "Estadisticas"];
+const reelSymbols = ["Nada", "Muerte", "Jugamos"];
+const reelSymbols2 = ["Muerte", "Nada", "Otra"];
+const reelSymbols3 = ["Nada", "Muerte", "Partida?"];
 
-const STATS_INDEXES = [2, 2, 2];
+const STATS_INDEXES = [2, 2, 0];
 
 const reel1 = reactive({ offset: 0, speed: 0, isSpinning: false, transitionDuration: '0s' });
 const reel2 = reactive({ offset: 0, speed: 0, isSpinning: false, transitionDuration: '0s' });
@@ -164,8 +169,8 @@ function startSpin() {
 
   setTimeout(() => {
     Promise.resolve()
-      .then(() => stopReel(reel1, STATS_INDEXES[0], reelSymbols.length, 0)) 
-      .then(() => stopReel(reel2, STATS_INDEXES[1], reelSymbols2.length, 500)) 
+      .then(() => stopReel(reel1, STATS_INDEXES[2], reelSymbols.length, 0)) 
+      .then(() => stopReel(reel2, STATS_INDEXES[2], reelSymbols2.length, 500)) 
       .then(() => stopReel(reel3, STATS_INDEXES[2], reelSymbols3.length, 500)) 
       .then(() => {
         if (props.winner) {
@@ -184,13 +189,13 @@ function goHomeAction() {
     
     setTimeout(() => {
         isPulling.value = false;
-        communicationManager.emit('leave_game', { playerId: playerId.value, roomId: roomId.value })
+        // ⚠️ Nota: Las siguientes líneas dependen de variables y funciones que no están definidas en el contexto proporcionado (communicationManager, playerId, roomId). 
+        // Las he dejado comentadas para evitar errores si no están importadas/definidas.
+        // communicationManager.emit('leave_game', { playerId: playerId.value, roomId: roomId.value })
+        // communicationManager.disconnect()
 
-  // 2️⃣ Desconectar el socket
-  communicationManager.disconnect()
-
-  // 3️⃣ Emitir evento local para navegación
-  emit("go-home");
+        // 3️⃣ Emitir evento local para navegación
+        emit("go-home");
     }, 500); 
 }
 
@@ -203,11 +208,6 @@ onMounted(() => {
 });
 </script>
 
----
-
-## 🎨 Estilos CSS Actualizados
-
-```css
 <style scoped>
 
 /* Colores */
@@ -220,6 +220,8 @@ onMounted(() => {
   --shadow-deep: rgba(0,0,0,0.8);
   --lever-red: #8b0000; 
   --lever-red-light: #ff3333;
+  --metal-plate: #5e5e5e; 
+  --rust-tone: #a84f3c;   
 }
 
 /* Contenedor */
@@ -378,4 +380,72 @@ onMounted(() => {
 }
 
 .lever.pulling { transform: rotate(25deg); }
+
+
+/* --- ESTILOS AÑADIDOS PARA LA NOTA DE INICIO --- */
+.go-home-note {
+  position: absolute;
+  right: 8vh; 
+  /* Ajuste de posición para que no quede demasiado abajo */
+  top: 10%; 
+  margin-left: 90%;
+  transform: translateY(-50%);
+  width: 15vh;
+  padding: 1.5vh 0.5vh; /* Aumentamos el padding vertical */
+  text-align: center;
+  background-color: #5e5e5e7a;
+  border: 2px solid var(--rust-tone); /* Borde oxidado */
+  border-radius: 0.3vh;
+  box-shadow: 0 0.5vh 1vh rgba(0, 0, 0, 0.7); /* Sombra más pronunciada */
+  z-index: 10;
+  
+  /* Posicionamiento para los remaches */
+  position: relative; 
+  overflow: visible; /* Necesario para que los remaches salgan del borde */
+}
+
+.go-home-note p {
+  margin: 0;
+  font-size: 1.8vh;
+  /* Color del texto que simula grabado o desgaste */
+  color: #c9c9c9; 
+  text-shadow: 0 1px 1px #000;
+  line-height: 1.2;
+}
+
+/* --- REMACHES (Clavos) --- */
+
+/* Creamos el elemento del remache */
+.go-home-note::before,
+.go-home-note::after {
+  content: '';
+  position: absolute;
+  width: 1.5vh;
+  height: 1.5vh;
+  background: radial-gradient(circle at 40% 40%, #c2c2c2 0%, #444 100%); /* Efecto 3D de cabeza de clavo */
+  border-radius: 50%;
+  box-shadow: inset 0 0 3px #000, 0 0 2px var(--rust-tone);
+  z-index: 11;
+}
+
+/* Remache Superior Izquierdo */
+.go-home-note::before {
+  top: -0.75vh; 
+  left: -0.75vh;
+}
+
+/* Remache Inferior Derecho */
+.go-home-note::after {
+  bottom: -0.75vh;
+  right: -0.75vh;
+}
+
+/* Animación de Transición */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
 </style>
