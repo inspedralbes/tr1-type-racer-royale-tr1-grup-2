@@ -234,7 +234,7 @@ onMounted(() => {
 
   // 🔹 Fetch palabras iniciales usando endpoint dinámico
 
-  fetch("http://localhost:3000/api/palabras/words", {
+  fetch("http://typebet.daw.inspedralbes.cat:3000/api/palabras/words", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

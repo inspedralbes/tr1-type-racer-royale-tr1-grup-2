@@ -22,7 +22,7 @@ async function manejoLogin() {
   // Manejo de errores de red o del fetch (try/catch):
   try {
     // Petición POST al backend con las credenciales:
-    const respuesta = await fetch("http://localhost:3000/api/user/login", {
+    const respuesta = await fetch("http://typebet.daw.inspedralbes.cat:3000/api/user/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
