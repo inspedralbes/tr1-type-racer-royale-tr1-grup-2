@@ -23,15 +23,35 @@ export function registerGameEvents(io, socket) {
     // Reclamar el powerup
     const carta = jugador.pendingPowerup; // carta asociada a esa palabra
     jugador.powerups = jugador.powerups || [];
-    jugador.powerups.push(carta);
+    if (jugador.powerups.length < 2) {
+      jugador.powerups.push(carta);
+
+      // Emitir actualización de powerup al jugador
+      io.to(playerId).emit("powerup_claimed", { data: { carta } });
+    } else {
+      return;
+    }
+
+    // --- CONTADOR DE POWERUPS ---
+  room.powerupTurnCounter = (room.powerupTurnCounter || 0) + 1;
+
+  // Cada 3 turnos de powerup, darle carta a quien no tenga ninguna
+  if (room.powerupTurnCounter % 3 === 0) {
+    const jugadoresSinCarta = room.players.filter(j => (j.powerups?.length || 0) === 0);
+    if (jugadoresSinCarta.length > 0) {
+      const jugadorBonus = jugadoresSinCarta[0]; // o aleatorio si quieres
+      const cartaBonus = generarCarta(); // tu función que crea la carta
+      jugadorBonus.powerups = jugadorBonus.powerups || [];
+      jugadorBonus.powerups.push(cartaBonus);
+
+      io.to(jugadorBonus.playerId).emit("powerup_claimed", { data: { carta: cartaBonus } });
+      console.log(`💡 [Powerup Bonus] Carta otorgada a ${jugadorBonus.playerId} por turno #${room.powerupTurnCounter}`);
+    }
+  }
 
     // Limpiar palabra de powerup
     jugador.currentPowerupWord = null;
     jugador.pendingPowerup = null;
-
-    // Emitir actualización de powerup al jugador
-    io.to(playerId).emit("powerup_claimed", { data: { carta } });
-    return; // No procesar palabra normal
   }
 
   // 🔹 2️⃣ Calcular palabras normales
@@ -102,7 +122,7 @@ export function registerGameEvents(io, socket) {
   io.to(roomId).emit("powerup_spawned", { data: {carta, playerId } });
 
   // Emitir al resto de jugadores que la carta ha sido obtenida por un jugador 
-  io.to(roomId).emit("powerup_claimed_global", { data: { carta } });
+  // io.to(roomId).emit("powerup_claimed_global", { data: { carta } });
 });
 
 

@@ -326,25 +326,34 @@ communicationManager.on("powerup_reset_words", (msg) => {
 
 
   // 🔹 Powerup reclamado por el jugador
-  communicationManager.on("powerup_spawned", (msg) => {
+communicationManager.on("powerup_spawned", (msg) => {
   const { carta, playerId: ganadorId } = msg.data;
 
   // Si es mi carta, la agrego a misPowerups
   if (ganadorId === playerId.value) {
+    // Si ya tiene 2 powerups, eliminar el más antiguo (el primero del array)
+    if (misPowerups.value.length >= 2) {
+      const eliminado = misPowerups.value.shift(); // elimina el primer elemento
+      console.log(`🗑️ Se ha eliminado el powerup más antiguo:`, eliminado);
+    }
+
+    // Añadir la nueva carta
     misPowerups.value.push(carta);
   }
-    // Limpiar palabra activa si coincide
-    if (cartaActual.value && cartaActual.value.id === carta.id) {
-      currentPowerupWord.value = null;
-      cartaActual.value = null;
-    }
-  
-    powerupsDisponibles.value = powerupsDisponibles.value.filter(
+
+  // Limpiar palabra activa si coincide
+  if (cartaActual.value && cartaActual.value.id === carta.id) {
+    currentPowerupWord.value = null;
+    cartaActual.value = null;
+  }
+
+  // Eliminar la carta de los disponibles
+  powerupsDisponibles.value = powerupsDisponibles.value.filter(
     (c) => c.id !== carta.id
   );
 
   // Mostrar visualmente que se ha ganado una carta (para todos)
-  console.log(`🃏 Jugador ${playerId} ha ganado la carta`, carta);
+  console.log(`🃏 Jugador ${playerId.value} ha ganado la carta`, carta);
 });
 
   // 🔹 Powerup reclamado por otros jugadores (solo para UI si quieres mostrarlo)
