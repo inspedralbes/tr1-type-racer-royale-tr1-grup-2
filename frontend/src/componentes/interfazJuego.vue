@@ -206,8 +206,10 @@ function onUpdatePlayerWords(msg) {
 //Controla el progreso de todos los jugadores y separa los usuarios
 function onUpdateProgress(msg) {
   const { players } = msg.data;
+  console.log("Datos brutos de jugadores del servidor:", players);
   players.forEach((p) => {
     console.log(`Jugador ${p.id}: ${p.completedWords} palabras completadas, estado: ${p.status}`);
+    
   });
   actualizarJugadores(players);
   const ganadorJugador = players.find(p => p.status === "finished");
@@ -344,35 +346,35 @@ onMounted(() => {
 
 
   // 🔹 Powerup reclamado por el jugador
-communicationManager.on("powerup_spawned", (msg) => {
-  const { carta, playerId: ganadorId } = msg.data;
+  communicationManager.on("powerup_spawned", (msg) => {
+    const { carta, playerId: ganadorId } = msg.data;
 
-  // Si es mi carta, la agrego a misPowerups
-  if (ganadorId === playerId.value) {
-    // Si ya tiene 2 powerups, eliminar el más antiguo (el primero del array)
-    if (misPowerups.value.length >= 2) {
-      const eliminado = misPowerups.value.shift(); // elimina el primer elemento
-      console.log(`🗑️ Se ha eliminado el powerup más antiguo:`, eliminado);
+    // Si es mi carta, la agrego a misPowerups
+    if (ganadorId === playerId.value) {
+      // Si ya tiene 2 powerups, eliminar el más antiguo (el primero del array)
+      if (misPowerups.value.length >= 2) {
+        const eliminado = misPowerups.value.shift(); // elimina el primer elemento
+        console.log(`🗑️ Se ha eliminado el powerup más antiguo:`, eliminado);
+      }
+
+      // Añadir la nueva carta
+      misPowerups.value.push(carta);
     }
 
-    // Añadir la nueva carta
-    misPowerups.value.push(carta);
-  }
+    // Limpiar palabra activa si coincide
+    if (cartaActual.value && cartaActual.value.id === carta.id) {
+      currentPowerupWord.value = null;
+      cartaActual.value = null;
+    }
 
-  // Limpiar palabra activa si coincide
-  if (cartaActual.value && cartaActual.value.id === carta.id) {
-    currentPowerupWord.value = null;
-    cartaActual.value = null;
-  }
+    // Eliminar la carta de los disponibles
+    powerupsDisponibles.value = powerupsDisponibles.value.filter(
+      (c) => c.id !== carta.id
+    );
 
-  // Eliminar la carta de los disponibles
-  powerupsDisponibles.value = powerupsDisponibles.value.filter(
-    (c) => c.id !== carta.id
-  );
-
-  // Mostrar visualmente que se ha ganado una carta (para todos)
-  console.log(`🃏 Jugador ${playerId.value} ha ganado la carta`, carta);
-});
+    // Mostrar visualmente que se ha ganado una carta (para todos)
+    console.log(`🃏 Jugador ${playerId.value} ha ganado la carta`, carta);
+  });
 
   // 🔹 Powerup reclamado por otros jugadores (solo para UI si quieres mostrarlo)
   communicationManager.on("powerup_claimed", (msg) => {
@@ -420,27 +422,28 @@ function actualizarJugadores(players) {
       id: "temp_" + tempId,
       username: p.username || "Jugador",
       icono: icono,
-      
+      powerupsNum: p.powerupsNum || 0,
     });
 
     if (idJugador === idPropio) {
       jugadorIcono.value = icono;
     } else {
+      console.log(`Inspeccionando jugador ${p.username}:`, p); 
+
       otrosJugadores.value.push({
         id: "temp_" + tempId,
         username: p.username || "Jugador",
         completedWords: p.completedWords || 0,
         status: p.status || "playing",
         icono: icono,
-        powerups: p.powerups || [],
-
+        powerupsNum: p.powerupsNum || 0, 
       });
     }
 
     tempId++;
   }
 
-  console.log("👥 Jugadores actualizados:", todosLosJugadores.value);
+  console.log("Otros jugadores (resultado final):", otrosJugadores.value); 
 }
 
 // FUNCION QUE VALIDA SI CADA CARÁCTER ESTA BIEN ESCRITO
@@ -645,27 +648,6 @@ function hablarCrupierAcierto() {
   voz.play().catch((e) => console.warn("No se pudo reproducir voz acierto:", e));
 }
 
-function getPowerupImagenes(jugador, index) {
-  // Si no tiene cartas, mostrar reverso
-  if (!jugador.powerups || jugador.powerups.length === 0) {
-    return "/assets/img/imgPowerUps/reversoCartas.png";
-  }
-
-  // Si tiene una carta y es el primer slot
-  if (jugador.powerups.length === 1 && index === 0) {
-    return "/assets/img/imgPowerUps/rey.png";
-  }
-
-  // Si tiene dos cartas
-  if (jugador.powerups.length >= 2) {
-    return index === 0
-      ? "/assets/img/imgPowerUps/rey.png"
-      : "/assets/img/imgPowerUps/reina.png";
-  }
-
-  // Si es el segundo slot pero solo tiene 1 carta
-  return "/assets/img/imgPowerUps/reversoCartas.png";
-}
 
 // 🧮 Computadas
 const palabrasEnVista = computed(() => {
@@ -733,8 +715,7 @@ const slideInUpClass = computed(() => ({
   </button>
 
   <!-- Div para la estadistica de jugadores -->
-  <div v-if="comenzar" class="linea-diagonal"></div>
-  <div v-if="comenzar" class="linea-diagonal2"></div>
+
   <div v-if="comenzar" class="player-container-exterior">
     <div v-for="(jugador, index) in otrosJugadores" :key="jugador.id"
       :class="['other-player-stat', `player-pos-${index}`]">
@@ -751,22 +732,21 @@ const slideInUpClass = computed(() => ({
 
   <div v-if="comenzar" class="iconos-jugadores-container">
     <div v-for="(jugador, index) in otrosJugadores" :key="jugador.id" class="icono-jugador-item">
-  <img :src="jugador.icono" alt="icono" class="icono-jugador-img" />
-  <p class="icono-jugador-nombre">{{ jugador.username }}</p>
+      <img :src="jugador.icono" alt="icono" class="icono-jugador-img" />
+      <p class="icono-jugador-nombre">{{ jugador.username }}</p>
 
-  <!-- Cartas de powerup -->
-  <div class="powerups-mini">
-    <img
-      v-for="i in 2"
-      :key="i"
-      :src="getPowerupImagenes(jugador, i - 1)"
-      alt="PowerUp"
-      class="powerup-mini-img"
-    />
+      <!-- Cartas de powerup -->
+      <div class="powerups-mini">
+      <img
+        v-for="i in jugador.powerupsNum"
+        :key="i"
+        src="/assets/img/imgPowerUps/reversoCartas.png"
+        alt="PowerUp"
+        class="powerup-mini-card"
+      />
   </div>
-</div>
   </div>
-
+  </div>
   <!-- Lista de palabras / Input / Estadisticas del usuario que esta jugando -->
   <div v-if="comenzar" class="bottom-ui-container" :class="slideInUpClass">
     <ul class="lista-palabras" :class="{ 'upside-down': efectoUpsideDownActivo }">
@@ -800,24 +780,20 @@ const slideInUpClass = computed(() => ({
 
     <!-- 🧰 Mis Power-Ups -->
     <div class="mis-powerups">
-  <h3>Mis cartas</h3>
-  <div class="cartas">
-    <div
-      v-for="carta in misPowerups"
-      :key="carta.id"
-      class="carta-container"
-    >
-      <!-- Imagen base de la carta -->
-      <div class="carta-imagen">
-        <img src="/assets/img/imgPowerUps/carta_joker_oficial.png" alt="Carta Power-Up" />
-      </div>
-      <!-- Nombre que aparece al hacer hover -->
-      <div class="carta-overlay">
-        <span>{{ carta.nombre }}</span>
+      <h3>Mis cartas</h3>
+      <div class="cartas">
+        <div v-for="carta in misPowerups" :key="carta.id" class="carta-container">
+          <!-- Imagen base de la carta -->
+          <div class="carta-imagen">
+            <img src="/assets/img/imgPowerUps/carta_joker_oficial.png" alt="Carta Power-Up" />
+          </div>
+          <!-- Nombre que aparece al hacer hover -->
+          <div class="carta-overlay">
+            <span>{{ carta.nombre }}</span>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</div>
 
     <div class="input-stats-row">
       <div class="contenedor-texto">
@@ -1063,9 +1039,11 @@ const slideInUpClass = computed(() => ({
   justify-content: center;
   filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.7) sepia(0.2) hue-rotate(340deg) saturate(1.5);
   z-index: 15;
-  margin-top: 30%;
-  margin-bottom: -220px;
-  margin-left: 20%;
+
+  position: absolute;
+  bottom: 30px;
+  left: 60%;
+  transform: translateX(-50%);
 }
 
 .palabra-actual {
@@ -1184,7 +1162,7 @@ const slideInUpClass = computed(() => ({
   color: #000000;
   font-weight: bold;
   padding: 5px 10px;
-  font-size:20px;
+  font-size: 20px;
   transform: translateZ(50px);
   z-index: 4;
   border: 2px solid #000000;
@@ -1235,26 +1213,26 @@ const slideInUpClass = computed(() => ({
 }
 
 .player-pos-0 {
-  top: 10%;
-  left: 80%;
+  top: 0%;
+  left: 105%;
   transform: translate(-50%, -50%);
 }
 
 .player-pos-1 {
   top: 10%;
-  left: 100%;
+  left: 105%;
   transform: translate(-50%, -50%);
 }
 
 .player-pos-2 {
-  top: 0%;
-  left: 90%;
+  top: 20%;
+  left: 105%;
   transform: translate(-50%, -50%);
 }
 
 .player-pos-3 {
-  top: 90%;
-  left: 90%;
+  top: 30%;
+  left: 105%;
   transform: translate(-50%, -50%);
 }
 
@@ -1374,7 +1352,7 @@ const slideInUpClass = computed(() => ({
 
 
 /* ESTILO POWERUPS CARTAS */
-.powerups-disponibles{
+.powerups-disponibles {
   display: flex;
   left: -100px;
   text-align: center;
@@ -1464,26 +1442,24 @@ const slideInUpClass = computed(() => ({
   text-shadow: 0 0 6px rgba(255, 215, 0, 0.7);
 }
 
-/* Hover: muestra el overlay */
 .carta-container:hover .carta-overlay {
   opacity: 1;
   transform: translateY(0);
 }
 
 .powerups-mini {
-  display: flex;
-  justify-content: center;
-  margin-top: 5px;
-  gap: 4px;
+  display: flex; 
+  justify-content: center; 
+  margin-top: 5px; 
+  gap: 2px; 
 }
 
-.powerup-mini-img {
-  width: 30px;
-  height: 45px;
-  border-radius: 4px;
-  border: 1px solid #fff;
-  object-fit: cover;
-  box-shadow: 0 0 5px rgba(0,0,0,0.5);
-}
 
+.powerup-mini-card {
+  width: 15px; 
+  height: 20px; 
+  border: 1px solid gold; 
+  border-radius: 2px;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+}
 </style>

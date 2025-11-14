@@ -1,5 +1,5 @@
 // backend/game/powerups/powerupLogic.js
-import { obtenerPalabras, generarPalabraPowerup  } from "../wordLogic.js";
+import { obtenerPalabras, generarPalabraPowerup } from "../wordLogic.js";
 import { generarPowerup } from "../powerups/powerupGenerator.js";
 
 const powerupTimers = {}; // timers por sala
@@ -50,7 +50,7 @@ export function startPowerupSpawner(io, roomId, room, intervalo = 10000) {
   powerupTimers[roomId] = setInterval(() => {
     console.log("10 segundos despues");
     const carta = generarPowerup();
-     const palabraExtra = generarPalabraPowerup();
+    const palabraExtra = generarPalabraPowerup();
     carta.palabra = palabraExtra;
 
     room.players.forEach(p => {
