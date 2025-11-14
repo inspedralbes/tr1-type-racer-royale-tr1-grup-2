@@ -1,11 +1,11 @@
 // backend/game/powerups/powerupLogic.js
-import { generarPalabras, calcularPalabrasRestantes } from "../wordLogic.js";
+import { obtenerPalabras, generarPalabraPowerup } from "../wordLogic.js";
 import { generarPowerup } from "../powerups/powerupGenerator.js";
 
 const powerupTimers = {}; // timers por sala
 
 export function resetGame(cantidadPalabras = 10) {
-  return generarPalabras(cantidadPalabras);
+  return obtenerPalabras(cantidadPalabras);
 }
 
 // FUNCION QUE ASIGNA UNA CARTA A UN JUGADOR
@@ -25,7 +25,11 @@ export function asignarCartaJugador(rooms, roomId, playerId, carta) {
     jugador.powerups.shift();
   }
 
-  console.log("el jugador ", playerId, "ha ganado la carta y se la ha asignado")
+  console.log(
+    "el jugador ",
+    playerId,
+    "ha ganado la carta y se la ha asignado"
+  );
   jugador.powerups.push(carta);
   console.log(jugador);
 }
@@ -41,7 +45,6 @@ export function eliminarCartaJugador(rooms, roomId, playerId, cartaId) {
   // Filtrar por id en lugar de efecto
   jugador.powerups = jugador.powerups.filter((carta) => carta.id !== cartaId);
 }
-
 
 export function startPowerupSpawner(io, roomId, room, intervalo = 10000) {
   if (powerupTimers[roomId]) return; // ya iniciado
@@ -59,6 +62,3 @@ export function stopPowerupSpawner(roomId) {
     delete powerupTimers[roomId];
   }
 }
-
-
-

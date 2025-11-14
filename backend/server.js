@@ -1,54 +1,42 @@
-// DEPENDENCIAS
+// server.js
 import cors from "cors";
 import express from "express";
 import http from "http";
 import "dotenv/config";
-import path from "path";
-import { fileURLToPath } from "url";
 
-// 👉 Importamos la función de conexión a MongoDB desde el archivo dbmongo.js
-import connectMongoStatsDB from "./dbmongo.js";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-// dotenv.config({ path: path.resolve(__dirname, "../.env") });
-
-// SOCKET.IO
-import { Server } from "socket.io";
-import { initializeSocketIO } from "./socket/socketInit.js";
-
-// RUTAS DE LA API
 import wordsRouter from "./routes/wordRoutes.js";
 import registerRouter from "./routes/registerRoutes.js";
 import profileRouter from "./routes/profileRoutes.js";
 
-// --- Express ---
 const app = express();
 const server = http.createServer(app);
 
-// --- CORS ---
-const corsOptions = {
-  origin: "*",
-  methods: ["GET", "POST", "PUT"],
-};
+let corsOptions;
+if (process.env.NODE_ENV === "development") {
+  corsOptions = { origin: "*", methods: ["GET", "POST"] };
+  console.log("[CORS] Desarrollo: todos los orígenes permitidos");
+} else {
+  const allowedOrigin =
+    process.env.FRONT_URL || "http://typebet.daw.inspedralbes.cat";
+  corsOptions = { origin: allowedOrigin, methods: ["GET", "POST", "PUT"] };
+  console.log(`[CORS] Producción: solo permitiendo ${allowedOrigin}`);
+}
+
 app.use(cors(corsOptions));
 app.use(express.json({ limit: "50mb" }));
 
-// --- Routers ---
 app.use("/api/palabras", wordsRouter);
 app.use("/api", registerRouter);
 app.use("/api", profileRouter);
 
-// --- Socket.IO ---
 const io = new Server(server, { cors: corsOptions });
 initializeSocketIO(io);
 
-io.on("connection", (socket) => {
-  socket.on("ping_test", (data) => {
-    console.log("📥 Ping recibido:", data);
-    socket.emit("pong_test", { ok: true });
-  });
-});
+const port = process.env.APP_HOST_PORT || 3000;
+const host = process.env.APP_HOST_IP || "0.0.0.0";
 
-// PUERTO DE ESCUCHA
-const port = process.env.PORT || 3000;
-server.listen(port, () => console.log(`[IO] http://localhost:${port}`));
+server.listen(port, host, () => {
+  console.log(
+    `[IO] Servidor corriendo en http://${host}:${port} - NODE_ENV=${process.env.NODE_ENV}`
+  );
+});

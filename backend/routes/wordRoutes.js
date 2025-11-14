@@ -1,11 +1,11 @@
 import express from "express";
-import { generarPalabras } from "../logic/wordLogic.js"; // ✅ palabras personales
+import { obtenerPalabras, seleccionarRandom } from "../logic/wordLogic.js";
 import { createRoom, getRoom } from "../logic/roomsManager.js";
 import { seleccionarRandom } from "../logic/wordLogic.js";
 
 const router = express.Router();
 
-router.post("/words", (req, res) => {
+router.post("/words", async (req, res) => {
   try {
     const { roomId, playerId, playerName, count = 5 } = req.body;
     console.log(
@@ -13,23 +13,15 @@ router.post("/words", (req, res) => {
     );
 
     let room = getRoom(roomId);
-    let selected;
-
-
+    let selected = [];
 
     if (!room) {
-      // 🆕 Crear sala con jugador inicial y sus palabras personales
-      const palabrasIniciales = generarPalabras(count);
-      const jugadorInicial = {
-        id: playerId,
-        name: playerName || "Jugador 1",
-        words: palabrasIniciales,
-        completedWords: 0,
-        status: "playing",
-      };
-
-      selected = [...palabrasIniciales];
-      createRoom(roomId, jugadorInicial.id, jugadorInicial.name, selected);
+      const allWords = await obtenerPalabras(count);
+      selected = seleccionarRandom(allWords, count);
+      console.log(
+        `🆕 Creando sala ${roomId} con jugador ${playerId} (${playerName})`
+      );
+      createRoom(roomId, playerId, playerName || "Jugador 1", selected);
     } else {
       const jugador = room.players.find((p) => p.playerId === playerId);
       console.log(
@@ -40,11 +32,12 @@ router.post("/words", (req, res) => {
 
       if (jugador) {
         if (!jugador.words || jugador.words.length === 0) {
-          selected = generarPalabras(count);
+          selected = await obtenerPalabras(count);
+          console.log(selected);
           jugador.words = [...selected];
         } else {
           console.log(`🆕 Nuevo jugador ${playerId}, añadiendo a la sala.`);
-          selected = generarPalabras(count);
+          selected = await obtenerPalabras(count);
           room.players.push({
             playerId,
             username: playerName || `Jugador ${room.players.length + 1}`,

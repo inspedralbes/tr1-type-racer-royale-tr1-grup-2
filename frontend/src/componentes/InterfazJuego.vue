@@ -57,8 +57,6 @@ const audioDialogoPowerUps = [
 // Variables para manejar 3D / crupier / ambiente / iconos(Temp)
 const crupierState = ref("normal");
 const mensajeInput = ref(dialogTextEntrada.value[0]);
-const mensajePowerUp = ref(null);
-const mostrarDialogoPowerUp = ref(false);
 const juegoIniciado = ref(false);
 const show2DUI = ref(false);
 const animationDuration = ref(0);
@@ -73,7 +71,7 @@ const iconosDisponibles = [
   "public/assets/img/userIconos/picas.png",
   "public/assets/img/userIconos/rombos.png",
 ];
-const jugadorIcono = ref("public/assets/img/iconos/userIconos/corazon.png");
+const jugadorIcono = ref("public/assets/img/iconos/corazon.png");
 
 // 🟩 Variables para manejar la pantalla final
 const mostrarPantallaFinal = ref(false);
@@ -246,31 +244,13 @@ onMounted(() => {
   communicationManager.on("powerup_available", (msg) => {
     const { carta, palabra } = msg.data;
 
+    // Mostrar la palabra del powerup en UI y guardarla
     currentPowerupWord.value = palabra;
     cartaActual.value = carta;
+
     powerupsDisponibles.value = [carta];
 
     console.log("💥 Powerup disponible:", carta, "Palabra:", palabra);
-
-    // 👇 Mostrar en el cuadro del crupier
-    mensajePowerUp.value = `${carta.nombre}: ${carta.descripcion}`;
-    mostrarDialogoPowerUp.value = true;
-    crupierState.value = "powerup";
-    mensajeInput.value = mensajePowerUp.value;
-
-    // Opcional: reproducir voz de powerup
-    const index = Math.floor(Math.random() * audioDialogoPowerUps.length);
-    const voz = new Audio(audioDialogoPowerUps[index]);
-    voz.volume = 0.1;
-    voz
-      .play()
-      .catch((e) => console.warn("No se pudo reproducir voz powerup:", e));
-
-    // Ocultar después de unos segundos
-    setTimeout(() => {
-      mostrarDialogoPowerUp.value = false;
-      crupierState.value = "normal";
-    }, 5000);
   });
 
   communicationManager.on("powerup_applied", (msg) => {
@@ -345,20 +325,29 @@ onMounted(() => {
 
     // Si es mi carta, la agrego a misPowerups
     if (ganadorId === playerId.value) {
+      // Si ya tiene 2 powerups, eliminar el más antiguo (el primero del array)
+      if (misPowerups.value.length >= 2) {
+        const eliminado = misPowerups.value.shift(); // elimina el primer elemento
+        console.log(`🗑️ Se ha eliminado el powerup más antiguo:`, eliminado);
+      }
+
+      // Añadir la nueva carta
       misPowerups.value.push(carta);
     }
+
     // Limpiar palabra activa si coincide
     if (cartaActual.value && cartaActual.value.id === carta.id) {
       currentPowerupWord.value = null;
       cartaActual.value = null;
     }
 
+    // Eliminar la carta de los disponibles
     powerupsDisponibles.value = powerupsDisponibles.value.filter(
       (c) => c.id !== carta.id
     );
 
     // Mostrar visualmente que se ha ganado una carta (para todos)
-    console.log(`🃏 Jugador ${playerId} ha ganado la carta`, carta);
+    console.log(`🃏 Jugador ${playerId.value} ha ganado la carta`, carta);
   });
 
   // 🔹 Powerup reclamado por otros jugadores (solo para UI si quieres mostrarlo)
@@ -760,7 +749,7 @@ const slideInUpClass = computed(() => ({
     </ul>
 
     <!-- 🃏 Power-Ups disponibles para reclamar -->
-    <!-- <div class="powerups-disponibles">
+    <div class="powerups-disponibles">
       <h3>Cartas disponibles</h3>
       <div class="cartas">
         <div v-for="carta in powerupsDisponibles" :key="carta.id" class="carta">
@@ -768,7 +757,7 @@ const slideInUpClass = computed(() => ({
           <p>{{ carta.descripcion }}</p>
         </div>
       </div>
-    </div> -->
+    </div>
 
     <!-- 🧰 Mis Power-Ups -->
     <div class="mis-powerups">
@@ -861,19 +850,13 @@ const slideInUpClass = computed(() => ({
         </div>
       </div>
 
-      <div
-        class="input-dialog-container"
-        :class="reboteClass"
-        v-if="!comenzar || mostrarDialogoPowerUp"
-      >
+      <div class="input-dialog-container" :class="reboteClass" v-if="!comenzar">
         <div class="input__container">
           <div class="shadow__input"></div>
-          <p v-if="mostrarDialogoPowerUp">{{ mensajePowerUp }}</p>
-          <p v-else-if="mensajeInput">{{ mensajeInput }}</p>
+
+          <p v-if="mensajeInput">{{ mensajeInput }}</p>
         </div>
       </div>
-
-      <!-- Input de el crupier para las cartas -->
     </div>
   </div>
 </template>
@@ -1055,14 +1038,16 @@ const slideInUpClass = computed(() => ({
   border: 3px;
   border-radius: 15px;
   box-shadow: 6px 6px 12px rgba(0, 0, 0, 0.45);
+  margin-left: auto;
+  margin-right: auto;
   text-align: center;
   justify-content: center;
   filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.9)) brightness(0.7) sepia(0.2)
     hue-rotate(340deg) saturate(1.5);
   z-index: 15;
   margin-top: 30%;
-  margin-bottom: -340px;
-  margin-left: 20%;
+  margin-bottom: -125px;
+  margin-left: 55%;
 }
 
 .palabra-actual {
@@ -1148,13 +1133,12 @@ const slideInUpClass = computed(() => ({
 .input__container {
   position: relative;
   background: #330000;
-  padding: 10px;
+  padding: 20px;
   border: 4px solid #8b5a2b;
   max-width: 350px;
   box-shadow: 8px 8px 0 #000;
   pointer-events: auto;
   font-family: Font2;
-  font-size: 30px;
   color: #f0e68c;
 }
 
@@ -1184,7 +1168,7 @@ const slideInUpClass = computed(() => ({
   color: #000000;
   font-weight: bold;
   padding: 5px 10px;
-  font-size: 20px;
+  font-size: 25px;
   transform: translateZ(50px);
   z-index: 4;
   border: 2px solid #000000;
@@ -1373,8 +1357,7 @@ const slideInUpClass = computed(() => ({
 /* ESTILO POWERUPS CARTAS */
 .powerups-disponibles,
 .mis-powerups {
-  display: flex;
-  left: -100px;
+  margin: 20px 0;
   text-align: center;
 }
 
@@ -1383,7 +1366,37 @@ const slideInUpClass = computed(() => ({
   display: flex;
   gap: 10px;
   justify-content: center;
-  margin-left: -700px;
+  flex-wrap: wrap;
+}
+
+.carta {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 2px solid #fff;
+  border-radius: 5px;
+  padding: 10px;
+  min-width: 120px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.carta:hover {
+  transform: scale(1.1);
+  border-color: yellowgreen;
+}
+
+/* ESTILO POWERUPS CARTAS */
+.powerups-disponibles,
+.mis-powerups {
+  margin: 20px 0;
+  text-align: center;
+}
+
+.powerups-disponibles .cartas,
+.mis-powerups .cartas {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .carta {
