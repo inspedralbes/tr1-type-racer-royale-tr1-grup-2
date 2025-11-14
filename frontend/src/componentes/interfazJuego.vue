@@ -236,7 +236,7 @@ onMounted(() => {
 
   // 🔹 Fetch palabras iniciales usando endpoint dinámico
 
-  fetch("http://localhost:3000/api/palabras/words", {
+  fetch("http://typebet.daw.inspedralbes.cat:3000/api/palabras/words", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -323,30 +323,23 @@ onMounted(() => {
     palabraInvalida.value = false;
     errorCount.value = 0;
 
-    // Pedir nuevas palabras al servidor
-    fetch("http://localhost:3000/api/palabras/words", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        roomId: roomId.value,
-        playerId: playerId.value,
-        playerName: playerName.value,
-        count: 10,
-      }),
+  // Pedir nuevas palabras al servidor
+  fetch("http://typebet.daw.inspedralbes.cat:3000/api/palabras/words", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      roomId: roomId.value,
+      playerId: playerId.value,
+      playerName: playerName.value,
+      count: 10,
+    }),
+  })
+    .then(res => res.ok ? res.json() : Promise.reject(`Error HTTP: ${res.status}`))
+    .then(data => {
+      listaEntera.value = data.data.initialWords;
+      console.log("✅ Palabras reiniciadas:", listaEntera.value);
     })
-      .then(res => res.ok ? res.json() : Promise.reject(`Error HTTP: ${res.status}`))
-      .then(data => {
-        listaEntera.value = data.data.initialWords;
-        console.log("✅ Palabras reiniciadas:", listaEntera.value);
-      })
-      .catch(err => console.error("❌ Error al reiniciar palabras:", err));
-  });
-
-  socket.on("powerup_update", (msg) => {
-  const { players } = msg.data;
-
-  // Excluir al jugador local y actualizar otrosJugadores
-  otrosJugadores.value = players.filter(p => p.playerId !== playerId.value);
+    .catch(err => console.error("❌ Error al reiniciar palabras:", err));
 });
 
 
