@@ -3,7 +3,7 @@ import { io } from "socket.io-client";
 class CommunicationManager {
   constructor() {
     // Asegúrate de que la URL coincida con tu backend
-    this.socket = io("http://localhost:3000", {
+    this.socket = io("http://typebet.daw.inspedralbes.cat:3000", {
       autoConnect: false, // No se conecta automáticamente al crear la instancia
     });
 

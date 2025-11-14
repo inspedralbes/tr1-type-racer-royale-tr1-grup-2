@@ -20,11 +20,14 @@ onMounted(async () => {
   const token = localStorage.getItem("token");
   if (token) {
     try {
-      const response = await fetch("http:/localhost:3000/api/user/user", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
-      });
+      const response = await fetch(
+        "http:/typebet.daw.inspedralbes.cat:3000/api/user/user",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token }),
+        }
+      );
 
       if (response.ok) {
         const userData = await response.json();

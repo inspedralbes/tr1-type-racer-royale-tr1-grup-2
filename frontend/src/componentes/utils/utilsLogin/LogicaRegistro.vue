@@ -21,14 +21,17 @@ async function manejoRegistro() {
   // Manejo de errores de red o del fetch (try/catch):
   try {
     // Petición POST al backend con las credenciales nuevas:
-    const response = await fetch("http://localhost:3000/api/user/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username: username.value,
-        password: password.value,
-      }),
-    });
+    const response = await fetch(
+      "http://typebet.daw.inspedralbes.cat:3000/api/user/register",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: username.value,
+          password: password.value,
+        }),
+      }
+    );
 
     // La respuesta JSON del servidor.
     const data = await response.json();
