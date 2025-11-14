@@ -20,7 +20,6 @@ import { initializeSocketIO } from "./socket/socketInit.js";
 import wordsRouter from "./routes/wordRoutes.js";
 import registerRouter from "./routes/registerRoutes.js";
 import profileRouter from "./routes/profileRoutes.js";
-import { initializeSocketIO } from "./socket/socketInit.js";
 
 // --- Express ---
 const app = express();
