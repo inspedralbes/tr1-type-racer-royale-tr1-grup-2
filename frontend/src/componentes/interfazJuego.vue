@@ -757,6 +757,10 @@ const slideInUpClass = computed(() => ({
   "slide-in-up": comenzar.value,
 }));
 
+const palabrasRestantes = computed(() => {
+  return listaEntera.value.length;
+});
+
 </script>
 
 <template>
@@ -833,6 +837,10 @@ const slideInUpClass = computed(() => ({
 
     <div class="input-stats-row">
       <div class="contenedor-texto">
+        <div class="palabras-restantes">
+        <img src="/public/assets/img/imgPowerUps/reina.png" alt="" /> 
+        <span>: {{ palabrasRestantes }}</span>
+      </div>
         <input type="text" class="text-input" :class="{
           'input-error': !esValido && palabraUser.length > 0,
           'input-ok': esValido && palabraUser.length > 0,
@@ -1046,6 +1054,24 @@ const slideInUpClass = computed(() => ({
 
 .stats-right span {
   font-weight: bold;
+  
+}
+
+.palabras-restantes{
+  font-family: Font2;
+  color: #f0e68c;
+  font-size: 35px;
+  margin-top: -50px;
+  text-align: center;
+  justify-content: center;
+  display: flex;
+  gap: 10px;
+}
+
+.palabras-restantes img{
+  justify-content: center;
+  width: 30px;
+  height: 40px;
 }
 
 .error-count {
@@ -1083,24 +1109,24 @@ const slideInUpClass = computed(() => ({
 }
 
 .powerup-word {
-  color: #ffdd55;
+  color: #ddb100;
   font-weight: bold;
   animation: glowPulse 1.2s infinite alternate ease-in-out;
 }
 
 @keyframes glowPulse {
   from {
-    text-shadow: 0 0 5px #ffdd55, 0 0 10px #ffaa00;
+    text-shadow: 0 0 5px #ffcc00, 0 0 10px #ffaa00;
   }
 
   to {
-    text-shadow: 0 0 20px #ffdd55, 0 0 40px #ffaa00;
+    text-shadow: 0 0 20px #ffcc00, 0 0 40px #ffaa00;
   }
 }
 
 .lista-palabras li {
   /* Aplica solo a los <li> dentro de la lista */
-  display: flex; 
+  display: flex;
   justify-content: center;
   align-items: center;
 }
@@ -1108,10 +1134,13 @@ const slideInUpClass = computed(() => ({
 /* Base para cada elemento letra generado por v-for */
 .letra-item {
   display: inline-block;
-  white-space: pre; /* Permite mostrar espacios */
-  min-width: 0.5em; /* Mínimo de ancho para asegurar el espaciado o fondo de error */
+  white-space: pre;
+  /* Permite mostrar espacios */
+  min-width: 0.5em;
+  /* Mínimo de ancho para asegurar el espaciado o fondo de error */
   text-align: center;
-  color: #555555; /* Color por defecto (pendiente) */
+  color: #555555;
+  /* Color por defecto (pendiente) */
   font-weight: normal;
 }
 
@@ -1120,7 +1149,7 @@ const slideInUpClass = computed(() => ({
   color: #ffffff;
   font-weight: bold;
   /* Base de sombra para que el texto resalte, similar a .palabra-actual anterior */
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.6); 
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
 }
 
 /* Letras correctas (Verde) */
@@ -1131,8 +1160,10 @@ const slideInUpClass = computed(() => ({
 
 /* Letra incorrecta (error) o letras extra (extra) (Rojo) */
 .letra-item.letra-error {
-  color: #ff4500; /* Letra roja */
-  background-color: rgba(255, 69, 0, 0.2); /* Fondo sutil rojo */
+  color: #ff4500;
+  /* Letra roja */
+  background-color: rgba(255, 69, 0, 0.2);
+  /* Fondo sutil rojo */
   border-radius: 3px;
   text-shadow: 0 0 8px rgba(255, 69, 0, 0.8);
 }
@@ -1446,9 +1477,10 @@ const slideInUpClass = computed(() => ({
 }
 
 .mis-powerups h3 {
-  font-family: 'Cinzel Decorative', serif;
-  color: #ffd700;
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  font-family: Font2;
+  font-size: 33px;
+  color: #660000;
+  text-shadow: 0 0 10px rgba(255, 187, 0, 0.5);
   margin-bottom: 12px;
 }
 
