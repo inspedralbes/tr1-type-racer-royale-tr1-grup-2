@@ -111,14 +111,14 @@ function guardarPerfil(payload) {
 
 function handleGoHome() {
 
-  localStorage.clear();
-  sessionStorage.clear();
+  // localStorage.clear();
+  // sessionStorage.clear();
 
-  console.log("🔹 Cambiando vistaActual a 'registro'");
+  console.log("🔹 Cambiando vistaActual a 'perfil'");
 
-  vistaActual.value = "registro";
+  vistaActual.value = "perfil";
 
-  jugador.value = null;
+  // jugador.value = null;
   roomSeleccionada.value = null;
   ganador.value = null;
 }

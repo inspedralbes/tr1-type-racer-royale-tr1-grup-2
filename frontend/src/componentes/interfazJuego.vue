@@ -119,22 +119,6 @@ watch(palabraUser, (newVal, oldVal) => {
     teclado.play().catch((error) => {});
   }
 
-  const indiceError = calcularIndiceError();
-  const esValidaAhora = indiceError === -1;
-
-  if (!esValidaAhora) {
-    if (!palabraInvalida.value) {
-      errorCount.value++;
-      palabraInvalida.value = true;
-      crupierState.value = "confundido";
-      hablarCrupierError();
-    }
-  } else {
-    if (palabraInvalida.value) {
-      crupierState.value = "normal";
-    }
-    palabraInvalida.value = false;
-  }
 
   const indiceError = calcularIndiceError();
   const esValidaAhora = indiceError === -1;
@@ -216,7 +200,7 @@ function onUpdatePlayerWords(msg) {
     console.log("🔴 DESPUÉS - listaEntera:", listaEntera.value);
     console.log("🔤 Palabras status actualizadas:", status);
     if (status === "finished") {
-      ganador.value = playerNameActual || playerIdActual;
+      ganador.value = playerName.value;
       emit("juego-finalizado", ganador.value);
       mostrarPantallaFinal.value = true;
       audioPlayer.pause();
@@ -286,6 +270,7 @@ onMounted(() => {
     currentPowerupWord.value = palabra;
     cartaActual.value = carta;
     powerupsDisponibles.value = [carta];
+    palabraUser.value = "";
 
     console.log("Powerup disponible:", carta, "Palabra:", palabra);
 
@@ -377,7 +362,7 @@ onMounted(() => {
         palabrasBaseRestantes.value--;
 
         // REINICIAR EL NUMERO DE PALABRAS RESTANTES
-        palabrasBaseRestantes.value = listaEntera.length;
+        palabrasRestantes.value = listaEntera.value.length
         console.log("✅ Palabras reiniciadas, mostrando nuevas palabras:", listaEntera.value);
       })
       .catch((err) => console.error("❌ Error al reiniciar palabras:", err));
@@ -435,8 +420,7 @@ onUnmounted(() => {
   communicationManager.off("powerup_available");
   communicationManager.off("powerup_spawned");
 
-  communicationManager.emit("leave_room", { playerId });
-  communicationManager.disconnect();
+  communicationManager.emit("leave_room", { playerId: playerId.value, roomId: roomId.value });
 });
 
 // Funcion para actualizar la lista de jugadors
@@ -803,7 +787,7 @@ const palabrasRestantes = computed(() => {
 
   <!-- Div para la estadistica de jugadores -->
 
-  <div v-if="comenzar" class="player-container-exterior">
+  <!-- <div v-if="comenzar" class="player-container-exterior">
     <div
       v-for="(jugador, index) in otrosJugadores"
       :key="jugador.id"
@@ -816,7 +800,7 @@ const palabrasRestantes = computed(() => {
         <span>{{ jugador.completedWords }}</span>
       </div>
     </div>
-  </div>
+  </div> -->
 
   <!-- Lista que muestra usuarios alrededor -->
 
@@ -828,9 +812,9 @@ const palabrasRestantes = computed(() => {
     >
       <img :src="jugador.icono" alt="icono" class="icono-jugador-img" />
       <p class="icono-jugador-nombre">{{ jugador.username }}</p>
-      <div class="player-stats-chip">
-        <span>{{ jugador.completedWords }}</span>
-      </div>
+        <div class="player-stats-chip">
+          <span>{{ jugador.completedWords }}</span>
+        </div>
       <!-- Cartas de powerup -->
       <div class="powerups-mini">
         <img
@@ -900,26 +884,22 @@ const palabrasRestantes = computed(() => {
 
     <div class="input-stats-row">
       <div class="contenedor-texto">
-        <div class="palabras-restantes">
-        <img src="/public/assets/img/imgPowerUps/reina.png" alt="" /> 
-        <span>: {{ palabrasRestantes }}</span>
-      </div>
         <input type="text" class="text-input" :class="{
           'input-error': !esValido && palabraUser.length > 0,
           'input-ok': esValido && palabraUser.length > 0,
         }" v-model="palabraUser" @keydown="onInputKeyDown" @paste="onInputPaste" :placeholder="palabraObjetivo
-          ? `Escribe: ${palabraObjetivo}`
+          ? `Escribe`
           : 'Cargando palabras...'
           " autofocus />
       </div>
       <div class="stats-right">
-        <p>
-          <img src="/public/assets/img/iconos/ficha.png" alt="Palabras restantes" />
-          <span>{{ palabrasBaseRestantes }}</span>
-        </p>
         <p class="icono-propio">
           <img :src="jugadorIcono" alt="icono propio" class="icono-jugador" />
-          <span>{{ playerNameActual }}</span>
+          <span class="word-count">{{ playerNameActual }}</span>
+        </p>
+        <p class="">
+          <img src="/public/assets/img/imgPowerUps/reina.png" alt="" /> 
+          <span>{{ palabrasRestantes }}</span>
         </p>
         <p>
           <img src="/public/assets/img/iconos/ficha.png" alt="" />
@@ -1170,6 +1150,12 @@ const palabrasRestantes = computed(() => {
   color: #ff4500;
   font-weight: bold;
   text-shadow: 0 0 8px rgba(255, 69, 0, 0.5);
+}
+
+.word-count {
+  color: #ff4500;
+  font-weight: bold;
+  text-shadow: 0 0 8px rgba(0, 255, 85, 0.5);
 }
 
 .lista-palabras {
