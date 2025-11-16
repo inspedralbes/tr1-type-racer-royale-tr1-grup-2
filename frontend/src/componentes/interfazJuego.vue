@@ -118,6 +118,40 @@ watch(palabraUser, (newVal, oldVal) => {
     teclado.currentTime = 0;
     teclado.play().catch((error) => {});
   }
+
+  const indiceError = calcularIndiceError();
+  const esValidaAhora = indiceError === -1;
+
+  if (!esValidaAhora) {
+    if (!palabraInvalida.value) {
+      errorCount.value++;
+      palabraInvalida.value = true;
+      crupierState.value = "confundido";
+      hablarCrupierError();
+    }
+  } else {
+    if (palabraInvalida.value) {
+      crupierState.value = "normal";
+    }
+    palabraInvalida.value = false;
+  }
+
+  const indiceError = calcularIndiceError();
+  const esValidaAhora = indiceError === -1;
+
+  if (!esValidaAhora) {
+    if (!palabraInvalida.value) {
+      errorCount.value++;
+      palabraInvalida.value = true;
+      crupierState.value = "confundido";
+      hablarCrupierError();
+    }
+  } else {
+    if (palabraInvalida.value) {
+      crupierState.value = "normal";
+    }
+    palabraInvalida.value = false;
+  }
 });
 watch(show2DUI, (newValue) => {
   if (newValue) {
@@ -199,9 +233,8 @@ function onUpdateProgress(msg) {
   const { players } = msg.data;
   console.log("Datos brutos de jugadores del servidor:", players);
   players.forEach((p) => {
-    console.log(
-      `Jugador ${p.id}: ${p.completedWords} palabras completadas, estado: ${p.status}`
-    );
+    console.log(`Jugador ${p.id}: ${p.completedWords} palabras completadas, estado: ${p.status}`);
+
   });
   actualizarJugadores(players);
   const ganadorJugador = players.find((p) => p.status === "finished");
@@ -449,34 +482,69 @@ function actualizarJugadores(players) {
 }
 
 // FUNCION QUE VALIDA SI CADA CARÁCTER ESTA BIEN ESCRITO
-function validarInput() {
+function calcularIndiceError() {
   const palabraEscrita = palabraUser.value;
   const objetivo = palabraObjetivo.value;
-  if (!objetivo) return true;
+  if (!objetivo) return -1; // No hay palabra objetivo
 
-  let esValidaAhora = true;
   for (let i = 0; i < palabraEscrita.length; i++) {
     if (palabraEscrita[i] !== objetivo[i]) {
-      esValidaAhora = false;
-      break;
+      return i; // Devuelve el índice de la primera letra incorrecta
     }
   }
 
-  if (!esValidaAhora) {
-    if (!palabraInvalida.value) {
-      errorCount.value++;
-      palabraInvalida.value = true;
-      crupierState.value = "confundido";
-      hablarCrupierError();
-    }
-  } else {
-    if (palabraInvalida.value) {
-      crupierState.value = "normal";
-    }
-    palabraInvalida.value = false;
-  }
-  return esValidaAhora;
+  return -1; // Toda la palabra escrita hasta ahora es correcta
 }
+
+// 🧮 Computadas (actualizadas)
+const indicePrimerError = computed(() => calcularIndiceError());
+
+// Mantiene la bandera de validación general
+const esValido = computed(() => indicePrimerError.value === -1);
+
+// 🌟 NUEVA COMPUTADA: Prepara la palabra para renderizar letra por letra
+const letrasConEstado = computed(() => {
+  const objetivo = palabraObjetivo.value || "";
+  const escrita = palabraUser.value;
+  const errorIndex = indicePrimerError.value;
+  const letras = [];
+
+  for (let i = 0; i < objetivo.length; i++) {
+    const letraObjetivo = objetivo[i];
+    const letraEscrita = escrita[i] || ""; // "" si aún no se ha escrito
+
+    let estado = "pendiente"; // Letra aún no escrita
+    if (i < escrita.length) {
+      if (i < errorIndex || errorIndex === -1) {
+        estado = "correcto"; // Letra correcta
+      } else if (i === errorIndex) {
+        estado = "error"; // Primera letra incorrecta
+      } else {
+        // La letra escrita después del error también se considera "error" en la UI
+        estado = "error";
+      }
+    }
+
+    letras.push({
+      id: i,
+      objetivo: letraObjetivo,
+      escrita: letraEscrita,
+      estado: estado,
+    });
+  }
+
+  // Si se escribieron más letras de las que tiene la palabra objetivo
+  for (let i = objetivo.length; i < escrita.length; i++) {
+    letras.push({
+      id: i,
+      objetivo: "",
+      escrita: escrita[i],
+      estado: "extra", // Letras extra, marcadas como error
+    });
+  }
+
+  return letras;
+});
 
 // MANEJA LA PULSACIÓN DE LA TECLA ESPACIO
 function onInputKeyDown(event) {
@@ -602,7 +670,7 @@ function empiezaJuego() {
           comenzar.value = true;
         }, 2500);
       }
-    }, i * 4000);
+    }, i * 3000);
   }
 }
 
@@ -670,7 +738,9 @@ const palabraObjetivo = computed(() => {
   if (jugador.currentPowerupWord) return jugador.currentPowerupWord; // PRIORIDAD
   return palabrasEnVista.value.length > 0 ? palabrasEnVista.value[0] : "";
 });
-const esValido = computed(() => validarInput());
+
+
+
 
 // --- MANEJADORES DE EVENTO DE ANIMACIÓN 3D  ---
 
@@ -707,6 +777,11 @@ const reboteClass = computed(() => ({
 const slideInUpClass = computed(() => ({
   "slide-in-up": comenzar.value,
 }));
+
+const palabrasRestantes = computed(() => {
+  return listaEntera.value.length;
+});
+
 </script>
 
 <template>
@@ -753,7 +828,9 @@ const slideInUpClass = computed(() => ({
     >
       <img :src="jugador.icono" alt="icono" class="icono-jugador-img" />
       <p class="icono-jugador-nombre">{{ jugador.username }}</p>
-
+      <div class="player-stats-chip">
+        <span>{{ jugador.completedWords }}</span>
+      </div>
       <!-- Cartas de powerup -->
       <div class="powerups-mini">
         <img
@@ -778,13 +855,17 @@ const slideInUpClass = computed(() => ({
         }"
       >
         <template v-if="index === 0">
-          <span class="escrita-correcta">{{
-            esValido ? palabraUser : ""
-          }}</span>
-
-          <span class="restante">{{
-            palabra.substring(palabraUser.length)
-          }}</span>
+          <span v-for="letra in letrasConEstado" :key="letra.id" :class="[
+            'letra-item',
+            {
+              'letra-correcta': letra.estado === 'correcto',
+              'letra-error': letra.estado === 'error' || letra.estado === 'extra',
+              'letra-pendiente': letra.estado === 'pendiente',
+              'letra-escrita': !!letra.escrita, // true si hay algo escrito
+            }
+          ]">
+            {{ letra.escrita || letra.objetivo || ' ' }}
+          </span>
         </template>
 
         <template v-else>
@@ -819,23 +900,17 @@ const slideInUpClass = computed(() => ({
 
     <div class="input-stats-row">
       <div class="contenedor-texto">
-        <input
-          type="text"
-          class="text-input"
-          :class="{
-            'input-error': !esValido && palabraUser.length > 0,
-            'input-ok': esValido && palabraUser.length > 0,
-          }"
-          v-model="palabraUser"
-          @keydown="onInputKeyDown"
-          @paste="onInputPaste"
-          :placeholder="
-            palabraObjetivo
-              ? `Escribe: ${palabraObjetivo}`
-              : 'Cargando palabras...'
-          "
-          autofocus
-        />
+        <div class="palabras-restantes">
+        <img src="/public/assets/img/imgPowerUps/reina.png" alt="" /> 
+        <span>: {{ palabrasRestantes }}</span>
+      </div>
+        <input type="text" class="text-input" :class="{
+          'input-error': !esValido && palabraUser.length > 0,
+          'input-ok': esValido && palabraUser.length > 0,
+        }" v-model="palabraUser" @keydown="onInputKeyDown" @paste="onInputPaste" :placeholder="palabraObjetivo
+          ? `Escribe: ${palabraObjetivo}`
+          : 'Cargando palabras...'
+          " autofocus />
       </div>
       <div class="stats-right">
         <p>
@@ -1071,6 +1146,24 @@ const slideInUpClass = computed(() => ({
 
 .stats-right span {
   font-weight: bold;
+  
+}
+
+.palabras-restantes{
+  font-family: Font2;
+  color: #f0e68c;
+  font-size: 35px;
+  margin-top: -50px;
+  text-align: center;
+  justify-content: center;
+  display: flex;
+  gap: 10px;
+}
+
+.palabras-restantes img{
+  justify-content: center;
+  width: 30px;
+  height: 40px;
 }
 
 .error-count {
@@ -1108,21 +1201,64 @@ const slideInUpClass = computed(() => ({
   transform: translateX(-50%);
 }
 
-.palabra-actual {
+.powerup-word {
+  color: #ddb100;
+  font-weight: bold;
+  animation: glowPulse 1.2s infinite alternate ease-in-out;
+}
+
+@keyframes glowPulse {
+  from {
+    text-shadow: 0 0 5px #ffcc00, 0 0 10px #ffaa00;
+  }
+
+  to {
+    text-shadow: 0 0 20px #ffcc00, 0 0 40px #ffaa00;
+  }
+}
+
+.lista-palabras li {
+  /* Aplica solo a los <li> dentro de la lista */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Base para cada elemento letra generado por v-for */
+.letra-item {
+  display: inline-block;
+  white-space: pre;
+  /* Permite mostrar espacios */
+  min-width: 0.5em;
+  /* Mínimo de ancho para asegurar el espaciado o fondo de error */
+  text-align: center;
+  color: #555555;
+  /* Color por defecto (pendiente) */
+  font-weight: normal;
+}
+
+/* Letras que ya fueron escritas (base de color más claro) */
+.letra-item.letra-escrita {
   color: #ffffff;
   font-weight: bold;
+  /* Base de sombra para que el texto resalte, similar a .palabra-actual anterior */
   text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
 }
 
-.escrita-correcta {
+/* Letras correctas (Verde) */
+.letra-item.letra-correcta {
   color: #32cd32;
-  font-weight: bold;
   text-shadow: 0 0 8px rgba(50, 205, 50, 0.5);
 }
 
-.restante {
-  color: #555555;
-  font-weight: normal;
+/* Letra incorrecta (error) o letras extra (extra) (Rojo) */
+.letra-item.letra-error {
+  color: #ff4500;
+  /* Letra roja */
+  background-color: rgba(255, 69, 0, 0.2);
+  /* Fondo sutil rojo */
+  border-radius: 3px;
+  text-shadow: 0 0 8px rgba(255, 69, 0, 0.8);
 }
 
 /* --- AJUSTES DEL CRUPIER Y DIÁLOGO --- */
@@ -1434,9 +1570,10 @@ const slideInUpClass = computed(() => ({
 }
 
 .mis-powerups h3 {
-  font-family: "Cinzel Decorative", serif;
-  color: #ffd700;
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  font-family: Font2;
+  font-size: 33px;
+  color: #660000;
+  text-shadow: 0 0 10px rgba(255, 187, 0, 0.5);
   margin-bottom: 12px;
 }
 
