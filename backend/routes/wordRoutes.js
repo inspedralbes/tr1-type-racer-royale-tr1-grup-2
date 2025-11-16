@@ -23,25 +23,24 @@ router.post("/words", async (req, res) => {
       const jugador = room.players.find(p => p.playerId === playerId);
       console.log("🟡 room.players actuales:", room.players.map(p => p.playerId));
       console.log("🔍 Buscando playerId:", playerId);
+      console.log("🔍 Buscando player de p:", jugador.playerId);
 
       if (jugador) {
-        if (!jugador.words || jugador.words.length === 0) {
-          selected = await obtenerPalabras(count);
-          console.log(selected)
-          jugador.words = [...selected];
-        } else {
-          console.log(`🆕 Nuevo jugador ${playerId}, añadiendo a la sala.`);
-          selected = await obtenerPalabras(count);
-          room.players.push({
-            playerId,
-            username: playerName || `Jugador ${room.players.length + 1}`,
-            words: [...selected],
-            completedWords: 0,
-            status: "playing",
-          });
-        }
+        selected = await obtenerPalabras(count);
+        console.log(selected)
+        jugador.words = [...selected];
+      } else {
+        console.log(`🆕 Nuevo jugador ${playerId}, añadiendo a la sala.`);
+        selected = await obtenerPalabras(count);
+        room.players.push({
+          playerId,
+          username: playerName || `Jugador ${room.players.length + 1}`,
+          words: [...selected],
+          completedWords: 0,
+          status: "playing",
+        });
       }
-    }
+      }
 
     res.json({
       data: {

@@ -104,6 +104,7 @@ onUnmounted(() => {
   communicationManager.off("rooms_list", handleRoomsList);
   communicationManager.off("room_created", handleRoomCreated);
   communicationManager.off("room_error", handleRoomError);
+  communicationManager.off("disconnect");
 });
 </script>
 

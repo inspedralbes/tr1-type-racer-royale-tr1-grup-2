@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from "vue";
+import { getApiUrl } from "../../../logic/getUrl.js";
 
 /// Emits al elemento padre este caso PantallaLogin.vue:
 const emit = defineEmits(["success", "error"]); // "success" si el registro es correcto, "error" si falla.
@@ -21,8 +22,7 @@ async function manejoRegistro() {
   // Manejo de errores de red o del fetch (try/catch):
   try {
     // Petición POST al backend con las credenciales nuevas:
-    const response = await fetch(
-      "http://typebet.daw.inspedralbes.cat:3000/api/user/register",
+    const response = await fetch(getApiUrl("/api/user/register"),
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

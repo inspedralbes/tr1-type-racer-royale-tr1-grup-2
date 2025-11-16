@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from "vue";
 import { playerName, playerId } from "../logic/globalState.js";
+import { getApiUrl } from "../logic/getApiUrl.js";
 
 // Emit
 const emit = defineEmits(["registrado"]);
@@ -15,8 +16,7 @@ async function registrarJugador() {
 
   if (nomJugador.value && nomJugador.value.trim() !== "") {
     try {
-      const res = await fetch(
-        "http://typebet.daw.inspedralbes.cat:3000/api/user/register",
+      const res = await fetch(getApiUrl("/api/user/register"),
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

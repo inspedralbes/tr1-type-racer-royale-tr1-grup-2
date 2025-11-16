@@ -4,7 +4,7 @@ services:
     container_name: tr1-mysql-db-prod
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: ${DB_PASS_ROOT}
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASS}
@@ -19,17 +19,17 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: tr1-backend-prod
-    ports:
-      - "3000:3000"
     environment:
       NODE_ENV: production
       DB_HOST: db
       DB_USER: ${DB_USER}
       DB_PASS: ${DB_PASS}
       DB_NAME: ${DB_NAME}
-      FRONT_URL: http://typebet.daw.inspedralbes.cat
+      FRONT_URL: ${FRONT_URL}
       APP_HOST_IP: 0.0.0.0
-      APP_HOST_PORT: 3000
+      APP_HOST_PORT: ${APP_HOST_PORT}
+    ports:
+      - "${APP_HOST_PORT}:3000"
     depends_on:
       - db
     networks:
@@ -41,8 +41,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: http://typebet.daw.inspedralbes.cat:3000
-        VITE_SOCKET_URL: http://typebet.daw.inspedralbes.cat:3000
+        VITE_API_URL: ${VITE_API_URL}
+        VITE_SOCKET_URL: ${VITE_SOCKET_URL}
     container_name: tr1-frontend-prod
     ports:
       - "80:5173"  # Opcional: exponer en puerto 80 para producción

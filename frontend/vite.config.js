@@ -7,13 +7,6 @@ export default defineConfig({
   plugins: [vue()],
   server: {
     port: 5173,
-    proxy: {
-      "/api": {
-        // Tu backend corre en el puerto 3000 (según tu docker-compose)
-        target: "http://localhost:3000",
-        changeOrigin: true,
-      },
-    },
   },
   resolve: {
     alias: {

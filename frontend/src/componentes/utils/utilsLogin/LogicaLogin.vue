@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from "vue";
 import { playerName, playerId } from "../../../logic/globalState.js";
+import { getApiUrl } from "../../../logic/getUrl.js";
 
 // Emits al elemento padre este caso PantallaLogin.vue:
 const emit = defineEmits(["success", "error"]); // "success" si el login es correcto, "error" si falla.
@@ -22,8 +23,7 @@ async function manejoLogin() {
   // Manejo de errores de red o del fetch (try/catch):
   try {
     // Petición POST al backend con las credenciales:
-    const respuesta = await fetch(
-      "http://typebet.daw.inspedralbes.cat:3000/api/user/login",
+    const respuesta = await fetch(getApiUrl("/api/user/login"),
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

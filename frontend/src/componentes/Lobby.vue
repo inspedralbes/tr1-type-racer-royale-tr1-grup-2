@@ -32,6 +32,7 @@ function iniciarJuego() {
 
 // ✅ 2. Esta es la función que se llama cuando el HIJO emite
 function handleExit() {
+  communicationManager.emit('leave_game', { playerId: playerId.value, roomId: props.room.roomId })
   console.log(`🚪 Saliendo del lobby ${props.room.roomId}...`);
 
   if (props.room && props.room.players) {

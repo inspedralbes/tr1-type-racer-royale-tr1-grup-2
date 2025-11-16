@@ -4,6 +4,7 @@ import communicationManager from "../services/communicationManager.js";
 import { playerName, playerId } from "../logic/globalState.js";
 import AnimacionJuego from "./interfazAnimacion.vue";
 import pantallaFinal from "./pantallaFinal.vue";
+import { getApiUrl } from "../logic/getUrl.js";
 
 import {
   aplicarUpsideDown,
@@ -83,6 +84,7 @@ const ganador = ref("");
 const listaEntera = ref([]);
 const palabraUser = ref("");
 const completedWords = ref(0);
+const palabrasBaseRestantes = ref(0);
 const errorCount = ref(0);
 const palabraActualIndex = ref(0);
 const palabrasCompletadasEnBloque = ref(0);
@@ -226,7 +228,7 @@ onMounted(() => {
 
   // 🔹 Fetch palabras iniciales usando endpoint dinámico
 
-  fetch("http://typebet.daw.inspedralbes.cat:3000/api/palabras/words", {
+  fetch(getApiUrl("/api/palabras/words"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -236,6 +238,7 @@ onMounted(() => {
     )
     .then((data) => {
       listaEntera.value = data.data.initialWords;
+      palabrasBaseRestantes.value = listaEntera.value.length;
     })
     .catch((err) => console.error("Error al obtener palabras:", err)); // Escuchar eventos del servidor
 
@@ -323,7 +326,7 @@ onMounted(() => {
     errorCount.value = 0;
 
     // Pedir nuevas palabras al servidor
-    fetch("http://typebet.daw.inspedralbes.cat:3000/api/palabras/words", {
+    fetch(getApiUrl("/api/palabras/words"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -338,7 +341,11 @@ onMounted(() => {
       )
       .then((data) => {
         listaEntera.value = data.data.initialWords;
-        console.log("✅ Palabras reiniciadas:", listaEntera.value);
+        palabrasBaseRestantes.value--;
+
+        // REINICIAR EL NUMERO DE PALABRAS RESTANTES
+        palabrasBaseRestantes.value = listaEntera.length;
+        console.log("✅ Palabras reiniciadas, mostrando nuevas palabras:", listaEntera.value);
       })
       .catch((err) => console.error("❌ Error al reiniciar palabras:", err));
   });
@@ -395,8 +402,8 @@ onUnmounted(() => {
   communicationManager.off("powerup_available");
   communicationManager.off("powerup_spawned");
 
-  // communicationManager.emit("leave_room", { playerId });
-  // communicationManager.disconnect();
+  communicationManager.emit("leave_room", { playerId });
+  communicationManager.disconnect();
 });
 
 // Funcion para actualizar la lista de jugadors
@@ -525,6 +532,7 @@ function onInputKeyDown(event) {
     // 🔹 Si no hay powerup, se procesa palabra normal
     else if (palabraUser.value === palabraObjetivo.value) {
       completedWords.value++;
+      palabrasBaseRestantes.value--;
       enviarPalabra(palabraUser.value);
       pasarLetra.currentTime = 0;
       pasarLetra.play().catch((error) => {
@@ -830,6 +838,10 @@ const slideInUpClass = computed(() => ({
         />
       </div>
       <div class="stats-right">
+        <p>
+          <img src="/public/assets/img/iconos/ficha.png" alt="Palabras restantes" />
+          <span>{{ palabrasBaseRestantes }}</span>
+        </p>
         <p class="icono-propio">
           <img :src="jugadorIcono" alt="icono propio" class="icono-jugador" />
           <span>{{ playerNameActual }}</span>

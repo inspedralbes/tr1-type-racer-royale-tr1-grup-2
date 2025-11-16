@@ -17,7 +17,7 @@ if (process.env.NODE_ENV === "development") {
   corsOptions = { origin: "*", methods: ["GET", "POST"] };
   console.log("[CORS] Desarrollo: todos los orígenes permitidos");
 } else {
-  const allowedOrigin = process.env.FRONT_URL || "http://typebet.daw.inspedralbes.cat";
+  const allowedOrigin = process.env.FRONT_URL || process.env.VITE_FRONT_URL;
   corsOptions = { origin: allowedOrigin, methods: ["GET", "POST"] };
   console.log(`[CORS] Producción: solo permitiendo ${allowedOrigin}`);
 }

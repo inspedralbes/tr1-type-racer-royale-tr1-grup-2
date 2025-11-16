@@ -8,6 +8,7 @@ import Lobby from "./componentes/Lobby.vue";
 import Juego from "./componentes/interfazJuego.vue";
 import PantallaFinal from "./componentes/pantallaFinal.vue";
 import PantallaPerfil from "./componentes/pantallaPerfil.vue";
+import { getApiUrl } from "./logic/getUrl.js";
 
 const vistaActual = ref("registro"); // registro | salas | lobby | juego | final
 const jugador = ref(null);
@@ -20,8 +21,7 @@ onMounted(async () => {
   const token = localStorage.getItem("token");
   if (token) {
     try {
-      const response = await fetch(
-        "http:/typebet.daw.inspedralbes.cat:3000/api/user/user",
+      const response = await fetch(getApiUrl("/api/user/user"),
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -110,11 +110,6 @@ function guardarPerfil(payload) {
 }
 
 function handleGoHome() {
-  try {
-    communicationManager.reset(); // desconecta y limpia todo
-  } catch (e) {
-    console.error("Error al desconectar socket:", e);
-  }
 
   localStorage.clear();
   sessionStorage.clear();
