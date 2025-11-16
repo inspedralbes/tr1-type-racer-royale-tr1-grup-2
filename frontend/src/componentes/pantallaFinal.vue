@@ -65,7 +65,6 @@
 
 <script setup>
 import { ref, reactive, onMounted, defineEmits, defineProps } from "vue";
-// IMPORTANTE: Asegúrate de que las rutas a los archivos de sonido sean correctas en tu proyecto
 import soundSpin from "../../public/assets/sonido/sonidoAccion/playful-casino-slot-machine.mp3";
 import soundWin from "../../public/assets/sonido/sonidoAccion/slot-machine-coin-payout.mp3";
 
@@ -79,14 +78,14 @@ const isPulling = ref(false);
 const canSpin = ref(false); 
 const canGoHome = ref(false); 
 
-// Altura del símbolo (150px)
+
 const SYMBOL_HEIGHT = 150; 
 const SYMBOL_HEIGHT_HALF = SYMBOL_HEIGHT / 2; 
 
-// Duración del giro antes de frenar (1.5 segundos)
+
 const AUDIO_DURATION_MS = 1500; 
 
-// Definición de símbolos (Palabras)
+
 const reelSymbols = ["Nada", "Muerte", "Jugamos"];
 const reelSymbols2 = ["Muerte", "Nada", "Otra"];
 const reelSymbols3 = ["Nada", "Muerte", "Partida?"];
@@ -161,7 +160,7 @@ function startSpin() {
   reel1.speed = reel2.speed = reel3.speed = 40; 
   reel1.transitionDuration = reel2.transitionDuration = reel3.transitionDuration = '0s';
 
-  // Posición inicial: El primer símbolo está medio fuera por arriba.
+  
   reel1.offset = SYMBOL_HEIGHT_HALF;
   reel2.offset = SYMBOL_HEIGHT_HALF;
   reel3.offset = SYMBOL_HEIGHT_HALF;
@@ -189,12 +188,6 @@ function goHomeAction() {
     
     setTimeout(() => {
         isPulling.value = false;
-        // ⚠️ Nota: Las siguientes líneas dependen de variables y funciones que no están definidas en el contexto proporcionado (communicationManager, playerId, roomId). 
-        // Las he dejado comentadas para evitar errores si no están importadas/definidas.
-        // communicationManager.emit('leave_game', { playerId: playerId.value, roomId: roomId.value })
-        // communicationManager.disconnect()
-
-        // 3️⃣ Emitir evento local para navegación
         emit("go-home");
     }, 500); 
 }

@@ -157,12 +157,13 @@ onMounted(() => {
   }
 
   // --- LUCES ---
-
   escena.add(new THREE.AmbientLight(0x443300, 1));
+
   const luzDireccional = new THREE.DirectionalLight(0xffb000, 1.5);
   luzDireccional.position.set(0, 10, 0);
   luzDireccional.castShadow = true;
   escena.add(luzDireccional);
+
   escena.fog = new THREE.Fog(0x111111, 8, 30);
 
   // --- CARGA DEL MODELO GLB ---
@@ -173,7 +174,7 @@ onMounted(() => {
       escena.add(gltf.scene);
       refGrupoModelo.value = gltf.scene;
 
-      // Habilitar que los objetos del modelo proyecten sombras
+      // Activar sombras en los meshes del modelo
       gltf.scene.traverse((node) => {
         if (node.isMesh) {
           node.castShadow = true;
@@ -183,7 +184,7 @@ onMounted(() => {
 
       refGrupoModelo.value.position.z = DESPLAZAMIENTO_Z;
 
-      // USAR LA CÁMARA DE BLENDER
+      // USAR LA CÁMARA DE BLENDER SI EXISTE
       const camaraGltf = gltf.cameras.find((cam) => cam.parent);
       if (camaraGltf) {
         refCamara.value = camaraGltf;
@@ -191,33 +192,35 @@ onMounted(() => {
         refCamara.value.updateProjectionMatrix();
       }
 
-      // SETUP DEL MEZCLADOR DE ANIMACIONES
+      // --- MEZCLADOR DE ANIMACIONES ---
       const mezclador = new THREE.AnimationMixer(gltf.scene);
       refMezclador.value = markRaw(mezclador);
 
+      // --- LLENADO DE ANIMACIONES SIN USAR MAP() ---
+      animacionesDisponibles.value = [];
+
       if (gltf.animations && gltf.animations.length > 0) {
-        animacionesDisponibles.value = gltf.animations.map((clip) => {
-          return {
-            nombre:
-              clip.name ||
-              `Action.${gltf.animations
-                .indexOf(clip)
-                .toString()
-                .padStart(3, "0")}`,
+        for (let i = 0; i < gltf.animations.length; i++) {
+          const clip = gltf.animations[i];
+
+          animacionesDisponibles.value.push({
+            nombre: clip.name || `Action.${i.toString().padStart(3, "0")}`,
             clip: markRaw(clip),
-          };
-        });
+          });
+        }
       }
 
+      // PRECOMPILAR SHADERS
       try {
-      refRenderizador.value.compile(escena, refCamara.value);
-      console.log("Compilación de shaders completada.");
-    } catch (e) {
-      console.error("Error durante la compilación de shaders:", e);
-    }
+        refRenderizador.value.compile(escena, refCamara.value);
+        console.log("Compilación de shaders completada.");
+      } catch (e) {
+        console.error("Error durante la compilación de shaders:", e);
+      }
 
       estaListo.value = true;
-      iniciarAnimacion();
+
+      iniciarAnimacion(); // ⚡ lanza animación inicial
     },
     (xhr) => {
       console.log(
@@ -229,7 +232,7 @@ onMounted(() => {
     }
   );
 
-  // --- INICIAR EL BUCLE Y ESCUCHAR REDIMENSIONAMIENTO ---
+  // --- INICIAR LOOP Y RESIZE ---
   animar();
   window.addEventListener("resize", manejarRedimensionamiento);
 });
