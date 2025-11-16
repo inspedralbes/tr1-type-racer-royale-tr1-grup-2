@@ -75,7 +75,7 @@ const jugadorIcono = ref("public/assets/img/iconos/corazon.png");
 
 // 🟩 Variables para manejar la pantalla final
 const mostrarPantallaFinal = ref(false);
-const ganador = ref("");
+const ganador = ref(""); // Debería ser String (username)
 
 // 🟩 Variables reactivas
 const listaEntera = ref([]);
@@ -130,18 +130,6 @@ watch(mostrarPantallaFinal, (nuevoValor) => {
 
 // 🟦 FUNCIONES DE SOCKET ADAPTADAS A COMMUNICATION MANAGER
 
-// // FUNCION QUE RECLAMA UNA CARTA POWER-UP
-// function reclamarCarta(carta) {
-//   console.log("Intentando reclamar carta:", carta);
-//   communicationManager.emit("claim_powerup", {
-//     data: {
-//       roomId: roomId.value,
-//       playerId: playerId.value,
-//       carta,
-//     }
-//   });
-// }
-
 // FUNCION QUE MANEJA EL USO DEL POWERUP
 function usarPowerup(indice) {
   const carta = misPowerups.value[indice];
@@ -164,6 +152,18 @@ function usarPowerup(indice) {
   console.log("Powerup usado:", carta.nombre);
 }
 
+// 💥 NUEVA FUNCIÓN PARA MANEJAR EL EVENTO DE LA PANTALLA FINAL
+function handleGoHome() {
+  // Limpieza y desconexión ya se hizo en pantallaFinal.vue,
+  // solo pedimos al componente App.vue que navegue.
+  mostrarPantallaFinal.value = false;
+  // 3. Emitir evento al App.vue para cambiar a la vista de registro/lobby
+  emit("juego-finalizado", "go_home");
+  console.log(
+    "🚪 Evento 'juego-finalizado' emitido para navegar a la vista de registro."
+  );
+}
+
 // FUNCION QUE MANEJA LA ACTUALIZACION DE PALABRAS DEL JUGADOR
 function onUpdatePlayerWords(msg) {
   const { playerId: jugador, remainingWords, status } = msg.data;
@@ -177,9 +177,13 @@ function onUpdatePlayerWords(msg) {
     listaEntera.value = remainingWords;
     console.log("🔴 DESPUÉS - listaEntera:", listaEntera.value);
     console.log("🔤 Palabras status actualizadas:", status);
+
     if (status === "finished") {
-      ganador.value = playerNameActual || playerIdActual;
-      emit("juego-finalizado", ganador.value);
+      // ⚠️ Corregido: convertir a String para la prop 'winner'
+      ganador.value = String(playerNameActual || playerIdActual);
+
+      // ❌ ELIMINADA línea: emit("juego-finalizado", ganador.value); // Esto causaba la navegación inmediata
+
       mostrarPantallaFinal.value = true;
       audioPlayer.pause();
       audioPlayer.currentTime = 0;
@@ -200,11 +204,17 @@ function onUpdateProgress(msg) {
   });
   actualizarJugadores(players);
   const ganadorJugador = players.find((p) => p.status === "finished");
+
   if (ganadorJugador) {
-    ganador.value = ganadorJugador.username;
-    emit("juego-finalizado", ganador.value);
+    // Si ya estamos mostrando la pantalla final, no hacemos nada
+    if (mostrarPantallaFinal.value) return;
+
+    ganador.value = ganadorJugador.username || String(ganadorJugador.playerId);
+
+    // ❌ ELIMINADA línea: emit("juego-finalizado", ganador.value); // Esto causaba la navegación inmediata
+
     mostrarPantallaFinal.value = true;
-    console.log(`🎉 La partida terminó. Ganador: ${ganadorJugador.playerId}`);
+    console.log(`🎉 La partida terminó. Ganador: ${ganador.value}`);
   }
 }
 
@@ -280,8 +290,8 @@ onMounted(() => {
         // No hace nada a otros, es protección
         break;
       // case "reset_game":
-      //   reiniciarPartida(); // Este efecto local solo puede resetear algo visual o contadores si quieres
-      //   break;
+      //   reiniciarPartida(); // Este efecto local solo puede resetear algo visual o contadores si quieres
+      //   break;
     }
 
     console.log(`💫 Powerup ${efecto} activado por ${from}`);
@@ -636,7 +646,7 @@ const palabraObjetivo = computed(() => {
 });
 const esValido = computed(() => validarInput());
 
-// --- MANEJADORES DE EVENTO DE ANIMACIÓN 3D  ---
+// --- MANEJADORES DE EVENTO DE ANIMACIÓN 3D  ---
 
 //Captura la duración total de la animación 3D y programa la aparición de la UI 2D.
 const handleAnimationDuration = (durationInSeconds) => {
@@ -677,190 +687,190 @@ const slideInUpClass = computed(() => ({
   <pantallaFinal
     v-if="mostrarPantallaFinal"
     :winner="ganador"
-    @go-home="mostrarPantallaFinal = false"
+    @go-home="handleGoHome"
   />
 
-  <!-- Audios -->
-  <audio
-    ref="keyPlayer"
-    src="/public/assets/sonido/sonidoAccion/mech-keyboard.mp3"
-  ></audio>
-  <audio src="/public/assets/sonido/sonidoAccion/carddrop.mp3"></audio>
-  <button v-on:click="musica()" id="btn_music">
-    <img src="/public/assets/img/iconos/musica.jpg" alt="" />
-  </button>
+  <template v-if="!mostrarPantallaFinal">
+    <audio
+      ref="keyPlayer"
+      src="/public/assets/sonido/sonidoAccion/mech-keyboard.mp3"
+    ></audio>
+    <audio src="/public/assets/sonido/sonidoAccion/carddrop.mp3"></audio>
+    <button v-on:click="musica()" id="btn_music">
+      <img src="/public/assets/img/iconos/musica.jpg" alt="" />
+    </button>
 
-  <!-- Div para la estadistica de jugadores -->
-  <div v-if="comenzar" class="linea-diagonal"></div>
-  <div v-if="comenzar" class="linea-diagonal2"></div>
-  <div v-if="comenzar" class="player-container-exterior">
-    <div
-      v-for="(jugador, index) in otrosJugadores"
-      :key="jugador.id"
-      :class="['other-player-stat', `player-pos-${index}`]"
-    >
-      <div class="player-name-chip">
-        {{ jugador.username }}
-      </div>
-      <div class="player-stats-chip">
-        <span>{{ jugador.completedWords }}</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Lista que muestra usuarios alrededor -->
-
-  <div v-if="comenzar" class="iconos-jugadores-container">
-    <div
-      v-for="(jugador, index) in otrosJugadores"
-      :key="jugador.id"
-      class="icono-jugador-item"
-    >
-      <img :src="jugador.icono" alt="icono" class="icono-jugador-img" />
-      <p class="icono-jugador-nombre">{{ jugador.username }}</p>
-    </div>
-  </div>
-
-  <!-- Lista de palabras / Input / Estadisticas del usuario que esta jugando -->
-  <div v-if="comenzar" class="bottom-ui-container" :class="slideInUpClass">
-    <ul
-      class="lista-palabras"
-      :class="{ 'upside-down': efectoUpsideDownActivo }"
-    >
-      <li
-        v-for="(palabra, index) in palabrasEnVista"
-        :key="index"
-        :class="{ 'palabra-actual': index === 0 }"
+    <div v-if="comenzar" class="linea-diagonal"></div>
+    <div v-if="comenzar" class="linea-diagonal2"></div>
+    <div v-if="comenzar" class="player-container-exterior">
+      <div
+        v-for="(jugador, index) in otrosJugadores"
+        :key="jugador.id"
+        :class="['other-player-stat', `player-pos-${index}`]"
       >
-        <template v-if="index === 0">
-          <span class="escrita-correcta">{{
-            esValido ? palabraUser : ""
-          }}</span>
-
-          <span class="restante">{{
-            palabra.substring(palabraUser.length)
-          }}</span>
-        </template>
-
-        <template v-else>
-          <span class="restante">{{ palabra }}</span>
-        </template>
-      </li>
-    </ul>
-
-    <!-- 🃏 Power-Ups disponibles para reclamar -->
-    <div class="powerups-disponibles">
-      <h3>Cartas disponibles</h3>
-      <div class="cartas">
-        <div v-for="carta in powerupsDisponibles" :key="carta.id" class="carta">
-          <strong>{{ carta.nombre }}</strong>
-          <p>{{ carta.descripcion }}</p>
+        <div class="player-name-chip">
+          {{ jugador.username }}
+        </div>
+        <div class="player-stats-chip">
+          <span>{{ jugador.completedWords }}</span>
         </div>
       </div>
     </div>
 
-    <!-- 🧰 Mis Power-Ups -->
-    <div class="mis-powerups">
-      <h3>Mis cartas</h3>
-      <div class="cartas">
-        <div v-for="carta in misPowerups" :key="carta.id" class="carta">
-          <strong>{{ carta.nombre }}</strong>
-        </div>
+    <div v-if="comenzar" class="iconos-jugadores-container">
+      <div
+        v-for="(jugador, index) in otrosJugadores"
+        :key="jugador.id"
+        class="icono-jugador-item"
+      >
+        <img :src="jugador.icono" alt="icono" class="icono-jugador-img" />
+        <p class="icono-jugador-nombre">{{ jugador.username }}</p>
       </div>
     </div>
 
-    <div class="input-stats-row">
-      <div class="contenedor-texto">
-        <input
-          type="text"
-          class="text-input"
-          :class="{
-            'input-error': !esValido && palabraUser.length > 0,
-            'input-ok': esValido && palabraUser.length > 0,
-          }"
-          v-model="palabraUser"
-          @keydown="onInputKeyDown"
-          @paste="onInputPaste"
-          :placeholder="
-            palabraObjetivo
-              ? `Escribe: ${palabraObjetivo}`
-              : 'Cargando palabras...'
-          "
-          autofocus
-        />
-      </div>
-      <div class="stats-right">
-        <p class="icono-propio">
-          <img :src="jugadorIcono" alt="icono propio" class="icono-jugador" />
-          <span>{{ playerNameActual }}</span>
-        </p>
-        <p>
-          <img src="/public/assets/img/iconos/ficha.png" alt="" />
-          <span>{{ completedWords }}</span>
-        </p>
-
-        <p>
-          <img src="/public/assets/img/iconos/calavera.jpg" alt="" />
-          <span :class="{ 'error-count': errorCount > 0 }">{{
-            errorCount
-          }}</span>
-        </p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Animacion / Crupier / Dialogo Crupier -->
-
-  <div class="game-background">
-    <AnimacionJuego
-      @animationFinished="handleAnimationFinished"
-      @animationDurationCalculated="handleAnimationDuration"
-    />
-
-    <div id="contenedor-juego">
-      <div id="crupier-entero" :class="reboteClass">
-        <div
-          id="crupier-normal"
-          :style="{ display: crupierState === 'normal' ? 'flex' : 'none' }"
+    <div v-if="comenzar" class="bottom-ui-container" :class="slideInUpClass">
+      <ul
+        class="lista-palabras"
+        :class="{ 'upside-down': efectoUpsideDownActivo }"
+      >
+        <li
+          v-for="(palabra, index) in palabrasEnVista"
+          :key="index"
+          :class="{ 'palabra-actual': index === 0 }"
         >
-          <img
-            src="/public/assets/img/crupier-normal_oficial.png"
-            alt="Crupier Normal"
+          <template v-if="index === 0">
+            <span class="escrita-correcta">{{
+              esValido ? palabraUser : ""
+            }}</span>
+
+            <span class="restante">{{
+              palabra.substring(palabraUser.length)
+            }}</span>
+          </template>
+
+          <template v-else>
+            <span class="restante">{{ palabra }}</span>
+          </template>
+        </li>
+      </ul>
+
+      <div class="powerups-disponibles">
+        <h3>Cartas disponibles</h3>
+        <div class="cartas">
+          <div
+            v-for="carta in powerupsDisponibles"
+            :key="carta.id"
+            class="carta"
+          >
+            <strong>{{ carta.nombre }}</strong>
+            <p>{{ carta.descripcion }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mis-powerups">
+        <h3>Mis cartas</h3>
+        <div class="cartas">
+          <div v-for="carta in misPowerups" :key="carta.id" class="carta">
+            <strong>{{ carta.nombre }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-stats-row">
+        <div class="contenedor-texto">
+          <input
+            type="text"
+            class="text-input"
+            :class="{
+              'input-error': !esValido && palabraUser.length > 0,
+              'input-ok': esValido && palabraUser.length > 0,
+            }"
+            v-model="palabraUser"
+            @keydown="onInputKeyDown"
+            @paste="onInputPaste"
+            :placeholder="
+              palabraObjetivo
+                ? `Escribe: ${palabraObjetivo}`
+                : 'Cargando palabras...'
+            "
+            autofocus
           />
         </div>
+        <div class="stats-right">
+          <p class="icono-propio">
+            <img :src="jugadorIcono" alt="icono propio" class="icono-jugador" />
+            <span>{{ playerNameActual }}</span>
+          </p>
+          <p>
+            <img src="/public/assets/img/iconos/ficha.png" alt="" />
+            <span>{{ completedWords }}</span>
+          </p>
 
-        <div
-          id="crupier-confundido"
-          :style="{ display: showConfusedImage ? 'flex' : 'none' }"
-        >
-          <img
-            src="/public/assets/img/crupier-confundido_oficial.png"
-            alt="Crupier Confundido"
-          />
-        </div>
-
-        <div
-          id="crupier-carta"
-          :style="{ display: showPowerupImage ? 'flex' : 'none' }"
-        >
-          <img
-            src="/public/assets/img/crupier-carta_oficial.png"
-            alt="Crupier Carta"
-          />
-        </div>
-      </div>
-
-      <div class="input-dialog-container" :class="reboteClass" v-if="!comenzar">
-        <div class="input__container">
-          <div class="shadow__input"></div>
-
-          <p v-if="mensajeInput">{{ mensajeInput }}</p>
+          <p>
+            <img src="/public/assets/img/iconos/calavera.jpg" alt="" />
+            <span :class="{ 'error-count': errorCount > 0 }">{{
+              errorCount
+            }}</span>
+          </p>
         </div>
       </div>
     </div>
-  </div>
+
+    <div class="game-background">
+      <AnimacionJuego
+        @animationFinished="handleAnimationFinished"
+        @animationDurationCalculated="handleAnimationDuration"
+      />
+
+      <div id="contenedor-juego">
+        <div id="crupier-entero" :class="reboteClass">
+          <div
+            id="crupier-normal"
+            :style="{ display: crupierState === 'normal' ? 'flex' : 'none' }"
+          >
+            <img
+              src="/public/assets/img/crupier-normal_oficial.png"
+              alt="Crupier Normal"
+            />
+          </div>
+
+          <div
+            id="crupier-confundido"
+            :style="{ display: showConfusedImage ? 'flex' : 'none' }"
+          >
+            <img
+              src="/public/assets/img/crupier-confundido_oficial.png"
+              alt="Crupier Confundido"
+            />
+          </div>
+
+          <div
+            id="crupier-carta"
+            :style="{ display: showPowerupImage ? 'flex' : 'none' }"
+          >
+            <img
+              src="/public/assets/img/crupier-carta_oficial.png"
+              alt="Crupier Carta"
+            />
+          </div>
+        </div>
+
+        <div
+          class="input-dialog-container"
+          :class="reboteClass"
+          v-if="!comenzar"
+        >
+          <div class="input__container">
+            <div class="shadow__input"></div>
+
+            <p v-if="mensajeInput">{{ mensajeInput }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
 </template>
-
 <style scoped>
 /* Fuentes */
 

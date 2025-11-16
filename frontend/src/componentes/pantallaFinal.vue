@@ -1,93 +1,130 @@
 <template>
-  <div class="slot-machine-container">
-    <div class="machine-frame">
-      <div class="machine-top">
-        <h2 class="machine-title">☠ Máquina del Destino ☠</h2>
+  <div class="final-screen-layout">
+    <div class="stats-column">
+      <h2 class="stats-title">🏆 Estadísticas Finales</h2>
+      <div class="player-info">
+        <p><strong>Jugador:</strong> {{ playerName }}</p>
       </div>
-
-      <div class="slot-display">
-        <div class="slot-reel">
-          <div class="reel-ticker" :style="reelStyle(reel1)">
-            <span
-              v-for="symbol in reelSymbols"
-              :key="'r1-' + symbol"
-              class="slot-symbol"
-              >{{ symbol }}</span
-            >
-            <span
-              v-for="symbol in reelSymbols"
-              :key="'r1dup-' + symbol"
-              class="slot-symbol"
-              >{{ symbol }}</span
-            >
+      <div class="stats-details-list">
+        <div v-if="playerStats" class="stats-list-inner">
+          <div class="stat-item">
+            <span>Aciertos:</span>
+            <span class="stat-value">{{ playerStats.aciertos }}</span>
+          </div>
+          <div class="stat-item">
+            <span>Errores:</span>
+            <span class="stat-value">{{ playerStats.errores }}</span>
+          </div>
+          <div class="stat-item">
+            <span>Intentos Totales:</span>
+            <span class="stat-value">{{ playerStats.totalIntentos }}</span>
+          </div>
+          <div class="stat-item">
+            <span>Palabras Frecuentes:</span>
+            <span class="stat-value">{{
+              playerStats.palabrasFrecuentes.length
+            }}</span>
           </div>
         </div>
-        <div class="slot-reel">
-          <div class="reel-ticker" :style="reelStyle(reel2)">
-            <span
-              v-for="symbol in reelSymbols2"
-              :key="'r2-' + symbol"
-              class="slot-symbol"
-              >{{ symbol }}</span
-            >
-            <span
-              v-for="symbol in reelSymbols2"
-              :key="'r2dup-' + symbol"
-              class="slot-symbol"
-              >{{ symbol }}</span
-            >
+        <p v-else class="loading-stats">Cargando estadísticas...</p>
+      </div>
+      <small class="disclaimer">¡El destino te espera!</small>
+    </div>
+
+    <div class="slot-machine-container">
+      <div class="machine-frame">
+        <div class="machine-top">
+          <h2 class="machine-title">☠ Máquina del Destino ☠</h2>
+        </div>
+
+        <div class="slot-display">
+          <div class="slot-reel">
+            <div class="reel-ticker" :style="reelStyle(reel1)">
+              <span
+                v-for="symbol in reelSymbols"
+                :key="'r1-' + symbol"
+                class="slot-symbol"
+                >{{ symbol }}</span
+              >
+              <span
+                v-for="symbol in reelSymbols"
+                :key="'r1dup-' + symbol"
+                class="slot-symbol"
+                >{{ symbol }}</span
+              >
+            </div>
+          </div>
+          <div class="slot-reel">
+            <div class="reel-ticker" :style="reelStyle(reel2)">
+              <span
+                v-for="symbol in reelSymbols2"
+                :key="'r2-' + symbol"
+                class="slot-symbol"
+                >{{ symbol }}</span
+              >
+              <span
+                v-for="symbol in reelSymbols2"
+                :key="'r2dup-' + symbol"
+                class="slot-symbol"
+                >{{ symbol }}</span
+              >
+            </div>
+          </div>
+          <div class="slot-reel">
+            <div class="reel-ticker" :style="reelStyle(reel3)">
+              <span
+                v-for="symbol in reelSymbols3"
+                :key="'r3-' + symbol"
+                class="slot-symbol"
+                >{{ symbol }}</span
+              >
+              <span
+                v-for="symbol in reelSymbols3"
+                :key="'r3dup-' + symbol"
+                class="slot-symbol"
+                >{{ symbol }}</span
+              >
+            </div>
           </div>
         </div>
-        <div class="slot-reel">
-          <div class="reel-ticker" :style="reelStyle(reel3)">
-            <span
-              v-for="symbol in reelSymbols3"
-              :key="'r3-' + symbol"
-              class="slot-symbol"
-              >{{ symbol }}</span
-            >
-            <span
-              v-for="symbol in reelSymbols3"
-              :key="'r3dup-' + symbol"
-              class="slot-symbol"
-              >{{ symbol }}</span
-            >
-          </div>
+
+        <div class="machine-details">
+          <h1>El elegido es:</h1>
+          <span v-if="winner" class="winner-name">{{ winner }}</span>
+          <span v-else-if="!canSpin" class="winner-name placeholder"
+            >...Calculando Destino...</span
+          >
+          <span v-else class="winner-name placeholder">— Nadie aún —</span>
         </div>
-      </div>
 
-      <div class="machine-details">
-        <h1>El elegido es:</h1>
-        <span v-if="winner" class="winner-name">{{ winner }}</span>
-        <span v-else-if="!canSpin" class="winner-name placeholder"
-          >...Calculando Destino...</span
-        >
-        <span v-else class="winner-name placeholder">— Nadie aún —</span>
-      </div>
-
-      <div class="lever-housing">
-        <div
-          class="lever"
-          :class="{ pulling: isPulling }"
-          @click="goHomeAction"
-          :style="{ cursor: canGoHome ? 'pointer' : 'default' }"
-        >
-          <div class="lever-ball"></div>
+        <div class="lever-housing">
+          <div
+            class="lever"
+            :class="{ pulling: isPulling }"
+            @click="goHomeAction"
+            :style="{ cursor: canGoHome ? 'pointer' : 'default' }"
+          >
+            <div class="lever-ball"></div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref, reactive, onMounted, defineEmits, defineProps } from "vue";
-// IMPORTANTE: Asegúrate de que las rutas a los archivos de sonido sean correctas en tu proyecto
-import soundSpin from "../../public/assets/sonido/sonidoAccion/playful-casino-slot-machine.mp3";
-import soundWin from "../../public/assets/sonido/sonidoAccion/slot-machine-coin-payout.mp3";
+import communicationManager from "../services/communicationManager.js";
+import { playerName, playerId, roomId } from "../logic/globalState.js";
+import axios from "axios";
+
+import soundSpin from "/public/assets/sonido/sonidoAccion/playful-casino-slot-machine.mp3";
+import soundWin from "/public/assets/sonido/sonidoAccion/slot-machine-coin-payout.mp3";
 
 const props = defineProps({
   winner: { type: String, default: "" },
 });
+
+const playerStats = ref(null);
 
 const emit = defineEmits(["go-home"]);
 
@@ -95,14 +132,11 @@ const isPulling = ref(false);
 const canSpin = ref(false);
 const canGoHome = ref(false);
 
-// Altura del símbolo (150px)
 const SYMBOL_HEIGHT = 150;
 const SYMBOL_HEIGHT_HALF = SYMBOL_HEIGHT / 2;
 
-// Duración del giro antes de frenar (1.5 segundos)
 const AUDIO_DURATION_MS = 1500;
 
-// Definición de símbolos (Palabras)
 const reelSymbols = ["Nada", "Muerte", "Estadisticas"];
 const reelSymbols2 = ["Muerte", "Nada", "Estadisticas"];
 const reelSymbols3 = ["Nada", "Muerte", "Estadisticas"];
@@ -162,7 +196,6 @@ function animateReels() {
 
 function stopReel(reel, targetSymbolIndex, symbolCount, delay) {
   return new Promise((resolve) => {
-    // Cálculo para centrar el símbolo en la ventana de 150px
     let targetOffset =
       -(targetSymbolIndex * SYMBOL_HEIGHT) + SYMBOL_HEIGHT_HALF;
 
@@ -198,7 +231,6 @@ function startSpin() {
     reel3.transitionDuration =
       "0s";
 
-  // Posición inicial: El primer símbolo está medio fuera por arriba.
   reel1.offset = SYMBOL_HEIGHT_HALF;
   reel2.offset = SYMBOL_HEIGHT_HALF;
   reel3.offset = SYMBOL_HEIGHT_HALF;
@@ -225,20 +257,48 @@ function goHomeAction() {
 
   setTimeout(() => {
     isPulling.value = false;
+
     communicationManager.emit("leave_game", {
       playerId: playerId.value,
       roomId: roomId.value,
     });
 
-    // 2️⃣ Desconectar el socket
     communicationManager.disconnect();
 
-    // 3️⃣ Emitir evento local para navegación
     emit("go-home");
   }, 500);
 }
 
+async function loadPlayerStats() {
+  const currentId = playerId.value;
+
+  if (!currentId) {
+    console.error("ID del jugador no disponible para cargar estadísticas.");
+    return;
+  }
+
+  try {
+    // Asegúrate de que esta URL coincida con la ruta de tu API de Express/MongoDB
+    const response = await axios.get(
+      `http://localhost:3000/api/user/stats/${currentId}`
+    );
+
+    playerStats.value = response.data;
+  } catch (error) {
+    console.error("Error al cargar estadísticas:", error);
+    // Fallback a valores por defecto en caso de error
+    playerStats.value = {
+      aciertos: 0,
+      errores: 0,
+      totalIntentos: 0,
+      palabrasFrecuentes: [],
+    };
+  }
+}
+
 onMounted(() => {
+  loadPlayerStats();
+
   animateReels();
   sonidoTragaperras.volume = 0.2;
   sonidoMonedas.volume = 0.3;
@@ -247,7 +307,6 @@ onMounted(() => {
 });
 </script>
 
---- ## 🎨 Estilos CSS Actualizados ```css
 <style scoped>
 /* Colores */
 :root {
@@ -259,23 +318,116 @@ onMounted(() => {
   --shadow-deep: rgba(0, 0, 0, 0.8);
   --lever-red: #8b0000;
   --lever-red-light: #ff3333;
+  --stats-frame: #4a342a;
+  --stats-text: #f0e6d2;
 }
 
-/* Contenedor */
-.slot-machine-container {
+/* ------------------------------------------- */
+/* NUEVO: Contenedor Principal (Layout Flex) */
+/* ------------------------------------------- */
+.final-screen-layout {
   display: flex;
   justify-content: center;
   align-items: center;
+  gap: 3vw;
   width: 100vw;
   height: 100vh;
   background: radial-gradient(circle at center, #3c2a2a 0%, #000 80%);
   font-family: "Courier New", Courier, monospace;
 }
 
-/* Marco */
+/* ------------------------------------------- */
+/* NUEVO: Columna de Estadísticas */
+/* ------------------------------------------- */
+.stats-column {
+  width: 25vw;
+  max-width: 300px;
+  min-width: 200px;
+  height: 70vh;
+  padding: 3vh 1.5vw;
+
+  background: var(--metal-dark);
+  border: 0.4vw solid var(--metal-rust);
+  border-radius: 0.8vw;
+  box-shadow: inset 0 0 1.5vw var(--shadow-deep);
+  color: var(--stats-text);
+
+  align-self: center;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.stats-title {
+  font-size: 3vh;
+  color: var(--light-amber);
+  text-shadow: 0 0 0.2vh #000;
+  text-align: center;
+  margin-bottom: 2vh;
+  padding-bottom: 1vh;
+  border-bottom: 0.2vh solid var(--metal-rust);
+}
+
+.player-info {
+  margin-bottom: 1.5vh;
+  padding-bottom: 1vh;
+  border-bottom: 0.1vh solid var(--metal-rust);
+  font-size: 1.8vh;
+  color: var(--stats-text);
+}
+
+.stats-details-list {
+  flex-grow: 1;
+  background: var(--stats-frame);
+  padding: 1.5vh;
+  border-radius: 0.5vw;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.6);
+}
+
+.stats-list-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5vh;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.7vh;
+  color: var(--paper-aged);
+  border-bottom: 0.1vh dashed var(--wood-old);
+  padding-bottom: 0.5vh;
+}
+
+.stat-value {
+  font-weight: bold;
+  color: var(--light-amber);
+  text-shadow: 0 0 0.1vh #000;
+}
+
+.loading-stats,
+.disclaimer {
+  text-align: center;
+  margin-top: 2vh;
+  font-size: 1.5vh;
+  color: var(--paper-aged);
+  opacity: 0.7;
+}
+
+/* ------------------------------------------- */
+/* ESTILOS ORIGINALES DE LA MÁQUINA */
+/* ------------------------------------------- */
+
+.slot-machine-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .machine-frame {
   position: relative;
-  width: 80vw;
+  width: 50vw;
+  max-width: 400px;
   height: 90vh;
   background: linear-gradient(
     135deg,
@@ -291,7 +443,6 @@ onMounted(() => {
   box-shadow: inset 0 0 3vw var(--shadow-deep);
 }
 
-/* Cabecera */
 .machine-top {
   text-align: center;
   padding-top: 1vh;
@@ -303,7 +454,6 @@ onMounted(() => {
   text-shadow: 0 0 0.4vh #000;
 }
 
-/* Rodillos */
 .slot-display {
   display: flex;
   justify-content: space-around;
@@ -318,7 +468,6 @@ onMounted(() => {
 
 .slot-reel {
   width: 28%;
-  /* Altura para mostrar solo 1 símbolo (150px) */
   height: 150px;
   background: var(--paper-aged);
   border: 0.2vw solid #3e2f1d;
@@ -332,27 +481,21 @@ onMounted(() => {
 .reel-ticker {
   display: flex;
   flex-direction: column;
-  /* El desplazamiento lo gestiona el JS */
 }
 
 .slot-symbol {
   height: 150px;
   line-height: 150px;
-  font-size: 8vh; /* Se redujo ligeramente el tamaño del texto para que quepa mejor */
+  font-size: 8vh;
   text-align: center;
   text-shadow: 0 0 0.5vh var(--shadow-deep);
   color: black;
-
-  /* 🔑 CAMBIO CLAVE AQUÍ: Fondo para el texto */
   background-color: rgba(0, 0, 0, 0.4);
   padding: 0 10px;
   box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8);
-  color: var(
-    --light-amber
-  ); /* Cambiamos el color del texto a ámbar para que contraste con el negro */
+  color: var(--light-amber);
 }
 
-/* Panel inferior y Palanca (sin cambios) */
 .machine-details {
   background: var(--metal-dark);
   border: 0.3vw solid var(--metal-rust);
