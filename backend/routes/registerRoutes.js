@@ -1,13 +1,14 @@
-// DEPENDENCIAS
 import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { dbPool } from "../db/dbPool.js"; // Importamos el pool de conexión
+import { dbPool } from "../db/dbPool.js"; 
 
-// --- Router ---
 const router = express.Router();
 
-// --- Registro ---
+// 
+// ENDPOINT DE API REST - REGISTRO DE USUARIO - METODO POST
+//
+
 router.post("/register", async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
@@ -32,39 +33,12 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// export default router;
 
 
+// 
+// ENDPOINT DE API REST - LOGIN DE USUARIO - METODO POST
+//
 
-// // backend/routes/register.js
-// import express from "express";
-
-// // IMPORTAR EL ESTADO GLOBAL DE JUGADORES
-// import { globalPlayers } from "../logic/globalState.js";
-
-// const router = express.Router();
-
-// let playerCounter = 1;
-
-// router.post("/register", (req, res) => {
-//   const { username } = req.body;
-//   const playerId = `u${playerCounter++}`;
-
-//   if (!username || username.trim() === "") {
-//     return res.status(400).json({ message: "Nombre inválido" });
-//   }
-
-//   // backend/routes/register.js o tu controlador de registro
-//     const player = { playerId, username };
-//     globalPlayers.push(player); // ✅ ahora se hace aquí
-
-
-//   console.log(`[🧍 Registro] Nuevo jugador: ${username} (${playerId})`);
-//   res.json(player);
-// });
-
-// export default router;
-// --- Login ---
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
@@ -107,7 +81,12 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// --- Get User Data from Token ---
+
+
+// 
+// ENDPOINT DE API REST - USUARIO CON TOKEN - METODO POST
+//
+
 router.post("/user", async (req, res) => {
   const { token } = req.body;
   if (!token) {

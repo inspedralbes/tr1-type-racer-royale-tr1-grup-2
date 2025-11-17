@@ -1,11 +1,16 @@
 import { ref } from "vue";
 
-// Efectos reactivos
 export const efectoUpsideDownActivo = ref(false);
 export const slowEnemyActivo = ref(false);
 export const escudoActivo = ref(false);
 
-// Funciones de efectos
+//
+//// FUNCIONES DE LOS EFECTOS DE LOS POWERUPS QUE PROVOCARAN A LA GENTE
+//
+
+
+
+// FUNCION QUE PONDRA LAS PALABRAS DE ARRIBA PARA ABAJO
 export function aplicarUpsideDown(duracion = 3000) {
   efectoUpsideDownActivo.value = true;
   console.log("mundo al reves");
@@ -14,8 +19,9 @@ export function aplicarUpsideDown(duracion = 3000) {
   }, duracion);
 }
 
+
+// FUNCION QUE APLICA A LOS ENEMIGOS EL BLOQUEO DEL TECLADO
 export function aplicarSlowEnemy(duracion = 5000) {
-  // duración por defecto 5s
   slowEnemyActivo.value = true;
   console.log(`🐢 Slow Enemy activado por ${duracion / 1000} segundos`);
 
@@ -25,6 +31,9 @@ export function aplicarSlowEnemy(duracion = 5000) {
   }, duracion);
 }
 
+
+
+// FUNCION QUE ACTIVA LA INMUNIDAD
 export function activarEscudo(duracion = 5000) {
   escudoActivo.value = true;
   console.log("escudo activo");

@@ -3,7 +3,6 @@ import { ref, onMounted, onUnmounted, defineProps } from "vue";
 import communicationManager from "../services/communicationManager";
 import { rooms } from "../logic/globalState.js";
 
-// Importar los hijos de Salas (utilsSalas)
 import LogicaPerfilUsuario from "./utils/utilsSalas/LogicaPerfilUsuario.vue";
 import LogicaSalirSala from "./utils/utilsSalas/LogicaSalirSalas.vue";
 import LogicaCrearLobby from "./utils/utilsSalas/LogicaCrearLobby.vue";
@@ -14,44 +13,52 @@ const props = defineProps({
   jugador: Object,
 });
 
-// 🔹 AÑADIMOS 'ver-perfil' y 'logout' a los eventos que este componente puede emitir
 const emit = defineEmits(["sala-seleccionada", "ver-perfil", "logout"]);
 const nuevaSala = ref("");
 const errorMessage = ref("");
 
-// 🔹 Recibir lista de salas del servidor
+// Recibir lista de salas del servidor
 const handleRoomsList = (payload) => {
   rooms.value = payload;
   console.log("📜 Lista de salas:", payload);
 };
 
-// 🔹 Cuando una sala se crea correctamente
+//
+// FUNCION QUE MANEJA LA CREACION DE UNA SALA
+//
+
 function handleRoomCreated(payload) {
   console.log("🆕 Sala creada desde backend:", payload);
-  // Emitimos solo los datos necesarios a App.vue
 
   const room = {
     roomId: payload.roomId,
-    playerId: props.jugador.id, // host
+    playerId: props.jugador.id,
     isHost: true,
-    players: [{ playerId: props.jugador.id, username: props.jugador.username }], // solo él por ahora
+    players: [{ playerId: props.jugador.id, username: props.jugador.username }], 
   };
   emit("sala-seleccionada", room);
 }
 
-// 🔹 Error al crear o unirse
 const handleRoomError = (payload) => {
   console.error("❌ Error:", payload.message);
   errorMessage.value = payload.message;
 };
 
-// 🔹 Solicitar lista de salas al servidor
+
+//
+// FUNCION QUE MANEJA LA ACTUALIZACIÓN DE
+//
+
 function actualizarSalas() {
   console.log("📡 Solicitando lista de salas...");
   communicationManager.emit("get_rooms");
 }
 
-// 🔹 Crear una nueva sala
+
+//
+// FUNCION QUE MANEJA LA CREACION DE UNA SALA
+//
+
 function crearSala() {
   if (!props.jugador) return;
   const roomName = nuevaSala.value.trim() || `Room_${props.jugador.username}`;
@@ -65,7 +72,11 @@ function crearSala() {
   nuevaSala.value = "";
 }
 
-// 🔹 Unirse a una sala
+
+//
+// FUNCION QUE MANEJA LA UNION A UNA SALA 
+//
+
 function unirseSala(room) {
   if (!props.jugador) return;
   communicationManager.emit("join_room", {
@@ -88,11 +99,6 @@ function handleLogout() {
 }
 
 onMounted(() => {
-  // El componente ahora solo se monta cuando 'jugador' existe.
-  console.log("onMounted: PantallaSalas montada. Conectando socket...");
-  console.log("ID del jugador:", props.jugador.id);
-  console.log("Username del jugador:", props.jugador.username);
-
   communicationManager.connect();
   communicationManager.on("rooms_list", handleRoomsList);
   communicationManager.on("room_created", handleRoomCreated);

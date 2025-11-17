@@ -10,13 +10,12 @@ import PantallaFinal from "./componentes/pantallaFinal.vue";
 import PantallaPerfil from "./componentes/pantallaPerfil.vue";
 import { getApiUrl } from "./logic/getUrl.js";
 
-const vistaActual = ref("registro"); // registro | salas | lobby | juego | final
+const vistaActual = ref("registro"); 
 const jugador = ref(null);
 const lobbyState = ref(null);
 const roomSeleccionada = ref(null);
 const ganador = ref(null);
 
-// Se ejecuta al montar el componente.
 onMounted(async () => {
   const token = localStorage.getItem("token");
   if (token) {
@@ -31,11 +30,9 @@ onMounted(async () => {
 
       if (response.ok) {
         const userData = await response.json();
-        // Guardamos los datos del usuario y el token para futuras peticiones
         jugador.value = { ...userData, token };
         vistaActual.value = "salas";
       } else {
-        // Si el token es inválido o expiró, limpiamos localStorage
         localStorage.removeItem("token");
       }
     } catch (error) {
@@ -46,30 +43,26 @@ onMounted(async () => {
 });
 
 function onJugadorRegistrado(data) {
-  // data ya contiene el token y los datos del usuario desde el backend
   jugador.value = data;
   vistaActual.value = "salas";
 }
 
-// 🔹 Evento: jugador entra a sala
 function onSalaSeleccionada(room) {
   roomSeleccionada.value = room;
   vistaActual.value = "lobby";
 }
 
-// 🔹 Evento: partida iniciada
 function onJuegoIniciado(payload) {
   vistaActual.value = "juego";
 }
 
-// 🔹 Evento: juego terminado
+// FUNCION QUE INDICA EL FINAL DEL JUEGO
 function onJuegoFinalizado(winner) {
   ganador.value = winner;
   vistaActual.value = "final";
 }
 
-// ✅ 1. AÑADE ESTA NUEVA FUNCIÓN
-// 🔹 Evento: Salir del Lobby (de Lobby.vue)
+// FUCNION QUE MANEJA LA SALIDA DE LA LOBBY
 function handleLobbyLeave() {
   console.log("APP: Recibido 'leave-lobby'. Volviendo a pantalla de salas.");
 
@@ -80,10 +73,9 @@ function handleLobbyLeave() {
   }
 
   vistaActual.value = "salas";
-  roomSeleccionada.value = null; // Limpiamos la sala seleccionada
+  roomSeleccionada.value = null; 
 }
 
-// Evento: ver-perfil (PantallaSalas-PantallaPerfil)
 
 function irAPerfil() {
   vistaActual.value = "perfil";
@@ -105,20 +97,16 @@ function guardarPerfil(payload) {
     jugador.value.avatar = payload.newAvatar;
   }
 
-  // Volver a la pantalla anterior (registro o salas)
   handlePerfilVolver();
 }
 
 function handleGoHome() {
 
-  // localStorage.clear();
-  // sessionStorage.clear();
 
   console.log("🔹 Cambiando vistaActual a 'perfil'");
 
   vistaActual.value = "perfil";
 
-  // jugador.value = null;
   roomSeleccionada.value = null;
   ganador.value = null;
 }

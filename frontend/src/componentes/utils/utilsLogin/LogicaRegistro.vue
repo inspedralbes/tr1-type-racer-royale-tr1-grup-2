@@ -2,26 +2,19 @@
 import { ref } from "vue";
 import { getApiUrl } from "../../../logic/getUrl.js";
 
-/// Emits al elemento padre este caso PantallaLogin.vue:
-const emit = defineEmits(["success", "error"]); // "success" si el registro es correcto, "error" si falla.
+const emit = defineEmits(["success", "error"]); 
 
-// Refs:
-const username = ref(""); // Almacena el valor del input de usuario (enlazado con v-model).
-const password = ref(""); // Almacena el valor del input de contraseña (enlazado con v-model).
+const username = ref(""); 
+const password = ref(""); 
 
-// Funciones:
 
-// Lógica de Registro al enviar el formulario --> Envía los datos al ENDPOINT /api/login del backend:
 async function manejoRegistro() {
-  // Comprueba si los campos no están vaciós:
   if (!username.value || !password.value) {
-    emit("error", "Ambos campos son obligatorios."); // Si falla la validación, emite un error al padre.
-    return; // Detiene la ejecución.
+    emit("error", "Ambos campos son obligatorios."); 
+    return; 
   }
 
-  // Manejo de errores de red o del fetch (try/catch):
   try {
-    // Petición POST al backend con las credenciales nuevas:
     const response = await fetch(getApiUrl("/api/user/register"),
       {
         method: "POST",
@@ -33,17 +26,14 @@ async function manejoRegistro() {
       }
     );
 
-    // La respuesta JSON del servidor.
     const data = await response.json();
 
-    // Comprobamos si la respuesta es exitosa o no:
     if (response.ok) {
-      emit("success", data); // Emite el evento "success" al padre.
+      emit("success", data); 
     } else {
-      emit("error", data.message); // Emite el mensaje de error.
+      emit("error", data.message); 
     }
   } catch (error) {
-    // Error de conexión:
     console.error("Error de conexión:", error);
     emit("error", "No se pudo conectar con el servidor.");
   }
@@ -89,10 +79,10 @@ async function manejoRegistro() {
 .card-content {
   display: flex;
   flex-direction: column;
-  align-items: center; /* Centra el contenido */
-  width: 90%; /* Un poco de margen a los lados */
-  max-width: 15em; /* Ancho máximo para el formulario */
-  margin: 0 auto; /* Centrado horizontal */
+  align-items: center; 
+  width: 90%; 
+  max-width: 15em; 
+  margin: 0 auto; 
   box-sizing: border-box;
 }
 
@@ -100,7 +90,7 @@ async function manejoRegistro() {
 h2 {
   font-size: 0.8em;
   font-weight: bold;
-  color: #ff9800; /* Color naranja de acento */
+  color: #ff9800; 
   margin-top: 0;
   margin-bottom: 0.5em;
   text-transform: uppercase;
@@ -119,7 +109,7 @@ form {
   display: flex;
   flex-direction: column;
   width: 100%;
-  margin-bottom: 0.6em; /* Espacio entre campos */
+  margin-bottom: 0.6em; 
 }
 
 /* Etiqueta (ej: "Usuario") */
@@ -127,8 +117,8 @@ label {
   font-size: 0.5em;
   font-weight: bold;
   color: white;
-  margin-bottom: 0.25em; /* Espacio entre label e input */
-  text-align: left; /* Alinea texto a la izquierda */
+  margin-bottom: 0.25em; 
+  text-align: left; 
 }
 
 /* Campos de texto y contraseña */
@@ -138,7 +128,7 @@ input[type="password"] {
   color: black;
   border: none;
   border-radius: 3px;
-  padding: 5px 8px; /* Más cómodo que el original */
+  padding: 5px 8px; 
   font-size: 0.5em;
   font-weight: bold;
   box-sizing: border-box;
@@ -163,7 +153,7 @@ input::placeholder {
   cursor: pointer;
   transition: background-color 0.2s;
   width: 100%;
-  margin-top: 0.5em; /* Espacio sobre el botón */
+  margin-top: 0.5em; 
   text-transform: uppercase;
 }
 

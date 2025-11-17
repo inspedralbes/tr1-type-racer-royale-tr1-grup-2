@@ -30,27 +30,28 @@ function iniciarJuego() {
   emit("juego-iniciado", props.room);
 }
 
-// ✅ 2. Esta es la función que se llama cuando el HIJO emite
+
+//
+// FUNCION QUE MANEJA LA SALIDA DE UNA PARTIDA 
+//
+
 function handleExit() {
   communicationManager.emit('leave_game', { playerId: playerId.value, roomId: props.room.roomId })
   console.log(`🚪 Saliendo del lobby ${props.room.roomId}...`);
 
   if (props.room && props.room.players) {
-    players.value = [...props.room.players]; // inicializa con el host
+    players.value = [...props.room.players]; 
   }
 
-  // 1. Notificar al backend que nos vamos
   communicationManager.emit("leave_lobby_signal", {
     roomId: props.room.roomId,
-    playerId: playerId.value, // Usamos .value porque es un ref importado
+    playerId: playerId.value, 
   });
 
-  // 2. Emitir a App.vue (el "abuelo") para que cambie la vista
   emit("leave-lobby");
 }
 
 onMounted(() => {
-  // Este evento es para cuando ALGUIEN (incluyéndote a ti) SE UNE
   communicationManager.on("joined_lobby", (data) => {
     console.log("📥 joined_lobby recibido:", data);
     if (data.roomId === props.room.roomId) {
@@ -58,13 +59,9 @@ onMounted(() => {
     }
   });
 
-  // ✅ 3. AÑADIMOS ESTE LISTENER:
-  // Este evento es para cuando OTRA PERSONA SE VA
-  // Tu backend debe emitir "player_left_lobby" a todos en la sala cuando alguien usa "leave_lobby_signal"
   communicationManager.on("player_left_lobby", (data) => {
     console.log("📥 player_left_lobby recibido:", data);
     if (data.roomId === props.room.roomId) {
-      // Simplemente actualizamos la lista de jugadores con la nueva lista del servidor
       players.value = data.players;
     }
   });
@@ -77,7 +74,6 @@ onMounted(() => {
 onUnmounted(() => {
   communicationManager.off("joined_lobby");
   communicationManager.off("start_game_signal");
-  // ✅ 4. Limpiamos el nuevo listener
   communicationManager.off("player_left_lobby");
 });
 </script>

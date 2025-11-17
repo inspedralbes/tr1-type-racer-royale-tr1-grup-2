@@ -4,6 +4,11 @@ import { createRoom, getRoom } from "../logic/roomsManager.js";
 
 const router = express.Router();
 
+
+// 
+// ENDPOINT DE API REST - CREACION DE PALABRAS Y SALA - METODO POST
+//
+
 router.post("/words", async (req, res) => {
   try {
     const { roomId, playerId, playerName, count } = req.body;

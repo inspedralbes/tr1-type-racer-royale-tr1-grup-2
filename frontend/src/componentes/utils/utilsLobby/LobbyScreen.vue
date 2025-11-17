@@ -1,8 +1,6 @@
 <script setup>
-// ✅ AÑADIDO: Importamos el playerId aquí para que el componente siga siendo autónomo
 import { playerId } from "../../../logic/globalState.js";
 
-// ✅ AÑADIDO: Definimos las props que este componente espera recibir del padre
 defineProps({
   roomId: {
     type: String,
@@ -53,9 +51,7 @@ defineProps({
 </template>
 
 <style scoped>
-/* ➡️ Todos los estilos relacionados con la pantalla se han movido aquí */
 
-/* --- Pantalla (más contraste y reflejo sutil) --- */
 .screen {
   height: 350px;
   border-radius: 10px;
@@ -71,7 +67,7 @@ defineProps({
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  position: relative; /* Añadido para el ::before */
+  position: relative; 
 
   &::before {
     content: "";
@@ -98,7 +94,6 @@ defineProps({
   scrollbar-color: #444 #222;
 }
 
-/* Contenido del Lobby */
 .room-id {
   font-size: 1.2rem;
   font-weight: bold;
@@ -163,7 +158,6 @@ defineProps({
   border-radius: 5px;
 }
 
-/* --- ESTILOS EXTRA PARA SCROLLBAR (para la pantalla) --- */
 .screen-body {
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.4) rgba(0, 0, 0, 0.1);

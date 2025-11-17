@@ -1,2 +1,2 @@
-// logic/globalState.js
-export const globalPlayers = []; // [{ playerId, username }]
+// CONSTANTE GLOBAL DEL BACK PARA GUARDAR A LOS JUGADORES QUE ENTRAN EN EL JUEGO
+export const globalPlayers = []; 

@@ -1,6 +1,6 @@
 <script setup>
 defineProps({
-  modelValue: String, // para v-model:nombre
+  modelValue: String, 
   editando: Boolean,
 });
 

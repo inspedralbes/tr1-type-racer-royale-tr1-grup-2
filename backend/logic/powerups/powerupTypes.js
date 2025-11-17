@@ -1,5 +1,4 @@
-// backend/game/powerups/powerupTypes.js
-
+// PALO DE LAS CARTAS
 export const suits = {
   DIAMANTES: "diamantes",
   CORAZONES: "corazones",
@@ -7,7 +6,8 @@ export const suits = {
   TREBOLES: "tréboles",
 };
 
-// Cada palo define un tipo de efecto base
+
+// EFECTOS DE CADA TIPO DE POWERUP
 export const baseEffects = {
   [suits.DIAMANTES]: {
     nombre: "Ataque simultáneo",

@@ -1,16 +1,18 @@
-// utils/wordsManager.js
-import { count } from "console";
 import { getRoom } from "./roomsManager.js";
 
 import fs from "fs/promises";
 
 const apiUrlBase = "https://random-word-api.herokuapp.com/word";
 
+
+//
+// FUNCION QUE OBTIENE LAS PALABRAS DE UNA API EXTERNA
+//
+
 export async function obtenerPalabras(cantidad = 30) {
 
   const apiUrl = `${apiUrlBase}?number=${cantidad}&lang=es`;
 
-  // Función para controlar timeout
   const fetchConTimeout = (url, ms) =>
     Promise.race([
       fetch(url),
@@ -18,24 +20,52 @@ export async function obtenerPalabras(cantidad = 30) {
     ]);
 
   try {
-    const res = await fetchConTimeout(apiUrl, 2000); // espera máximo 3 segundos
+    const res = await fetchConTimeout(apiUrl, 2000); 
     if (!res.ok) throw new Error("Error en la API");
 
     let palabrasAPI = await res.json();
     console.log("✅ Palabras obtenidas desde API:", palabrasAPI);
 
-    // Filtrar solo palabras individuales (sin espacios)
-    palabrasAPI = palabrasAPI
-      .filter(p => !p.includes(" "))
-      .map(p => p.toLowerCase());
+    // FUNCION DE ARRAY - ALTO NIVEL
+    // palabrasAPI = palabrasAPI
+    //   .filter(p => !p.includes(" "))
+    //   .map(p => p.toLowerCase());
 
-    // Si hay menos palabras que la cantidad pedida, completar con locales
+
+    // SUSTITUTO DE .filter() Y .map()
+    const nuevasPalabrasAPI = [];
+
+    for (let i = 0; i < palabrasAPI.length; i++) {
+      const palabra = palabrasAPI[i];
+
+      if (palabra.indexOf(" ") === -1) {
+        nuevasPalabrasAPI.push(palabra.toLowerCase());
+      }
+    }
+
+    palabrasAPI = nuevasPalabrasAPI;
+
     if (palabrasAPI.length < cantidad) {
       const data = await fs.readFile("./logic/palabras.json", "utf8");
       const palabrasLocales = JSON.parse(data);
-      palabrasAPI = palabrasAPI
-        .concat(palabrasLocales)
-        .slice(0, cantidad);
+
+      // FUNCIONES DE ARRAY - ALTO NIVEL 
+      // palabrasAPI = palabrasAPI
+      //   .concat(palabrasLocales)
+      //   .slice(0, cantidad);
+
+      // SUSTITUTO DE .concat() Y .slice()
+      const nuevasPalabrasCompletas = [];
+
+      for (let i = 0; i < palabrasAPI.length && nuevasPalabrasCompletas.length < cantidad; i++) {
+        nuevasPalabrasCompletas.push(palabrasAPI[i]);
+      }
+
+      for (let i = 0; i < palabrasLocales.length && nuevasPalabrasCompletas.length < cantidad; i++) {
+        nuevasPalabrasCompletas.push(palabrasLocales[i]);
+      }
+
+      palabrasAPI = nuevasPalabrasCompletas;
     }
 
     return palabrasAPI;
@@ -44,7 +74,6 @@ export async function obtenerPalabras(cantidad = 30) {
     console.warn("⚠️ No se pudieron obtener palabras de la API:", err.message);
     console.log("🔁 Usando palabras locales desde JSON...");
 
-    // Lee el JSON local (asegúrate de que tenga un array de palabras)
     const data = await fs.readFile("./logic/palabras.json", "utf8");
     const palabrasLocales = JSON.parse(data);
 
@@ -53,8 +82,10 @@ export async function obtenerPalabras(cantidad = 30) {
 }
 
 
+//
+// FUNCION QUE SELECCIONA PALABRAS RANDOM 
+//
 
-// 🔹 Selecciona `cantidad` de palabras distintas de un array dado
 export const seleccionarRandom = (array, cantidad) => {
   const copia = [...array];
   const seleccion = [];
@@ -66,8 +97,11 @@ export const seleccionarRandom = (array, cantidad) => {
   return seleccion;
 };
 
-// 🔹 Función que elimina la palabra completada de la lista del jugador que la responde
-// y devuelve la palabra eliminada para añadirla al resto
+
+//
+// FUNCION QUE CALCULA LAS PALABRAS RESTANTES DE LOS JUGADORES 
+//
+
 export const calcularPalabrasRestantes = (rooms, roomId, playerId, wordId, threshold = 3, completedWords) => {
   const room = getRoom(roomId);
   if (!room) return;
@@ -80,18 +114,15 @@ export const calcularPalabrasRestantes = (rooms, roomId, playerId, wordId, thres
 
   const palabraCompletada = wordId >= 0 && wordId < copia.length ? copia[wordId] : null;
 
-  // ✅ Eliminar palabra completada
   if (wordId >= 0 && wordId < copia.length) {
     copia.splice(wordId, 1);
   }
 
-  // ✅ Actualizar datos del jugador
   jugador.words = copia;
   jugador.completedWords = completedWords;
   console.log(completedWords);
   console.log("🟢 POSTCAMBIO -- room.players:", room.players);
 
-  // ⚡ Si alcanza múltiplo del threshold → enviar palabra a los demás
   if (completedWords % threshold === 0) {
     console.log(
       `⚡ ${jugador.name || playerId} ha completado ${jugador.completedWords} palabras — enviando "${completedWords}" a los demás`
@@ -100,33 +131,35 @@ export const calcularPalabrasRestantes = (rooms, roomId, playerId, wordId, thres
   }
 };
 
-// 🔹 Función que añade la palabra completada al resto de jugadores
+
+//
+// FUNCION QUE AÑADE LA PALABRA COMPLETADA AL RESTO DE JUGADORES
+//
+
 export const añadirPalabraCompletada = (rooms, roomId, playerId, palabraEliminada) => {
   const room = rooms[roomId];
   if (!room) return;
 
-  room.players.forEach(p => {
+  // FUNCION DE ARRAY - ALTO NIVEL
+  // room.players.forEach(p => {
+  //   if (p.playerId !== playerId) {
+  //     p.words.push(palabraEliminada);
+  //   }
+  // });
+
+  // SUSTITUTO DE .forEach()
+  for (let i = 0; i < room.players.length; i++) {
+    const p = room.players[i];
+
     if (p.playerId !== playerId) {
       p.words.push(palabraEliminada);
     }
-  });
+  }
 };
 
-// 🔹 Array de palabras especiales para powerups
-// export const palabrasPowerup = [
-//   "desafortunadamente",
-//   "incomprensible",
-//   "extraordinario",
-//   "electrodoméstico",
-//   "contemporáneo",
-//   "trascendental",
-//   "ininteligible",
-//   "paralelepípedo",
-//   "hipopótamo",
-//   "otorrinolaringólogo"
-// ];
 
-export const palabrasPowerup = [
+// CONSTANTE DE PALABRAS DE LOS POWERUPS
+const palabrasPowerup = [
   "abismo", "acantilado", "albergue", "almácigo", "antorcha", "apogeo", "arcano", "atolón",
   "bastión", "brújula", "caballete", "calzada", "camafeo", "candil", "cántico", "caparazón",
   "caverna", "cenit", "cetro", "ciruela", "cobijo", "cometa", "conjuro", "coral", "cráter",
@@ -141,6 +174,10 @@ export const palabrasPowerup = [
   "vástago", "vereda", "vértice", "vórtice", "zenit", "zócalo"
 ];
 
+
+//
+//  FUNCION QUE DEVUELVE LA PALBRA ASIGANDA AL POWERUP
+//
 
 export const generarPalabraPowerup = () => {
   const index = Math.floor(Math.random() * palabrasPowerup.length);

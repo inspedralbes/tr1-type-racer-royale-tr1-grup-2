@@ -2,9 +2,8 @@ import { io } from "socket.io-client";
 
 class CommunicationManager {
   constructor() {
-    // Asegúrate de que la URL coincida con tu backend
     this.socket = io("http://typebet.daw.inspedralbes.cat:3000", {
-      autoConnect: false, // No se conecta automáticamente al crear la instancia
+      autoConnect: false, 
     });
 
     this.socket.on("connect_error", (err) => {
@@ -44,15 +43,12 @@ class CommunicationManager {
   reset() {
     if (!this.socket) return;
 
-    // Elimina todos los listeners registrados en el socket
     this.socket.off();
     console.log("✅ Todos los listeners han sido eliminados.");
 
-    // Desconecta el socket
     this.socket.disconnect();
     console.log("✅ Socket desconectado.");
 
-    // Limpieza interna
     this.socket = null;
   }
 }

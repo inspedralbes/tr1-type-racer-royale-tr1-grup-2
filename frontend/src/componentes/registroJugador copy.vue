@@ -28,13 +28,12 @@ async function registrarJugador() {
 
       const data = await res.json();
 
-      // Guardar solo los datos del jugador actual en globalState
       playerId.value = data.playerId;
       playerName.value = data.username;
 
       estaDesapareciendo.value = true;
       setTimeout(() => {
-        emit("registrado", data); // pasa al componente de salas
+        emit("registrado", data); 
       }, 600);
     } catch (err) {
       console.error(err);

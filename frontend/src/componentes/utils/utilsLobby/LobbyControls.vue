@@ -1,5 +1,4 @@
 <script setup>
-// ✅ AÑADIDO: Definimos las props que este componente espera
 defineProps({
   isHost: {
     type: Boolean,
@@ -11,7 +10,6 @@ defineProps({
   },
 });
 
-// ✅ AÑADIDO: Definimos los eventos que este componente puede emitir
 const emit = defineEmits(["startGameRequested", "leave-lobby"]);
 </script>
 
@@ -46,15 +44,12 @@ const emit = defineEmits(["startGameRequested", "leave-lobby"]);
 </template>
 
 <style scoped>
-/* ➡️ Todos los estilos relacionados con el teclado se han movido aquí */
 
-/* Variables locales para los acentos de color, si se necesitaran */
 :root {
   --accent-red: #d32f2f;
   --accent-green: #4caf50;
 }
 
-/* --- TECLADO Y BOTONES (más 3D y realismo) --- */
 .keypad button {
   background: linear-gradient(to bottom, #333333, #1a1a1a);
   border: 1px solid #0a0a0a;

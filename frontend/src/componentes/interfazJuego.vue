@@ -94,9 +94,9 @@ const playerNameActual = playerName.value;
 const comenzar = ref(false);
 
 // Power-Ups
-const powerupsDisponibles = ref([]); // cartas que aparecen en pantalla para reclamar
-const misPowerups = ref([]); // cartas que ya tengo asignadas
-const currentPowerupWord = ref(null); // palabra activa de powerup
+const powerupsDisponibles = ref([]); 
+const misPowerups = ref([]); 
+const currentPowerupWord = ref(null); 
 const cartaActual = ref(null);
 
 const emit = defineEmits(["juego-finalizado"]);
@@ -149,27 +149,15 @@ watch(mostrarPantallaFinal, (nuevoValor) => {
   }
 });
 
-// FUNCIONES DE SOCKET ADAPTADAS A COMMUNICATION MANAGER
-
-// // FUNCION QUE RECLAMA UNA CARTA POWER-UP
-// function reclamarCarta(carta) {
-//   console.log("Intentando reclamar carta:", carta);
-//   communicationManager.emit("claim_powerup", {
-//     data: {
-//       roomId: roomId.value,
-//       playerId: playerId.value,
-//       carta,
-//     }
-//   });
-// }
-
+//
 // FUNCION QUE MANEJA EL USO DEL POWERUP
+//
+
 function usarPowerup(indice) {
   const carta = misPowerups.value[indice];
   console.log("carta actual:" + carta);
   if (!carta) return;
 
-  // Emitir al backend para que aplique el efecto a los demás
   communicationManager.emit("use_powerup", {
     data: {
       playerId: playerId.value,
@@ -179,14 +167,16 @@ function usarPowerup(indice) {
     },
   });
 
-  // Aplicar efecto local solo si te afecta a ti
   if (carta.efecto === "shield") activarEscudo();
 
   misPowerups.value.splice(indice, 1);
   console.log("Powerup usado:", carta.nombre);
 }
 
+//
 // FUNCION QUE MANEJA LA ACTUALIZACION DE PALABRAS DEL JUGADOR
+//
+
 function onUpdatePlayerWords(msg) {
   const { playerId: jugador, remainingWords, status, username } = msg.data;
 
@@ -213,7 +203,11 @@ function onUpdatePlayerWords(msg) {
   }
 }
 
-//Controla el progreso de todos los jugadores y separa los usuarios
+
+//
+// FUNCION QUE CONTROLA EL PROGRESO DE LOS USUARIOS 
+//
+
 function onUpdateProgress(msg) {
   const { players } = msg.data;
   console.log("Datos brutos de jugadores del servidor:", players);
@@ -231,20 +225,17 @@ function onUpdateProgress(msg) {
   }
 }
 
-// MOUNT / UNMOUNT
+
 onMounted(() => {
-  // Conectar socket
   communicationManager.connect();
 
-  // 🔹 Fetch palabras iniciales
+  /// FETCH INICIAL DEL JUEGO
   const payload = {
     roomId: roomId.value,
     playerId: playerId.value,
     playerName: playerName.value,
     count: 10,
   };
-
-  // 🔹 Fetch palabras iniciales usando endpoint dinámico
 
   fetch(getApiUrl("/api/palabras/words"), {
     method: "POST",
@@ -258,13 +249,11 @@ onMounted(() => {
       listaEntera.value = data.data.initialWords;
       palabrasBaseRestantes.value = listaEntera.value.length;
     })
-    .catch((err) => console.error("Error al obtener palabras:", err)); // Escuchar eventos del servidor
+    .catch((err) => console.error("Error al obtener palabras:", err)); 
 
-  // Escuchar eventos
   communicationManager.on("update_player_words", onUpdatePlayerWords);
   communicationManager.on("update_progress", onUpdateProgress);
 
-  // 🔹 Powerup disponible en la sala
   communicationManager.on("powerup_available", (msg) => {
     const { carta, palabra } = msg.data;
 
@@ -318,13 +307,12 @@ onMounted(() => {
 
     switch (efecto) {
       case "word_upside_down":
-        aplicarUpsideDown(); // afecta solo a los demás
+        aplicarUpsideDown(); 
         break;
       case "slow_enemy":
         aplicarSlowEnemy();
         break;
       case "shield":
-        // No hace nada a otros, es protección
         break;
       case "reset_game":
         break;
@@ -333,18 +321,17 @@ onMounted(() => {
     console.log(`💫 Powerup ${efecto} activado por ${from}`);
   });
 
+  // SOCKER ESCUCHA CUANDO SE RESETEAN LAS PALABRAS POR UN POWERUP
   communicationManager.on("powerup_reset_words", (msg) => {
     const { from } = msg.data;
     console.log(`🔄 Powerup reset recibido de ${from}`);
 
-    // Limpiar input y palabras actuales
     palabraUser.value = "";
-    listaEntera.value = []; // vaciar palabras actuales
+    listaEntera.value = []; 
     completedWords.value = 0;
     palabraInvalida.value = false;
     errorCount.value = 0;
 
-    // Pedir nuevas palabras al servidor
     fetch(getApiUrl("/api/palabras/words"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -362,50 +349,44 @@ onMounted(() => {
         listaEntera.value = data.data.initialWords;
         palabrasBaseRestantes.value--;
 
-        // REINICIAR EL NUMERO DE PALABRAS RESTANTES
         palabrasRestantes.value = listaEntera.value.length
         console.log("✅ Palabras reiniciadas, mostrando nuevas palabras:", listaEntera.value);
       })
       .catch((err) => console.error("❌ Error al reiniciar palabras:", err));
   });
 
-  // 🔹 Powerup reclamado por el jugador
+
+  // SOCKET ESCUCHA SPAWNEO DE POWERUPS
   communicationManager.on("powerup_spawned", (msg) => {
     const { carta, playerId: ganadorId, powerups } = msg.data;
 
-    // Si es mi carta, la agrego a misPowerups
     if (ganadorId === playerId.value) {
-      // Si ya tiene 2 powerups, eliminar el más antiguo (el primero del array)
       if (misPowerups.value.length >= 2) {
-        const eliminado = misPowerups.value.shift(); // elimina el primer elemento
+        const eliminado = misPowerups.value.shift(); 
         console.log(`🗑️ Se ha eliminado el powerup más antiguo:`, eliminado);
       }
 
-      // Añadir la nueva carta
       misPowerups.value.push(carta);
     }
 
-    // Limpiar palabra activa si coincide
     if (cartaActual.value && cartaActual.value.id === carta.id) {
       currentPowerupWord.value = null;
       cartaActual.value = null;
     }
 
-    // Eliminar la carta de los disponibles
     powerupsDisponibles.value = powerupsDisponibles.value.filter(
       (c) => c.id !== carta.id
     );
 
-    // Mostrar visualmente que se ha ganado una carta (para todos)
     console.log(`Jugador ${playerId.value} ha ganado la carta`, carta);
   });
 
-  // 🔹 Powerup reclamado por otros jugadores (solo para UI si quieres mostrarlo)
+
+  // SOCKET ESCUCHA LOS POWERUPS RECLAMADOS POR EL JUGADOR QUE LO HA RESPONDIDO
   communicationManager.on("powerup_claimed", (msg) => {
     const { carta, playerId: claimant } = msg.data;
     console.log(`Powerup reclamado por ${claimant}:`, carta);
 
-    // Eliminarlo de las palabras disponibles si coincidía
     if (cartaActual.value && cartaActual.value.id === carta.id) {
       currentPowerupWord.value = null;
       cartaActual.value = null;
@@ -414,9 +395,8 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  // Desregistrar eventos
   communicationManager.off("update_player_words", onUpdatePlayerWords);
-  communicationManager.off("update_progress", onUpdateProgress); // Desconectar socket
+  communicationManager.off("update_progress", onUpdateProgress); 
   communicationManager.off("powerup_claimed");
   communicationManager.off("powerup_available");
   communicationManager.off("powerup_spawned");
@@ -424,7 +404,11 @@ onUnmounted(() => {
   communicationManager.emit("leave_room", { playerId: playerId.value, roomId: roomId.value });
 });
 
-// Funcion para actualizar la lista de jugadors
+
+//
+// FUNCION PARA ACTUALIZAR A LOS JUGADORES
+//
+
 function actualizarJugadores(players) {
   if (!Array.isArray(players)) return;
 
@@ -466,28 +450,29 @@ function actualizarJugadores(players) {
   console.log("Otros jugadores (resultado final):", otrosJugadores.value);
 }
 
+
+//
 // FUNCION QUE VALIDA SI CADA CARÁCTER ESTA BIEN ESCRITO
+//
+
 function calcularIndiceError() {
   const palabraEscrita = palabraUser.value;
   const objetivo = palabraObjetivo.value;
-  if (!objetivo) return -1; // No hay palabra objetivo
+  if (!objetivo) return -1; 
 
   for (let i = 0; i < palabraEscrita.length; i++) {
     if (palabraEscrita[i] !== objetivo[i]) {
-      return i; // Devuelve el índice de la primera letra incorrecta
+      return i; 
     }
   }
 
-  return -1; // Toda la palabra escrita hasta ahora es correcta
+  return -1;
 }
 
-// 🧮 Computadas (actualizadas)
 const indicePrimerError = computed(() => calcularIndiceError());
 
-// Mantiene la bandera de validación general
 const esValido = computed(() => indicePrimerError.value === -1);
 
-// 🌟 NUEVA COMPUTADA: Prepara la palabra para renderizar letra por letra
 const letrasConEstado = computed(() => {
   const objetivo = palabraObjetivo.value || "";
   const escrita = palabraUser.value;
@@ -496,7 +481,7 @@ const letrasConEstado = computed(() => {
 
   for (let i = 0; i < objetivo.length; i++) {
     const letraObjetivo = objetivo[i];
-    const letraEscrita = escrita[i] || ""; // "" si aún no se ha escrito
+    const letraEscrita = escrita[i] || ""; 
 
     let estado = "pendiente"; // Letra aún no escrita
     if (i < escrita.length) {
@@ -531,7 +516,11 @@ const letrasConEstado = computed(() => {
   return letras;
 });
 
-// MANEJA LA PULSACIÓN DE LA TECLA ESPACIO
+
+//
+// FUNCION QUE MANEJA LA PULSACIÓN DE LA TECLA ESPACIO
+//
+
 function onInputKeyDown(event) {
   if (slowEnemyActivo.value) {
     event.preventDefault();
@@ -540,14 +529,14 @@ function onInputKeyDown(event) {
   }
   // FLECHA DE LA IZQUIERDA PARA USAR EL POWERUP 1
   if (event.key === "ArrowLeft") {
-    usarPowerup(0); // usar carta 1
+    usarPowerup(0); 
     event.preventDefault();
     return;
   }
 
   // FLECHA DE LA DERECHA PARA USAR EL POWERUP2
   if (event.key === "ArrowRight") {
-    usarPowerup(1); // usar carta 2
+    usarPowerup(1);
     event.preventDefault();
     return;
   }
@@ -555,26 +544,21 @@ function onInputKeyDown(event) {
   if (event.key === " " && palabraUser.value.length > 0) {
     event.preventDefault();
 
-    //Para validar la palabra, que envie y que suene el sonido cuando pasa a la siguiente palabra.
-    // 🔹 Si hay una palabra de powerup activa
     if (currentPowerupWord.value) {
       if (palabraUser.value === currentPowerupWord.value) {
-        // Reclama el powerup
-        completedWords.value++; // opcional: contar como completada también
+        completedWords.value++; 
         currentPowerupWord.value = null;
 
-        // Emitir al backend que el jugador ha reclamado la carta
         communicationManager.emit("claim_powerup", {
           data: {
             roomId: roomId.value,
             playerId: playerId.value,
-            carta: cartaActual.value, // la carta enviada con la palabra de powerup
+            carta: cartaActual.value, 
           },
         });
 
         console.log("🎉 Powerup reclamado:", cartaActual.value);
       } else {
-        // palabra de powerup incorrecta
         errorCount.value++;
         console.warn(
           "❌ Palabra de powerup incorrecta. Errores:",
@@ -582,7 +566,6 @@ function onInputKeyDown(event) {
         );
       }
     }
-    // 🔹 Si no hay powerup, se procesa palabra normal
     else if (palabraUser.value === palabraObjetivo.value) {
       completedWords.value++;
       palabrasBaseRestantes.value--;
@@ -601,17 +584,19 @@ function onInputKeyDown(event) {
       hablarCrupierError();
     }
 
-    // Limpiar input
     palabraUser.value = "";
   }
 }
 
-// 🛡️ Bloquea pegado
 function onInputPaste(event) {
   event.preventDefault();
 }
 
-// FUNCION QUE ENVIA LA PALABRA COMPLETADA AL SERVIDOR
+
+//
+// FUNCION PARA ENVIAR LA PALABRA COMPLETADA
+//
+
 function enviarPalabra(palabraCompletada) {
   const payload = {
     wordId: 0,
@@ -626,7 +611,6 @@ function enviarPalabra(palabraCompletada) {
   console.log("📤 Datos enviados al servidor:", payload);
 }
 
-// FUNCION QUE INICIA LA MUSICA DE FONDO
 function musica() {
   audioPlayer.volume = 0.05;
   audioPlayer.loop = true;
@@ -641,7 +625,10 @@ function musica() {
     });
 }
 
+//
 // FUNCION QUE INICIA EL JUEGO DESPUES DEL DIALOGO DEL CRUPIER
+//
+
 function empiezaJuego() {
   for (let i = 0; i < dialogTextEntrada.value.length; i++) {
     setTimeout(() => {
@@ -659,7 +646,10 @@ function empiezaJuego() {
   }
 }
 
-// Funcion para reproducir la voz de el crupier: Bienvenida / Error / Aciertos / PowerUps
+
+//
+// FUNCION PARA REPRODUCIR LA VOZ DEL CRUPIER
+//
 
 function hablarCrupier(index) {
   const audioSrc = audioDialogoEntrada[index];
@@ -710,12 +700,10 @@ function hablarCrupierAcierto() {
 // 🧮 Computadas
 const palabrasEnVista = computed(() => {
   if (currentPowerupWord.value) {
-    return [currentPowerupWord.value]; // mostrar solo la palabra de powerup
+    return [currentPowerupWord.value]; 
   }
   if (!Array.isArray(listaEntera.value)) return [];
-  return listaEntera.value.slice(0, 5); // palabras normales
-  if (!Array.isArray(listaEntera.value)) return []; // 🔹 SIEMPRE muestra las primeras 5 palabras del array
-  return listaEntera.value.slice(0, 5);
+  return listaEntera.value.slice(0, 5); 
 });
 
 const palabraObjetivo = computed(() => {
@@ -786,23 +774,6 @@ const palabrasRestantes = computed(() => {
     <img src="/public/assets/img/iconos/musica.jpg" alt="" />
   </button>
 
-  <!-- Div para la estadistica de jugadores -->
-
-  <!-- <div v-if="comenzar" class="player-container-exterior">
-    <div
-      v-for="(jugador, index) in otrosJugadores"
-      :key="jugador.id"
-      :class="['other-player-stat', `player-pos-${index}`]"
-    >
-      <div class="player-name-chip">
-        {{ jugador.username }}
-      </div>
-      <div class="player-stats-chip">
-        <span>{{ jugador.completedWords }}</span>
-      </div>
-    </div>
-  </div> -->
-
   <!-- Lista que muestra usuarios alrededor -->
 
   <div v-if="comenzar" class="iconos-jugadores-container">
@@ -846,7 +817,7 @@ const palabrasRestantes = computed(() => {
               'letra-correcta': letra.estado === 'correcto',
               'letra-error': letra.estado === 'error' || letra.estado === 'extra',
               'letra-pendiente': letra.estado === 'pendiente',
-              'letra-escrita': !!letra.escrita, // true si hay algo escrito
+              'letra-escrita': !!letra.escrita, 
             }
           ]">
             {{ letra.escrita || letra.objetivo || ' ' }}
