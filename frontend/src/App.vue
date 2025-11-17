@@ -163,5 +163,6 @@ function handleGoHome() {
     v-if="vistaActual === 'final'"
     :winner="ganador"
     @go-home="handleGoHome"
+    @registrado="onJugadorRegistrado"
   />
 </template>

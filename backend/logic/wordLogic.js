@@ -6,7 +6,7 @@ import fs from "fs/promises";
 
 const apiUrlBase = "https://random-word-api.herokuapp.com/word";
 
-export async function obtenerPalabras(cantidad = 10) {
+export async function obtenerPalabras(cantidad = 30) {
 
   const apiUrl = `${apiUrlBase}?number=${cantidad}&lang=es`;
 

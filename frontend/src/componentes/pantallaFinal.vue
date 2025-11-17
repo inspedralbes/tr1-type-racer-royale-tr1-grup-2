@@ -188,7 +188,7 @@ function goHomeAction() {
     
     setTimeout(() => {
         isPulling.value = false;
-        emit("go-home");
+        emit("registrado");
     }, 500); 
 }
 

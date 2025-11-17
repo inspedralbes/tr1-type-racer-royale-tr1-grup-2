@@ -12,10 +12,10 @@ const guardado = ref(false);
 
 // --- Lógica de Avatares  ---
 const avataresDisponibles = ref([
-  "../../public/assets/img/imgAvatares/avatar1.png",
-  "../../public/assets/img/imgAvatares/avatar2.png",
-  "../../public/assets/img/imgAvatares/avatar3.png",
-  "../../public/assets/img/imgAvatares/avatar4.png",
+  "assets/img/imgAvatares/avatar1.png",
+  "assets/img/imgAvatares/avatar2.png",
+  "assets/img/imgAvatares/avatar3.png",
+  "assets/img/imgAvatares/avatar4.png",
 ]);
 
 const formData = ref({

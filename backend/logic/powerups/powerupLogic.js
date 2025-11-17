@@ -4,7 +4,7 @@ import { generarPowerup } from "../powerups/powerupGenerator.js";
 
 const powerupTimers = {}; // timers por sala
 
-export function resetGame(cantidadPalabras = 10) {
+export function resetGame(cantidadPalabras = 30) {
   return obtenerPalabras(cantidadPalabras);
 }
 
@@ -44,7 +44,7 @@ export function eliminarCartaJugador(rooms, roomId, playerId, cartaId) {
 }
 
 
-export function startPowerupSpawner(io, roomId, room, intervalo = 10000) {
+export function startPowerupSpawner(io, roomId, room, intervalo = 17000) {
   if (powerupTimers[roomId]) return; // ya iniciado
 
   powerupTimers[roomId] = setInterval(() => {

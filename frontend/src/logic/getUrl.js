@@ -2,7 +2,7 @@ import { io } from "socket.io-client";
 
 
 export function getApiUrl(path) {
-  const base = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  const base = import.meta.env.VITE_API_URL || "http://typebet.daw.inspedralbes.cat:3000";
   console.log(base);
   return `${base}${path}`;
 }

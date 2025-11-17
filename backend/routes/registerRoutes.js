@@ -20,7 +20,7 @@ router.post("/register", async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
     const sql = "INSERT INTO users (username, password) VALUES (?, ?)";
     await dbPool.query(sql, [username, hashedPassword]);
-    res.status(201).json({ message: "¡Usuario registrado con éxito!", playerID });
+    res.status(201).json({ message: "¡Usuario registrado con éxito!" });
   } catch (error) {
     if (error.code === "ER_DUP_ENTRY") {
       return res
