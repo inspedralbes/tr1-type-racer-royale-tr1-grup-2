@@ -141,11 +141,12 @@ export function registerGameEvents(io, socket) {
         status: jugador.status,
         completedWords: jugador.completedWords,
         roomId,
+	username: jugador.username,
       },
     });
 
     //ENVIAR LA ACTUALIZACIÓN A TODOS LOS DEMÁS JUGADORES EN LA SALA
-    socket.broadcast.to(roomId).emit("update_progress", {
+    io.to(roomId).emit("update_progress", {
       data: {
         players: room.players.map((p) => ({
           roomId,

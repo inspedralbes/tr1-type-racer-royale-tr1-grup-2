@@ -39,7 +39,7 @@
       <div class="machine-details">
         <h1>El elegido es:</h1>
         <span v-if="winner" class="winner-name">{{ winner }}</span>
-        <span v-else-if="!canSpin" class="winner-name placeholder">...Calculando Destino...</span>
+        <span v-else-if="!canSpin" class="winner-name placeholder">Has ganado</span>
         <span v-else class="winner-name placeholder">— Nadie aún —</span>
 
         </div>

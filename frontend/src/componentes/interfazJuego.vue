@@ -188,7 +188,7 @@ function usarPowerup(indice) {
 
 // FUNCION QUE MANEJA LA ACTUALIZACION DE PALABRAS DEL JUGADOR
 function onUpdatePlayerWords(msg) {
-  const { playerId: jugador, remainingWords, status } = msg.data;
+  const { playerId: jugador, remainingWords, status, username } = msg.data;
 
   console.log("📤 playerId front:", playerId.value, typeof playerId.value);
   console.log("📥 playerId backend:", jugador, typeof jugador);
@@ -199,8 +199,9 @@ function onUpdatePlayerWords(msg) {
     listaEntera.value = remainingWords;
     console.log("🔴 DESPUÉS - listaEntera:", listaEntera.value);
     console.log("🔤 Palabras status actualizadas:", status);
+
     if (status === "finished") {
-      ganador.value = playerName.value;
+      ganador.value = playerNameActual;
       emit("juego-finalizado", ganador.value);
       mostrarPantallaFinal.value = true;
       audioPlayer.pause();
