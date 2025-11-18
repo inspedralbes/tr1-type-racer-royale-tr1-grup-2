@@ -20,11 +20,11 @@ const emit = defineEmits(["juego-iniciado", "leave-lobby"]);
 const canStartGame = computed(() => players.value.length >= 2);
 
 function iniciarJuego() {
-  console.log("⏳ El host inicia la partida...");
+  console.log("El host inicia la partida...");
 
   communicationManager.emit("start_game_signal", {
     roomId: props.room.roomId,
-    hostId: props.room.playerId, // Asumo que room.playerId es el ID del host
+    hostId: props.room.playerId, 
   });
 
   emit("juego-iniciado", props.room);
@@ -53,14 +53,14 @@ function handleExit() {
 
 onMounted(() => {
   communicationManager.on("joined_lobby", (data) => {
-    console.log("📥 joined_lobby recibido:", data);
+    console.log("joined_lobby recibido:", data);
     if (data.roomId === props.room.roomId) {
       players.value = data.players;
     }
   });
 
   communicationManager.on("player_left_lobby", (data) => {
-    console.log("📥 player_left_lobby recibido:", data);
+    console.log("player_left_lobby recibido:", data);
     if (data.roomId === props.room.roomId) {
       players.value = data.players;
     }

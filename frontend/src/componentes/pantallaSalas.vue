@@ -20,7 +20,7 @@ const errorMessage = ref("");
 // Recibir lista de salas del servidor
 const handleRoomsList = (payload) => {
   rooms.value = payload;
-  console.log("📜 Lista de salas:", payload);
+  console.log("Lista de salas:", payload);
 };
 
 //
@@ -28,7 +28,7 @@ const handleRoomsList = (payload) => {
 //
 
 function handleRoomCreated(payload) {
-  console.log("🆕 Sala creada desde backend:", payload);
+  console.log("Sala creada desde backend:", payload);
 
   const room = {
     roomId: payload.roomId,
@@ -40,7 +40,7 @@ function handleRoomCreated(payload) {
 }
 
 const handleRoomError = (payload) => {
-  console.error("❌ Error:", payload.message);
+  console.error("Error:", payload.message);
   errorMessage.value = payload.message;
 };
 
@@ -50,7 +50,7 @@ const handleRoomError = (payload) => {
 //
 
 function actualizarSalas() {
-  console.log("📡 Solicitando lista de salas...");
+  console.log("Solicitando lista de salas...");
   communicationManager.emit("get_rooms");
 }
 
@@ -88,8 +88,9 @@ function unirseSala(room) {
   emit("sala-seleccionada", room);
 }
 
-// --- 🔹 LÓGICA DE NAVEGACIÓN (CORREGIDA) ---
-
+//
+// LÓGICA DE NAVEGACIÓN
+//
 function handleVerPerfil() {
   emit("ver-perfil");
 }
@@ -134,7 +135,7 @@ onUnmounted(() => {
               <LogicaCrearLobby v-model="nuevaSala" @crear-lobby="crearSala" />
               <LogicaPintarSalas v-model="rooms" @unirse-sala="unirseSala" />
             </div>
-            <!--FIN-->
+            
           </div>
         </div>
       </div>
@@ -150,7 +151,7 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* La escena 3D */
+/* La escena 3D  */
 .scene {
   --room-width: 100vw;
   --room-height: 100vh;
@@ -163,8 +164,6 @@ onUnmounted(() => {
   left: 0;
   overflow: hidden;
   background-color: black;
-
-  /* Perspectiva para la "cámara" */
   perspective: 700px;
   transition: transform 1s ease-in-out;
 }
@@ -181,7 +180,6 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   position: relative;
-  /* Activa el espacio 3D */
   transform-style: preserve-3d;
 
   pointer-events: none;
@@ -199,9 +197,6 @@ onUnmounted(() => {
   background-repeat: no-repeat;
   background-size: cover;
   transform: translateZ(calc(var(--room-depth) * -1));
-
-  /* --- FIX 3D (PASO 2) --- */
-  /* Deshabilitamos clics en la pared de fondo */
   pointer-events: none;
 }
 
@@ -215,9 +210,6 @@ onUnmounted(() => {
   bottom: 0;
   transform-origin: bottom;
   transform: rotateX(90deg);
-
-  /* --- FIX 3D (PASO 1) --- */
-  /* Deshabilitamos clics en las paredes que bloquean */
   pointer-events: none;
 }
 
@@ -231,8 +223,6 @@ onUnmounted(() => {
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
-
-  /* --- FIX 3D (PASO 1) --- */
   pointer-events: none;
 }
 
@@ -246,8 +236,6 @@ onUnmounted(() => {
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
-
-  /* --- FIX 3D (PASO 1) --- */
   pointer-events: none;
 }
 
@@ -261,8 +249,6 @@ onUnmounted(() => {
   top: 0;
   transform-origin: top;
   transform: rotateX(-90deg);
-
-  /* --- FIX 3D (PASO 1) --- */
   pointer-events: none;
 }
 
@@ -305,7 +291,7 @@ onUnmounted(() => {
 
 /*Iluminación pagina*/
 .illuminated-area {
-  pointer-events: none; /* Esto ya estaba bien */
+  pointer-events: none;
   position: absolute;
   top: 0;
   left: 0;
@@ -341,10 +327,7 @@ onUnmounted(() => {
   transform: translateX(-25vw);
   background-color: #f7f0e3;
   border-radius: 2.5vh;
-  z-index: 2; /* Por encima de la puerta (pero .door-frame ahora es 10) */
-
-  /* --- FIX Z-INDEX LÁMPARA (PASO 2) --- */
-  /* Por si acaso, le quitamos los clics a la lámpara también */
+  z-index: 2;
   pointer-events: none;
 }
 
@@ -364,7 +347,7 @@ onUnmounted(() => {
   );
   filter: blur(15px);
   z-index: -1;
-  pointer-events: none; /* Esto ya estaba bien */
+  pointer-events: none;
 }
 
 .salas-container {
@@ -404,7 +387,6 @@ onUnmounted(() => {
   text-align: center;
 }
 
-/* --- ESTILOS PARA MEJORAS DE UI --- */
 .error-message {
   background-color: #ff3b30;
   color: white;
@@ -619,7 +601,6 @@ onUnmounted(() => {
   border-radius: 20px;
 }
 
-/*==============================================*/
 @keyframes active-status {
   0% {
     background-color: var(--online-status);
@@ -637,6 +618,7 @@ onUnmounted(() => {
     background-color: var(--online-status);
   }
 }
+
 .Btn {
   display: flex;
   align-items: center;
@@ -653,7 +635,6 @@ onUnmounted(() => {
   background-color: rgb(255, 65, 65);
 }
 
-/* plus sign */
 .sign {
   width: 100%;
   transition-duration: 0.3s;
@@ -669,7 +650,7 @@ onUnmounted(() => {
 .sign svg path {
   fill: white;
 }
-/* text */
+
 .text {
   position: absolute;
   right: 0%;
@@ -680,7 +661,7 @@ onUnmounted(() => {
   font-weight: 600;
   transition-duration: 0.3s;
 }
-/* hover effect on button width */
+
 .Btn:hover {
   width: 125px;
   border-radius: 40px;
@@ -692,14 +673,14 @@ onUnmounted(() => {
   transition-duration: 0.3s;
   padding-left: 20px;
 }
-/* hover effect button's text */
+
 .Btn:hover .text {
   opacity: 1;
   width: 70%;
   transition-duration: 0.3s;
   padding-right: 10px;
 }
-/* button click effect*/
+
 .Btn:active {
   transform: translate(2px, 2px);
 }
