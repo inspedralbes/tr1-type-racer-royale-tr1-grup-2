@@ -1,12 +1,5 @@
-# transversals
-Esquema mínim de carpetes pels projectes transversals
-
-És obligatori seguir aquesta estructura tot i que la podeu ampliar.
-
-## Atenció
-Un cop comenceu heu de canviar aquesta explicació amb la corresponent al vostre projecte (utilitzant markdown)
-
-# Aquest fitxer ha de contenir com a mínim:
+# Type Bet
+-----------------
  * Nom dels integrants:
     * Edson Torres
     * Oleksiy Prochko Yatsko
@@ -29,4 +22,7 @@ Un cop comenceu heu de canviar aquesta explicació amb la corresponent al vostre
    * Pendiente
      
  * Estat: (explicació d'en quin punt està)
-   * Estamos en los inicios. 
+   * Estamos en los inicios.
+  
+ * URL DeepWiki
+   * [DeepWiki](https://deepwiki.com/inspedralbes/tr1-type-racer-royale-tr1-grup-2) 
