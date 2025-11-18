@@ -1,0 +1,73 @@
+services:
+  # --- Base de datos MySQL ---
+  db:
+    image: mysql:8.0
+    container_name: tr1-mysql-db-dev
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASS}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./db_init:/docker-entrypoint-initdb.d
+
+  # --- Adminer (gestor de base de datos) ---
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8081:8080"
+    depends_on:
+      - db
+
+  # --- Backend (con Hot Reload) ---
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: backend-dev
+    image: tr1-backend-dev
+    container_name: tr1-backend-dev
+    working_dir: /app/backend
+    command: "npx nodemon server.js"
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      DB_HOST: db
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_NAME: ${DB_NAME}
+    volumes:
+      - ./backend:/app/backend
+      - /app/backend/node_modules
+    depends_on:
+      - db
+
+  # --- Frontend (con Hot Reload de Vite) ---
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: frontend-dev
+    image: tr1-frontend-dev
+    container_name: tr1-frontend-dev
+    working_dir: /app/frontend
+    command: "npm run dev"
+    ports:
+      - "5173:5173"
+    environment:
+      NODE_ENV: development
+      VITE_BACKEND_URL: http://localhost:3000
+    volumes:
+      - ./frontend:/app/frontend
+      - /app/frontend/node_modules
+    depends_on:
+      - backend
+
+volumes:
+  mysql-data:
