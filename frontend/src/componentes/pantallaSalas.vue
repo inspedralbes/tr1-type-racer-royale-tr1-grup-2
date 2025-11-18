@@ -325,7 +325,6 @@ onUnmounted(() => {
   top: -0.5vh;
   left: -1%;
   width: 102%;
-  width: 102%;
   height: 2.5vh;
   background-color: black;
   border-radius: 0.8vh;
@@ -355,8 +354,6 @@ onUnmounted(() => {
   left: -15vw;
   width: 80vw;
   height: 75vh;
-  width: 80vw;
-  height: 75vh;
   background: radial-gradient(
     ellipse at 50% 0%,
     rgba(255, 255, 220, 0.35) 0%,
@@ -364,7 +361,7 @@ onUnmounted(() => {
   );
   filter: blur(15px);
   z-index: -1;
-  pointer-events: none; /* Esto ya estaba bien */
+  pointer-events: none; 
 }
 
 .salas-container {

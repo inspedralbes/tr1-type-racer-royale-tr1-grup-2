@@ -184,7 +184,6 @@ async function registrarJugador() {
   height: 154px;
   perspective: 1000px;
   color: white;
-  transform: scale(2);
   transition: transform 0.6s ease-in, opacity 1.2s ease-in;
   position: absolute;
   top: 50%;
@@ -298,7 +297,6 @@ async function registrarJugador() {
 
 .strip {
   position: absolute;
-  background-color: black;
   width: 15em;
   height: 1.5em;
   top: 2.4em;
@@ -309,6 +307,7 @@ async function registrarJugador() {
     #202020 10px,
     #202020 20px
   );
+  background-color: black;
 }
 
 .mstrip {

@@ -293,7 +293,6 @@ onMounted(() => {
   font-size: 8vh; /* Se redujo ligeramente el tamaño del texto para que quepa mejor */
   text-align: center;
   text-shadow: 0 0 0.5vh var(--shadow-deep);
-  color: black;
   
   /* 🔑 CAMBIO CLAVE AQUÍ: Fondo para el texto */
   background-color: rgba(0, 0, 0, 0.4); 
@@ -377,7 +376,6 @@ onMounted(() => {
 
 /* --- ESTILOS AÑADIDOS PARA LA NOTA DE INICIO --- */
 .go-home-note {
-  position: absolute;
   right: 8vh; 
   /* Ajuste de posición para que no quede demasiado abajo */
   top: 10%; 
@@ -391,8 +389,6 @@ onMounted(() => {
   border-radius: 0.3vh;
   box-shadow: 0 0.5vh 1vh rgba(0, 0, 0, 0.7); /* Sombra más pronunciada */
   z-index: 10;
-  
-  /* Posicionamiento para los remaches */
   position: relative; 
   overflow: visible; /* Necesario para que los remaches salgan del borde */
 }

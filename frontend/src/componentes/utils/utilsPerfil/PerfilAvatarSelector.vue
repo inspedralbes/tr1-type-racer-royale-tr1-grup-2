@@ -21,6 +21,10 @@ function handleFileChange(event) {
     <legend>Personalización</legend>
     <div class="campo">
       <label>Elige un nuevo Avatar:</label>
+      <label>
+        <input type="text" />
+        Elige un nuevo Avatar:
+      </label>
       <div class="avatares-seleccion">
         <img
           v-for="avatarSrc in avataresDisponibles"
