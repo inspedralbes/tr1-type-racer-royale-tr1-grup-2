@@ -1,7 +1,7 @@
 import cors from "cors";
 import { Server } from "socket.io";
 import express from "express";
-import http from "http";
+import http from "node:http";
 import "dotenv/config";
 
 import wordsRouter from "./routes/wordRoutes.js";

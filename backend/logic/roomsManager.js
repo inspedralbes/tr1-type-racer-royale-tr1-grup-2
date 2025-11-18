@@ -37,7 +37,24 @@ export const createRoom = (
   } = options;
 
   const roomId = generateRoomId();
-  if (!rooms[roomId]) {
+  if (rooms[roomId]) {
+    const room = rooms[roomId];
+    if (room.numPlayers >= room.maxPlayers) {
+      throw new Error("La sala está llena.");
+    }
+
+    const alreadyInRoom = room.players.some(p => p.playerId === playerId);
+    if (!alreadyInRoom) {
+      room.players.push({
+        playerId,
+        username: playerName,
+        words: [...initialWords],
+        completedWords: 0,
+        status: "waiting",
+      });
+      room.numPlayers++;
+    }
+  } else {
     rooms[roomId] = {
       roomId,
       host: playerId,
@@ -59,23 +76,6 @@ export const createRoom = (
       initialWords: [...initialWords],
       createdAt: Date.now(),
     };
-  } else {
-    const room = rooms[roomId];
-    if (room.numPlayers >= room.maxPlayers) {
-      throw new Error("La sala está llena.");
-    }
-
-    const alreadyInRoom = room.players.some(p => p.playerId === playerId);
-    if (!alreadyInRoom) {
-      room.players.push({
-        playerId,
-        username: playerName,
-        words: [...initialWords],
-        completedWords: 0,
-        status: "waiting",
-      });
-      room.numPlayers++;
-    }
   }
 
   return rooms[roomId];
@@ -159,8 +159,7 @@ export const leaveRoom = (roomId, playerId) => {
   // SUSTITUTO DE .filter()
   const nuevosJugadores = [];
 
-  for (let i = 0; i < room.players.length; i++) {
-    const p = room.players[i];
+  for (const p of room.players) {
     if (p.playerId !== playerId) {
       nuevosJugadores.push(p);
     }
@@ -211,8 +210,8 @@ export const startGame = (roomId) => {
   // room.players.forEach((p) => (p.status = "playing"));
 
   // SUSTITUTO DE .forEach()
-  for (let i = 0; i < room.players.length; i++) {
-    room.players[i].status = "playing";
+  for (const player of room.players) {
+    player.status = "playing";
   }
 };
 
@@ -231,8 +230,8 @@ export const finishGame = (roomId) => {
   // room.players.forEach((p) => (p.status = "finished"));
 
   // SUSTITUTO DE .forEach()
-  for (let i = 0; i < room.players.length; i++) {
-    room.players[i].status = "finished";
+  for (const player of room.players) {
+    player.status = "finished";
   }
 };
 
@@ -254,9 +253,9 @@ export const joinRoom = (roomId, playerId, username) => {
 
   // SUSTITUTO DE .find()
   let existingPlayer = null;
-  for (let i = 0; i < room.players.length; i++) {
-    if (room.players[i].playerId === playerId) {
-      existingPlayer = room.players[i];
+  for (const player of room.players) {
+    if (player.playerId === playerId) {
+      existingPlayer = player;
       break;
     }
   }

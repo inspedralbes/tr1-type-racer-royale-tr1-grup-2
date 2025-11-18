@@ -1,6 +1,6 @@
 import { getRoom } from "./roomsManager.js";
 
-import fs from "fs/promises";
+import fs from "node:fs/promises";
 
 const apiUrlBase = "https://random-word-api.herokuapp.com/word";
 
@@ -35,10 +35,8 @@ export async function obtenerPalabras(cantidad = 30) {
     // SUSTITUTO DE .filter() Y .map()
     const nuevasPalabrasAPI = [];
 
-    for (let i = 0; i < palabrasAPI.length; i++) {
-      const palabra = palabrasAPI[i];
-
-      if (palabra.indexOf(" ") === -1) {
+    for (const palabra of palabrasAPI) {
+      if (!palabra.includes(" ")) {
         nuevasPalabrasAPI.push(palabra.toLowerCase());
       }
     }
@@ -102,7 +100,7 @@ export const seleccionarRandom = (array, cantidad) => {
 // FUNCION QUE CALCULA LAS PALABRAS RESTANTES DE LOS JUGADORES 
 //
 
-export const calcularPalabrasRestantes = (rooms, roomId, playerId, wordId, threshold = 3, completedWords) => {
+export const calcularPalabrasRestantes = (rooms, roomId, playerId, wordId, completedWords, threshold = 3) => {
   const room = getRoom(roomId);
   if (!room) return;
   const jugador = room.players.find(p => p.playerId === playerId);
@@ -148,13 +146,12 @@ export const añadirPalabraCompletada = (rooms, roomId, playerId, palabraElimina
   // });
 
   // SUSTITUTO DE .forEach()
-  for (let i = 0; i < room.players.length; i++) {
-    const p = room.players[i];
-
+  for (const p of room.players) {
     if (p.playerId !== playerId) {
       p.words.push(palabraEliminada);
     }
   }
+
 };
 
 

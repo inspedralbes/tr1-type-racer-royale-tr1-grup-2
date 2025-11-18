@@ -19,12 +19,7 @@ router.post("/words", async (req, res) => {
 
 
 
-    if (!room) {
-      const allWords = await obtenerPalabras(count);
-      selected = seleccionarRandom(allWords, count);
-      console.log(`🆕 Creando sala ${roomId} con jugador ${playerId} (${playerName})`);
-      createRoom(roomId, playerId, playerName || "Jugador 1", selected);
-    } else {
+    if (room) {
       const jugador = room.players.find(p => p.playerId === playerId);
       console.log("🟡 room.players actuales:", room.players.map(p => p.playerId));
       console.log("🔍 Buscando playerId:", playerId);
@@ -45,6 +40,11 @@ router.post("/words", async (req, res) => {
           status: "playing",
         });
       }
+    } else {
+      const allWords = await obtenerPalabras(count);
+      selected = seleccionarRandom(allWords, count);
+      console.log(`🆕 Creando sala ${roomId} con jugador ${playerId} (${playerName})`);
+      createRoom(roomId, playerId, playerName || "Jugador 1", selected);
       }
 
     res.json({

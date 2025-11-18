@@ -48,7 +48,7 @@ export function eliminarCartaJugador(rooms, roomId, playerId, cartaId) {
   if (!room) return;
 
   const jugador = room.players.find((p) => p.playerId === playerId);
-  if (!jugador || !jugador.powerups) return;
+  if (jugador?.powerups) return;
 
   // Filtrar por id en lugar de efecto
   jugador.powerups = jugador.powerups.filter((carta) => carta.id !== cartaId);
@@ -74,8 +74,8 @@ export function startPowerupSpawner(io, roomId, room, intervalo = 17000) {
     // });
 
     // SUSTITUTO DEL .forEach()
-    for (let i = 0; i < room.players.length; i++) {
-      room.players[i].currentPowerupWord = palabraExtra;
+    for (const player of room.players) {
+      player.currentPowerupWord = palabraExtra;
     }
 
     io.to(roomId).emit("powerup_available", { data: { carta, palabra: palabraExtra } });
